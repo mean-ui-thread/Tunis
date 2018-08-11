@@ -10,3 +10,16 @@ HunterGate(
 )
 
 project(Tunis)
+
+include(BuildOptions)
+
+
+add_library(Tunis
+    src/TunisGL.c
+)
+target_include_directories(Tunis PUBLIC include)
+
+
+if (TUNIS_BUILD_SAMPLES)
+    add_subdirectory(samples)
+endif()
