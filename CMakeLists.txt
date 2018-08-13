@@ -18,8 +18,13 @@ add_subdirectory(backend)
 add_library(Tunis
     cmake/BuildOptions.cmake
     cmake/Hunter/config.cmake
+
+    src/TunisColor.cpp
+    include/TunisColor.h
+
     src/Tunis.cpp
     include/Tunis.h
+
 )
 target_include_directories(Tunis PUBLIC include)
 target_link_libraries(Tunis PUBLIC TunisBackend)

@@ -57,12 +57,12 @@ public:
         return m_isDirty;
     }
 
-    inline void resetDirty()
+    inline void setClean()
     {
         m_isDirty = false;
     }
 
-    inline void forceDirty()
+    inline void setDirty()
     {
         m_isDirty = true;
     }
@@ -98,9 +98,9 @@ public:
     }
 
 private:
+    bool m_isDirty = false;
     std::vector<Ttype> m_stack;
     Ttype m_value;
-    bool m_isDirty = true;
 };
 
 class RenderState
@@ -113,6 +113,7 @@ public:
     void reset();
     void apply();
 
+    RenderProperty<glm::vec4> clearColor;
     RenderProperty<glm::ivec4> viewport;
 
 };

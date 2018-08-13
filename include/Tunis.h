@@ -2,6 +2,7 @@
 #define TUNIS_H
 
 #include <memory>
+#include "TunisColor.h"
 
 namespace tunis
 {
@@ -14,7 +15,8 @@ public:
     Context();
     ~Context();
 
-    void beginFrame(int32_t windowWidth, int32_t windowHeight);
+    void setBackgroundColor(const glm::vec4 &color);
+    void beginFrame(int32_t x, int32_t y, int32_t w, int32_t h);
     void endFrame();
 
 private:
