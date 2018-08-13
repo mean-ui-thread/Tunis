@@ -12,7 +12,10 @@ void SampleApp::init()
 }
 
 
-void SampleApp::render(double dt)
+void SampleApp::render(int32_t windowWidth, int32_t windowHeight, double frameTime)
 {
+    ctx->beginFrame(windowWidth, windowHeight);
 
+
+    ctx->endFrame();
 }

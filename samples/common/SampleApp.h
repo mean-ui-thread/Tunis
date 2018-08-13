@@ -11,7 +11,7 @@ public:
     int getScreenHeight() const;
 
     void init();
-    void render(double dt);
+    void render(int32_t windowWidth, int32_t windowHeight, double frameTime);
 
 private:
     std::unique_ptr<tunis::Context> ctx;

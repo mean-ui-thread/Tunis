@@ -19,6 +19,7 @@ add_library(Tunis
     cmake/BuildOptions.cmake
     cmake/Hunter/config.cmake
     src/Tunis.cpp
+    include/Tunis.h
 )
 target_include_directories(Tunis PUBLIC include)
 target_link_libraries(Tunis PUBLIC TunisBackend)

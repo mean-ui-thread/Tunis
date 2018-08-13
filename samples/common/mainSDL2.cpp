@@ -60,7 +60,11 @@ int main( int argc, char* args[] )
             }
         }
 
-        app.render((double)(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency());
+        int w, h;
+        SDL_GetWindowSize(window, &w, &h);
+        double frameTime = (double)(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
+
+        app.render(w, h, frameTime);
 
         SDL_GL_SwapWindow(window);
     }

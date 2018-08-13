@@ -46,7 +46,11 @@ int main( int argc, char* args[] )
     {
         glfwPollEvents();
 
-        app.render(glfwGetTime());
+        int w, h;
+        glfwGetWindowSize(window, &w, &h);
+        double frameTime = glfwGetTime();
+
+        app.render(w, h, frameTime);
 
         glfwSwapBuffers(window);
     }
