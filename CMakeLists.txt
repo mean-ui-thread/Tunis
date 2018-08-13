@@ -13,12 +13,15 @@ project(Tunis)
 
 include(BuildOptions)
 
+add_subdirectory(backend)
 
 add_library(Tunis
-    src/TunisGL.c
+    cmake/BuildOptions.cmake
+    cmake/Hunter/config.cmake
+    src/Tunis.cpp
 )
 target_include_directories(Tunis PUBLIC include)
-
+target_link_libraries(Tunis PUBLIC TunisBackend)
 
 if (TUNIS_BUILD_SAMPLES)
     add_subdirectory(samples)
