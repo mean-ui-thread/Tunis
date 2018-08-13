@@ -43,6 +43,8 @@ int main( int argc, char* args[] )
 
     SDL_GL_SetSwapInterval(1);
 
+    app.init();
+
     SDL_Event e = {};
     Uint64 start = SDL_GetPerformanceCounter();
 

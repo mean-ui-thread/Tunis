@@ -40,6 +40,8 @@ int main( int argc, char* args[] )
 
     glfwSwapInterval(1);
 
+    app.init();
+
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();

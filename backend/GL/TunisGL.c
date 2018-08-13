@@ -29,7 +29,7 @@
  ******************************************************************************/
 
 #define TUNIS_PROTO_IMPL 0
-#include <GL/TunisGL.h>
+#include <TunisGL.h>
 
 #include <stdio.h>
 #include <stdlib.h>
