@@ -15,10 +15,16 @@ Context::~Context()
 
 }
 
-void Context::beginFrame(int32_t windowWidth, int32_t windowHeight)
+void Context::setBackgroundColor(const glm::vec4 &color)
 {
-    m_pBackend->renderState.viewport = glm::ivec4(0, 0, windowWidth, windowHeight);
+    m_pBackend->renderState.clearColor = color;
+}
 
+void Context::beginFrame(int32_t x, int32_t y, int32_t w, int32_t h)
+{
+    m_pBackend->renderState.viewport = glm::ivec4(x, y, w, h);
+
+    m_pBackend->clearFrame();
 
 }
 

@@ -15,6 +15,8 @@ public:
     ~Backend();
 
     RenderState renderState;
+
+    void clearFrame();
 };
 
 }
