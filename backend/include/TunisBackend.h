@@ -1,6 +1,10 @@
 #ifndef TUNISBACKEND_H
 #define TUNISBACKEND_H
 
+#include <cinttypes>
+
+#include <TunisRenderState.h>
+
 namespace tunis
 {
 
@@ -10,6 +14,7 @@ public:
     Backend();
     ~Backend();
 
+    RenderState renderState;
 };
 
 }

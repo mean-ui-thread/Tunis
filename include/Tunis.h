@@ -14,6 +14,8 @@ public:
     Context();
     ~Context();
 
+    void beginFrame(int32_t windowWidth, int32_t windowHeight);
+    void endFrame();
 
 private:
     std::unique_ptr<Backend> m_pBackend;
