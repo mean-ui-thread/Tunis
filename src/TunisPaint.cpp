@@ -9,6 +9,8 @@ SoA<
     float,
     Color,
     Color,
-    size_t
+    size_t,
+    int
 > Paint::_soa;
 
+std::vector<size_t> Paint::_available;
