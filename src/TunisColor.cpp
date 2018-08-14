@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#define RGBA_COLOR(COLOR_NAME, r, g, b, a) const glm::vec4 tunis::color::COLOR_NAME = glm::vec4(r/255.0f, g/255.0f, b/255.0f, a/255.0f)
+#define RGBA_COLOR(COLOR_NAME, r, g, b, a) const tunis::Color tunis::color::COLOR_NAME = tunis::Color(r/255.0f, g/255.0f, b/255.0f, a/255.0f)
 #define RGB_COLOR(COLOR_NAME, r, g, b) RGBA_COLOR(COLOR_NAME, r, g, b, 255)
 
 RGBA_COLOR(Transparent, 0, 0, 0, 0);
@@ -170,11 +170,11 @@ RGB_COLOR(SlateGray, 112, 128, 144);
 RGB_COLOR(DarkSlateGray, 47, 79, 79);
 RGB_COLOR(Black, 0, 0, 0);
 
-glm::vec4 tunis::color::fromString(const char* colorName)
+tunis::Color tunis::color::fromString(const char* colorName)
 {
     if (colorName[0] == '#')
     {
-        glm::vec4 color;
+        tunis::Color color;
         uint32_t word = static_cast<uint32_t>(strtol(&colorName[1], nullptr, 16));
         size_t colorNameLength = strlen(&colorName[1]);
 

@@ -16,8 +16,11 @@ public:
     ~Context();
 
     void setBackgroundColor(const glm::vec4 &color);
+
     void beginFrame(int32_t x, int32_t y, int32_t w, int32_t h);
     void endFrame();
+
+
 
 private:
     std::unique_ptr<Backend> m_pBackend;
