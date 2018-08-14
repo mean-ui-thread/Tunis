@@ -4,9 +4,8 @@
 #include "TunisColor.h"
 #include "soa.h"
 
+#include <algorithm>
 #include <array>
-#include <glm/common.hpp>
-
 
 namespace tunis
 {
@@ -41,7 +40,7 @@ public:
                 {dy, -dx, dx, dy, startX - dx*large, startY - dy*large}, // xform
                 {large, large + d*0.5f}, // extend
                 0.0f,                    // radius
-                glm::max(1.0f, d),       // feather
+                std::max(1.0f, d),       // feather
                 innerColor,              // innerColor
                 outerColor,              // outerColor
                 0                        // image
