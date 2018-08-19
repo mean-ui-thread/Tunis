@@ -9,19 +9,19 @@ namespace tunis
 {
 
 template<typename Ttype>
-class RenderProperty
+class RenderState
 {
 public:
-    RenderProperty()
+    RenderState()
     {
     }
 
-    RenderProperty(const Ttype& value) :
+    RenderState(const Ttype& value) :
         m_value(value)
     {
     }
 
-    RenderProperty(const RenderProperty& other) :
+    RenderState(const RenderState& other) :
         m_value(other.m_value)
     {
     }
@@ -36,7 +36,7 @@ public:
         return m_value;
     }
 
-    inline RenderProperty& operator=(const RenderProperty& other)
+    inline RenderState& operator=(const RenderState& other)
     {
         *this = other.m_value;
         m_stack = other.m_stack;
@@ -115,24 +115,6 @@ private:
     std::vector<Ttype> m_stack;
     Ttype m_value;
 };
-
-class RenderState
-{
-public:
-    RenderState();
-    RenderState(const RenderState& other);
-    RenderState& operator=(const RenderState& other);
-
-    void reset();
-    void sync();
-
-    RenderProperty<glm::vec4> clearColor;
-    RenderProperty<glm::ivec4> viewport;
-    RenderProperty<Texture> texture;
-
-};
-
-
 
 }
 

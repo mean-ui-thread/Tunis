@@ -5,8 +5,8 @@
 using namespace tunis::color;
 
 const char *SampleApp::getSampleName() const { return "01_HelloRectangles"; }
-int SampleApp::getScreenWidth() const { return 1280; }
-int SampleApp::getScreenHeight() const { return 720; }
+int SampleApp::getScreenWidth() const { return 320; }
+int SampleApp::getScreenHeight() const { return 200; }
 
 void SampleApp::init()
 {

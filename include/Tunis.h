@@ -2,7 +2,10 @@
 #define TUNIS_H
 
 #include <memory>
+
+#include "TunisColor.h"
 #include "TunisPaint.h"
+#include "TunisTexture.h"
 
 namespace tunis
 {
@@ -38,7 +41,30 @@ public:
 
 
 private:
+
+    enum RenderType
+    {
+        RenderDefault2D = 0,
+    };
+
+    enum
+    {
+        _renderType = 0,
+        _texture,
+        _vertexStartOffset,
+        _vertexCount
+    };
+
+    SoA<
+        RenderType, // _renderType
+        Texture,    // _texture
+        size_t,     // _vertexStartOffset
+        size_t      // _vertexCount
+    > m_batches;
+
     std::unique_ptr<Backend> m_pBackend;
+    std::vector<Texture> m_textures;
+
 };
 
 }
