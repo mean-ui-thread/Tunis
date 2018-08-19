@@ -184,7 +184,7 @@ tunis::Color tunis::color::fromString(const char* colorName)
             color.r = ((word & 0xFF0000) >> 16);
             color.g = ((word & 0x00FF00) >> 8);
             color.b = ((word & 0x0000FF) >> 0);
-            color.a = 1.0f;
+            color.a = 255;
             return color;
         }
         else if (colorNameLength == 8) /* "#AARRGGBB" */

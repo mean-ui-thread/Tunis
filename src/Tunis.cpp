@@ -15,6 +15,7 @@ Context::Context() :
     m_textures.push_back(tex); // retain
 
     m_pBackend->bindTexture(tex);
+    setBackgroundColor(color::White);
 
     m_batches.reserve(1024);
 }
