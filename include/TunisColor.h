@@ -8,7 +8,7 @@
 namespace tunis
 {
 
-using Color = glm::vec4;
+using Color = glm::tvec4<uint8_t>;
 
 namespace color
 {
@@ -180,12 +180,12 @@ extern const Color Black;
 
 inline Color rgb(uint8_t r, uint8_t g, uint8_t b)
 {
-    return Color(r/255.0f, g/255.0f, b/255.0f, 1.0f);
+    return Color(r, g, b, 255);
 }
 
 inline Color rgba(uint8_t r, uint8_t g, uint8_t b, float a)
 {
-    return Color(r/255.0f, g/255.0f, b/255.0f, a);
+    return Color(r, g, b, static_cast<uint8_t>(a*255));
 }
 
 extern Color fromString(const char* colorName);

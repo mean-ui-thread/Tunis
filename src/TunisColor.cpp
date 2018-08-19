@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#define RGBA_COLOR(COLOR_NAME, r, g, b, a) const tunis::Color tunis::color::COLOR_NAME = tunis::Color(r/255.0f, g/255.0f, b/255.0f, a/255.0f)
+#define RGBA_COLOR(COLOR_NAME, r, g, b, a) const tunis::Color tunis::color::COLOR_NAME = tunis::Color(r, g, b, a)
 #define RGB_COLOR(COLOR_NAME, r, g, b) RGBA_COLOR(COLOR_NAME, r, g, b, 255)
 
 RGBA_COLOR(Transparent, 0, 0, 0, 0);
@@ -181,19 +181,19 @@ tunis::Color tunis::color::fromString(const char* colorName)
         if (colorNameLength == 6) /* "#RRGGBB" */
         {
                               /* R G B */
-            color.r = ((word & 0xFF0000) >> 16) / 255.0f;
-            color.g = ((word & 0x00FF00) >> 8) / 255.0f;
-            color.b = ((word & 0x0000FF) >> 0) / 255.0f;
+            color.r = ((word & 0xFF0000) >> 16);
+            color.g = ((word & 0x00FF00) >> 8);
+            color.b = ((word & 0x0000FF) >> 0);
             color.a = 1.0f;
             return color;
         }
         else if (colorNameLength == 8) /* "#AARRGGBB" */
         {
                               /* A R G B */
-            color.a = ((word & 0xFF000000) >> 24) / 255.0f;
-            color.r = ((word & 0x00FF0000) >> 16) / 255.0f;
-            color.g = ((word & 0x0000FF00) >> 8) / 255.0f;
-            color.b = ((word & 0x000000FF) >> 0) / 255.0f;
+            color.a = ((word & 0xFF000000) >> 24);
+            color.r = ((word & 0x00FF0000) >> 16);
+            color.g = ((word & 0x0000FF00) >> 8);
+            color.b = ((word & 0x000000FF) >> 0);
             return color;
         }
 
@@ -372,6 +372,6 @@ tunis::Color tunis::color::fromString(const char* colorName)
     RETURN_IF_MATCH(Black);
 
 unknownColor:
-    std::cerr << "Unknown color '" << colorName << "'. Returning 'White' instead." << std::endl;
-    return tunis::color::White;
+    std::cerr << "Unknown color '" << colorName << "'. Returning 'Black' instead." << std::endl;
+    return tunis::color::Black;
 }

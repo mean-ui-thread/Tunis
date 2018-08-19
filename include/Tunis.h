@@ -18,7 +18,7 @@ public:
     Context();
     ~Context();
 
-    void setBackgroundColor(const glm::vec4 &color);
+    void setBackgroundColor(const Color &color);
 
     void beginFrame(int32_t x, int32_t y, int32_t w, int32_t h);
     void endFrame();
