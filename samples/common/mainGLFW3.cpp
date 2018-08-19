@@ -12,7 +12,6 @@ void error_callback(int error, const char* description)
 
 int main( int argc, char* args[] )
 {
-    SampleApp app;
 
     glfwSetErrorCallback(error_callback);
 
@@ -26,9 +25,9 @@ int main( int argc, char* args[] )
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_SAMPLES, 4);
 
-    GLFWwindow* window = glfwCreateWindow(app.getScreenWidth(),
-                                          app.getScreenHeight(),
-                                          app.getSampleName(),
+    GLFWwindow* window = glfwCreateWindow(SampleApp::getScreenWidth(),
+                                          SampleApp::getScreenHeight(),
+                                          SampleApp::getSampleName(),
                                           nullptr, nullptr);
 
     if(!window)
@@ -41,7 +40,8 @@ int main( int argc, char* args[] )
 
     glfwSwapInterval(1);
 
-    app.init();
+    // tunis::Context can only be instantiated after a context is created.
+    SampleApp app;
 
     while (!glfwWindowShouldClose(window))
     {

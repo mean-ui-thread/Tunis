@@ -5,15 +5,19 @@
 #include <memory>
 #include <vector>
 
-#include <TunisRenderState.h>
-
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
 #include "soa.h"
 
+#include "TunisTexture.h"
+
 namespace tunis
 {
+
+using Position = glm::tvec2<float>;
+using TCoord = glm::tvec2<uint16_t>;
+using Color = glm::tvec4<uint8_t>;
 
 struct BackendData;
 
@@ -26,7 +30,7 @@ public:
     Backend(const Backend &other) = delete;
     Backend& operator=(const Backend &other) = delete;
 
-    void setClearColor(const glm::vec4 &color);
+    void setClearColor(const Color &color);
     void setViewport(const glm::ivec4 &rect);
     void bindTexture(const Texture &tex);
 
@@ -34,9 +38,9 @@ public:
 
     struct Vertex
     {
-        glm::tvec2<float>    pos;
-        glm::tvec2<uint16_t> tcoord;
-        glm::tvec4<uint8_t>  color;
+        Position pos;
+        TCoord   tcoord;
+        Color    color;
     };
 
     std::vector<Vertex> vertexBuffer;
@@ -52,7 +56,7 @@ public:
 
 private:
 
-    glm::vec4 m_clearColor;
+    Color m_clearColor;
     glm::ivec4 m_viewport;
     Texture m_texture;
 

@@ -164,11 +164,11 @@ Backend::~Backend()
     tunisGLShutdown();
 }
 
-void Backend::setClearColor(const glm::vec4 &color)
+void Backend::setClearColor(const Color &color)
 {
     if (m_clearColor != color)
     {
-        glClearColor(color.r, color.g, color.b, color.a);
+        glClearColor(color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f);
         m_clearColor = color;
     }
 }

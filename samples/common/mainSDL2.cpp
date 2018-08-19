@@ -8,8 +8,6 @@
 
 int main( int argc, char* args[] )
 {
-    SampleApp app;
-
     if (SDL_Init( SDL_INIT_VIDEO ) < 0 )
     {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
@@ -22,11 +20,11 @@ int main( int argc, char* args[] )
     SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
     SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 4);
 
-    SDL_Window* window = SDL_CreateWindow(app.getSampleName(),
+    SDL_Window* window = SDL_CreateWindow(SampleApp::getSampleName(),
                                           SDL_WINDOWPOS_UNDEFINED,
                                           SDL_WINDOWPOS_UNDEFINED,
-                                          app.getScreenWidth(),
-                                          app.getScreenHeight(),
+                                          SampleApp::getScreenWidth(),
+                                          SampleApp::getScreenHeight(),
                                           SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN );
 
     if(!window)
@@ -45,7 +43,8 @@ int main( int argc, char* args[] )
 
     SDL_GL_SetSwapInterval(1);
 
-    app.init();
+    // tunis::Context can only be instantiated after a context is created.
+    SampleApp app;
 
     SDL_Event e = {};
     Uint64 start = SDL_GetPerformanceCounter();

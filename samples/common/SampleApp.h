@@ -6,15 +6,13 @@
 class SampleApp
 {
 public:
-    const char *getSampleName() const;
-    int getScreenWidth() const;
-    int getScreenHeight() const;
+    static const char *getSampleName();
+    static int getScreenWidth();
+    static int getScreenHeight();
 
-    void init();
     void render(int32_t windowWidth, int32_t windowHeight, double frameTime);
 
-private:
-    std::unique_ptr<tunis::Context> ctx;
+    tunis::Context ctx;
 };
 
 #endif // SAMPLEAPP_H
