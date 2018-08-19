@@ -34,9 +34,9 @@ public:
 
     struct Vertex
     {
-        glm::vec2 pos;
-        glm::vec2 tcoord;
-        glm::vec4 color;
+        glm::tvec2<float>    pos;
+        glm::tvec2<uint16_t> tcoord;
+        glm::tvec4<uint8_t>  color;
     };
 
     std::vector<Vertex> vertexBuffer;

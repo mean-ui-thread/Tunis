@@ -5,6 +5,8 @@
 
 #include <cassert>
 
+#include <glm/glm.hpp>
+
 #ifndef TUNIS_VERTEX_MAX
 #define TUNIS_VERTEX_MAX 16384
 #endif
@@ -146,9 +148,9 @@ Backend::Backend() :
     glBindBuffer(GL_ARRAY_BUFFER, m_data->vbo);
     glBufferData(GL_ARRAY_BUFFER, TUNIS_VERTEX_MAX * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
 
-    glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_position), sizeof(Vertex::pos)    / sizeof(float), GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)0);
-    glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_texcoord), sizeof(Vertex::tcoord) / sizeof(float), GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)(sizeof(Vertex::pos)));
-    glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_color),    sizeof(Vertex::color)  / sizeof(float), GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)(sizeof(Vertex::pos) + sizeof(Vertex::tcoord)));
+    glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_position), sizeof(Vertex::pos)    / sizeof(decltype(Vertex::pos)::value_type),    GL_FLOAT,          GL_FALSE, sizeof(Vertex), (const void *)0);
+    glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_texcoord), sizeof(Vertex::tcoord) / sizeof(decltype(Vertex::tcoord)::value_type), GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(Vertex), (const void *)(sizeof(Vertex::pos)));
+    glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_color),    sizeof(Vertex::color)  / sizeof(decltype(Vertex::color)::value_type),  GL_UNSIGNED_BYTE,  GL_TRUE,  sizeof(Vertex), (const void *)(sizeof(Vertex::pos) + sizeof(Vertex::tcoord)));
     glEnableVertexAttribArray(static_cast<GLuint>(m_data->default2DShader.a_position));
     glEnableVertexAttribArray(static_cast<GLuint>(m_data->default2DShader.a_texcoord));
     glEnableVertexAttribArray(static_cast<GLuint>(m_data->default2DShader.a_color));

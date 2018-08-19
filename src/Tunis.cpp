@@ -60,8 +60,6 @@ void Context::fillRect(float x, float y, float width, float height)
     // allocate room for 4 new vertices.
     m_pBackend->vertexBuffer.resize(i + 4);
 
-    float one = m_pBackend->getTextelSize();
-
     // top left
     m_pBackend->vertexBuffer[i].pos.x = x;
     m_pBackend->vertexBuffer[i].pos.y = y;
@@ -74,22 +72,22 @@ void Context::fillRect(float x, float y, float width, float height)
     m_pBackend->vertexBuffer[i].pos.x = x;
     m_pBackend->vertexBuffer[i].pos.y = y + height;
     m_pBackend->vertexBuffer[i].tcoord.s = 0;
-    m_pBackend->vertexBuffer[i].tcoord.t = one;
+    m_pBackend->vertexBuffer[i].tcoord.t = 1;
     m_pBackend->vertexBuffer[i].color = fillStyle.getInnerColor();
     ++i;
 
     // bottom right
     m_pBackend->vertexBuffer[i].pos.x = x + width;
     m_pBackend->vertexBuffer[i].pos.y = y + height;
-    m_pBackend->vertexBuffer[i].tcoord.s = one;
-    m_pBackend->vertexBuffer[i].tcoord.t = one;
+    m_pBackend->vertexBuffer[i].tcoord.s = 1;
+    m_pBackend->vertexBuffer[i].tcoord.t = 1;
     m_pBackend->vertexBuffer[i].color = fillStyle.getInnerColor();
     ++i;
 
     // top right
     m_pBackend->vertexBuffer[i].pos.x = x + width;
     m_pBackend->vertexBuffer[i].pos.y = y;
-    m_pBackend->vertexBuffer[i].tcoord.s = one;
+    m_pBackend->vertexBuffer[i].tcoord.s = 1;
     m_pBackend->vertexBuffer[i].tcoord.t = 0;
     m_pBackend->vertexBuffer[i].color = fillStyle.getInnerColor();
     ++i;
