@@ -21,9 +21,6 @@ add_library(Tunis
     cmake/BuildOptions.cmake
     cmake/Hunter/config.cmake
 
-    include/soa.h
-    include/mapped_soa.h
-
     src/TunisColor.cpp
     include/TunisColor.h
 

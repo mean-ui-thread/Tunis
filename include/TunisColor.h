@@ -178,6 +178,16 @@ extern const Color SlateGray;
 extern const Color DarkSlateGray;
 extern const Color Black;
 
+inline Color rgb(uint8_t r, uint8_t g, uint8_t b)
+{
+    return Color(r/255.0f, g/255.0f, b/255.0f, 1.0f);
+}
+
+inline Color rgba(uint8_t r, uint8_t g, uint8_t b, float a)
+{
+    return Color(r/255.0f, g/255.0f, b/255.0f, a);
+}
+
 extern Color fromString(const char* colorName);
 
 }

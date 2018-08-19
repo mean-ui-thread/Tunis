@@ -61,8 +61,29 @@ public:
         return Paint(id);
     }
 
-    inline Paint(size_t id) : id(id)
+    inline Paint(const Color &color)
     {
+
+        if (_available.size() > 0)
+        {
+            id = _available.back();
+            _available.pop_back();
+        }
+        else
+        {
+            id = _soa.size();
+            _soa.resize(_soa.size()+1);
+        }
+
+        _soa.get<_xform>(id) = {};
+        _soa.get<_extend>(id) = {};
+        _soa.get<_radius>(id) = 0;
+        _soa.get<_feather>(id) = 0;
+        _soa.get<_innerColor>(id) = color;
+        _soa.get<_outerColor>(id) = color::Transparent;
+        _soa.get<_image>(id) = 0;
+        _soa.get<_refCount>(id) = 1;
+
     }
 
     inline Paint(const Paint &other) : id(other.id)
@@ -82,16 +103,23 @@ public:
     {
         if (this != &other)
         {
-            if (--_soa.get<_refCount>(id) == 0)
-            {
-                _available.push_back(id);
-            }
-
+            int refCount = _soa.get<_refCount>(id);
             _soa.copy(other.id, id);
-            ++_soa.get<_refCount>(other.id);
-
-            id = other.id;
+            _soa.get<_refCount>(id) = refCount;
         }
+
+        return *this;
+    }
+
+    inline Paint &operator=(const Color &color)
+    {
+        _soa.get<_xform>(id) = {};
+        _soa.get<_extend>(id) = {};
+        _soa.get<_radius>(id) = 0;
+        _soa.get<_feather>(id) = 0;
+        _soa.get<_innerColor>(id) = color;
+        _soa.get<_outerColor>(id) = color::Transparent;
+        _soa.get<_image>(id) = 0;
 
         return *this;
     }
@@ -138,6 +166,10 @@ public:
 
 private:
 
+    inline Paint(size_t id) : id(id)
+    {
+    }
+
     enum {
         _xform = 0,
         _extend,
@@ -150,14 +182,14 @@ private:
     };
 
     static SoA<
-        std::array<float, 6>, // xform
-        std::array<float, 2>, // extend
-        float,                // radius
-        float,                // feather
-        Color,                // innerColor
-        Color,                // outerColor
-        size_t,               // image
-        int                   // refCount;
+        std::array<float, 6>, // _xform
+        std::array<float, 2>, // _extend
+        float,                // _radius
+        float,                // _feather
+        Color,                // _innerColor
+        Color,                // _outerColor
+        size_t,               // _image
+        int                   // _refCount
     > _soa;
 
     static std::vector<size_t> _available;

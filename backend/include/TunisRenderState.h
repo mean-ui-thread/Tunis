@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <glm/vec4.hpp>
+#include "TunisTexture.h"
 
 namespace tunis
 {
@@ -52,6 +53,11 @@ public:
         return m_value;
     }
 
+    inline Ttype* operator-> ()
+    {
+        return &m_value;
+    }
+
     inline bool isDirty() const
     {
         return m_isDirty;
@@ -74,6 +80,13 @@ public:
             *this = m_stack.front();
             m_stack.clear();
         }
+        m_isDirty = true;
+    }
+
+    inline void reset(const Ttype& value)
+    {
+        *this = value;
+        m_stack.clear();
         m_isDirty = true;
     }
 
@@ -111,10 +124,11 @@ public:
     RenderState& operator=(const RenderState& other);
 
     void reset();
-    void apply();
+    void sync();
 
     RenderProperty<glm::vec4> clearColor;
     RenderProperty<glm::ivec4> viewport;
+    RenderProperty<Texture> texture;
 
 };
 

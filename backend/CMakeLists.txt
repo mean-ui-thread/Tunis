@@ -6,8 +6,17 @@ include(${TUNIS_BACKEND}/Sources.cmake)
 add_library(TunisBackend
     ${TUNIS_BACKEND}/Sources.cmake
     ${TUNIS_BACKEND_SOURCES}
+
+    ${TUNIS_BACKEND}/TunisBackend.cpp
+    ${TUNIS_BACKEND}/TunisRenderState.cpp
+    ${TUNIS_BACKEND}/TunisTexture.cpp
+
     include/TunisBackend.h
     include/TunisRenderState.h
+    include/TunisTexture.h
+
+    include/soa.h
+    include/mapped_soa.h
 )
 
 target_include_directories(TunisBackend
