@@ -18,6 +18,7 @@ public:
     Texture();
     Texture(int width, int height, Filtering filtering = FilterTrilinear);
     Texture(const Texture &other);
+    Texture(const Texture &&other);
     ~Texture();
 
     Texture &operator=(const Texture &other);

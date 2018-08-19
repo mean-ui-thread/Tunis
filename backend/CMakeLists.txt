@@ -8,7 +8,6 @@ add_library(TunisBackend
     ${TUNIS_BACKEND_SOURCES}
 
     ${TUNIS_BACKEND}/TunisBackend.cpp
-    ${TUNIS_BACKEND}/TunisRenderState.cpp
     ${TUNIS_BACKEND}/TunisTexture.cpp
 
     include/TunisBackend.h

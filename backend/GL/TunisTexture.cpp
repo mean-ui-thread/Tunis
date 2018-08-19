@@ -96,6 +96,11 @@ Texture::Texture(const Texture &other) : id(other.id)
     ++_soa.get<_refCount>(id);
 }
 
+Texture::Texture(const Texture &&other) : id(other.id)
+{
+    ++_soa.get<_refCount>(id);
+}
+
 Texture::~Texture()
 {
     if (--_soa.get<_refCount>(id) == 0)
