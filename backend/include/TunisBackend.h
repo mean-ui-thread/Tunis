@@ -31,6 +31,9 @@ public:
     Backend& operator=(const Backend &other) = delete;
 
     void setClearColor(const Color &color);
+    inline const Color &getClearColor() const {
+        return m_clearColor;
+    }
     void setViewport(const glm::ivec4 &rect);
     void bindTexture(const Texture &tex);
 

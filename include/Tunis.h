@@ -23,7 +23,9 @@ public:
     void beginFrame(int32_t x, int32_t y, int32_t w, int32_t h);
     void endFrame();
 
-    Paint fillStyle;
+    Paint fillStyle = color::Black;
+    Paint strokeStyle = color::Black;
+    float lineWidth = 1.0f;
 
     /*!
      * \brief fillRect draws a filled rectangle whose starting point is at the
@@ -39,8 +41,31 @@ public:
      */
     void fillRect(float x, float y, float width, float height);
 
+    /*!
+     * \brief strokeRect paints a rectangle which has a starting point at (x, y)
+     * and has a w width and an h height onto the canvas, using the current
+     * stroke style.
+     * \param x The x axis of the coordinate for the rectangle starting point.
+     * \param y The y axis of the coordinate for the rectangle starting point.
+     * \param width The rectangle's width.
+     * \param height The rectangle's height.
+     */
+    void strokeRect(float x, float y, float width, float height);
+
+    /*!
+     * \brief clearRect sets all pixels in the rectangle defined by starting
+     * point (x, y) and size (width, height) to transparent black, erasing any
+     * previously drawn content.
+     * \param x The x axis of the coordinate for the rectangle starting point.
+     * \param y The y axis of the coordinate for the rectangle starting point.
+     * \param width The rectangle's width.
+     * \param height The rectangle's height.
+     */
+    void clearRect(float x, float y, float width, float height);
 
 private:
+
+    void pushColorRect(float x, float y, float width, float height, const Color &color);
 
     enum RenderType
     {

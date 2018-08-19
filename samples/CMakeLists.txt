@@ -1,3 +1,4 @@
 add_subdirectory(common)
 
 add_subdirectory(01_SimpleExample)
+add_subdirectory(02_DrawingRectangles)
