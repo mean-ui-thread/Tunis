@@ -1,4 +1,4 @@
-project(01_BasicUsage)
+project(01_SimpleExample)
 
 add_executable(${PROJECT_NAME} SampleApp.cpp)
 target_link_libraries(${PROJECT_NAME} TunisSampleCommon)
