@@ -1,3 +1,3 @@
 add_subdirectory(common)
 
-add_subdirectory(01_BasicUsage)
+add_subdirectory(01_SimpleExample)
