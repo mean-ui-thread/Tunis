@@ -6,7 +6,6 @@
 using namespace tunis;
 
 Context::Context() :
-    fillStyle(Paint(color::Black)),
     m_pBackend(new Backend())
 {
     // Create a default texture atlas.
@@ -56,6 +55,33 @@ void Context::endFrame()
 
 void Context::fillRect(float x, float y, float width, float height)
 {
+    pushColorRect(x, y, width, height, fillStyle.getInnerColor());
+}
+
+void Context::clearRect(float x, float y, float width, float height)
+{
+    pushColorRect(x, y, width, height, m_pBackend->getClearColor());
+}
+
+void Context::strokeRect(float x, float y, float width, float height)
+{
+    float hlw = lineWidth * 0.5f;
+
+    // top line
+    pushColorRect(x-hlw, y-hlw, width+lineWidth, lineWidth, strokeStyle.getInnerColor());
+
+    // bottom line
+    pushColorRect(x-hlw, y+height-hlw, width+lineWidth, lineWidth, strokeStyle.getInnerColor());
+
+    // left line
+    pushColorRect(x-hlw, y+hlw, lineWidth, height-lineWidth, strokeStyle.getInnerColor());
+
+    // right line
+    pushColorRect(x+width-hlw, y+hlw, lineWidth, height-lineWidth, strokeStyle.getInnerColor());
+}
+
+void Context::pushColorRect(float x, float y, float width, float height, const Color &color)
+{
     size_t i = m_pBackend->vertexBuffer.size();
 
     // allocate room for 4 new vertices.
@@ -66,7 +92,7 @@ void Context::fillRect(float x, float y, float width, float height)
     m_pBackend->vertexBuffer[i].pos.y = y;
     m_pBackend->vertexBuffer[i].tcoord.s = 0;
     m_pBackend->vertexBuffer[i].tcoord.t = 0;
-    m_pBackend->vertexBuffer[i].color = fillStyle.getInnerColor();
+    m_pBackend->vertexBuffer[i].color = color;
     ++i;
 
     // bottom left
@@ -74,7 +100,7 @@ void Context::fillRect(float x, float y, float width, float height)
     m_pBackend->vertexBuffer[i].pos.y = y + height;
     m_pBackend->vertexBuffer[i].tcoord.s = 0;
     m_pBackend->vertexBuffer[i].tcoord.t = 1;
-    m_pBackend->vertexBuffer[i].color = fillStyle.getInnerColor();
+    m_pBackend->vertexBuffer[i].color = color;
     ++i;
 
     // bottom right
@@ -82,7 +108,7 @@ void Context::fillRect(float x, float y, float width, float height)
     m_pBackend->vertexBuffer[i].pos.y = y + height;
     m_pBackend->vertexBuffer[i].tcoord.s = 1;
     m_pBackend->vertexBuffer[i].tcoord.t = 1;
-    m_pBackend->vertexBuffer[i].color = fillStyle.getInnerColor();
+    m_pBackend->vertexBuffer[i].color = color;
     ++i;
 
     // top right
@@ -90,7 +116,7 @@ void Context::fillRect(float x, float y, float width, float height)
     m_pBackend->vertexBuffer[i].pos.y = y;
     m_pBackend->vertexBuffer[i].tcoord.s = 1;
     m_pBackend->vertexBuffer[i].tcoord.t = 0;
-    m_pBackend->vertexBuffer[i].color = fillStyle.getInnerColor();
+    m_pBackend->vertexBuffer[i].color = color;
     ++i;
 
     if (m_batches.size() > 0)
@@ -110,3 +136,5 @@ void Context::fillRect(float x, float y, float width, float height)
     Texture tex = m_textures.back();
     m_batches.push(RenderDefault2D, std::move(tex), m_batches.size(), 4);
 }
+
+
