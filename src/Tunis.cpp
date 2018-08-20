@@ -84,8 +84,10 @@ void Context::pushColorRect(float x, float y, float width, float height, const C
 {
     size_t i = m_pBackend->vertexBuffer.size();
 
-    // allocate room for 4 new vertices.
-    m_pBackend->vertexBuffer.resize(i + 4);
+    // allocate room for 6 new vertices for a pair of triangles.
+    m_pBackend->vertexBuffer.resize(i + 6);
+
+    // ---- FIRST TRIANGLE ---
 
     // top left
     m_pBackend->vertexBuffer[i].pos.x = x;
@@ -111,10 +113,28 @@ void Context::pushColorRect(float x, float y, float width, float height, const C
     m_pBackend->vertexBuffer[i].color = color;
     ++i;
 
+    // ---- FIRST TRIANGLE ---
+
+    // bottom right
+    m_pBackend->vertexBuffer[i].pos.x = x + width;
+    m_pBackend->vertexBuffer[i].pos.y = y + height;
+    m_pBackend->vertexBuffer[i].tcoord.s = 1;
+    m_pBackend->vertexBuffer[i].tcoord.t = 1;
+    m_pBackend->vertexBuffer[i].color = color;
+    ++i;
+
     // top right
     m_pBackend->vertexBuffer[i].pos.x = x + width;
     m_pBackend->vertexBuffer[i].pos.y = y;
     m_pBackend->vertexBuffer[i].tcoord.s = 1;
+    m_pBackend->vertexBuffer[i].tcoord.t = 0;
+    m_pBackend->vertexBuffer[i].color = color;
+    ++i;
+
+    // top left
+    m_pBackend->vertexBuffer[i].pos.x = x;
+    m_pBackend->vertexBuffer[i].pos.y = y;
+    m_pBackend->vertexBuffer[i].tcoord.s = 0;
     m_pBackend->vertexBuffer[i].tcoord.t = 0;
     m_pBackend->vertexBuffer[i].color = color;
     ++i;
@@ -126,7 +146,7 @@ void Context::pushColorRect(float x, float y, float width, float height, const C
         if (m_batches.get<_renderType>(lastBatchId) == RenderDefault2D)
         {
             // the batch may continue
-            m_batches.get<_vertexCount>(lastBatchId) += 4;
+            m_batches.get<_vertexCount>(lastBatchId) += 6;
             return;
         }
     }
@@ -134,7 +154,7 @@ void Context::pushColorRect(float x, float y, float width, float height, const C
     // start a new batch. RenderDefault2D can use any textures for now, as long
     // as they have that little white square in them.
     Texture tex = m_textures.back();
-    m_batches.push(RenderDefault2D, std::move(tex), m_batches.size(), 4);
+    m_batches.push(RenderDefault2D, std::move(tex), m_batches.size(), 6);
 }
 
 

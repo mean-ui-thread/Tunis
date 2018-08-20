@@ -9,6 +9,8 @@
 #define TUNIS_VERTEX_MAX 16384
 #endif
 
+#define TUNIS_USE_IBO 0
+
 
 using namespace tunis;
 
@@ -72,7 +74,9 @@ struct tunis::BackendData
     Default2DShader default2DShader;
     GLuint vao = 0;
     GLuint vbo = 0;
+#if TUNIS_USE_IBO
     GLuint ibo = 0;
+#endif
 };
 
 
@@ -126,6 +130,7 @@ Backend::Backend() :
         glBindVertexArray(m_data->vao);
     }
 
+#if TUNIS_USE_IBO
     // Create static index buffer object.
     uint16_t indices[TUNIS_VERTEX_MAX / 4 * 6];
     for (uint16_t i = 0; i < TUNIS_VERTEX_MAX / 4; ++i)
@@ -140,11 +145,14 @@ Backend::Backend() :
     glGenBuffers(1, &m_data->ibo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_data->ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices, GL_STATIC_DRAW);
+#endif
 
     // Create dynamic vertex buffer object
     glGenBuffers(1, &m_data->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, m_data->vbo);
-    glBufferData(GL_ARRAY_BUFFER, TUNIS_VERTEX_MAX * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
+#if TUNIS_USE_IBO
+        glBufferData(GL_ARRAY_BUFFER, TUNIS_VERTEX_MAX * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
+#endif
 
     glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_position), decltype(Vertex::pos)::length(),    GL_FLOAT,          GL_FALSE, sizeof(Vertex), (const void *)0);
     glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_texcoord), decltype(Vertex::tcoord)::length(), GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(Vertex), (const void *)(sizeof(Vertex::pos)));
@@ -206,14 +214,25 @@ void Backend::reset()
 
 void Backend::flushVertexBuffer()
 {
+#if TUNIS_USE_IBO
     glBufferSubData(GL_ARRAY_BUFFER, 0,
                     static_cast<GLsizeiptr>(vertexBuffer.size() * sizeof(Vertex)),
                     &vertexBuffer.front());
+#else
+    glBufferData(GL_ARRAY_BUFFER,
+                 static_cast<GLsizeiptr>(vertexBuffer.size() * sizeof(Vertex)),
+                 &vertexBuffer.front(),
+                 GL_STREAM_DRAW);
+#endif
 }
 
 void Backend::render(size_t vertexStartIndex, size_t vertexCount)
 {
+#if TUNIS_USE_IBO
     glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(vertexCount/4*6), GL_UNSIGNED_SHORT, (void*)(vertexStartIndex * sizeof(GLushort)));
+#else
+    glDrawArrays(GL_TRIANGLES, static_cast<GLint>(vertexStartIndex), static_cast<GLsizei>(vertexCount));
+#endif
 }
 
 
