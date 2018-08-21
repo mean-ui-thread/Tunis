@@ -10,12 +10,9 @@
 #include "TunisTexture.h"
 #include "TunisVertex.h"
 
+
 namespace tunis
 {
-
-using Position = glm::tvec2<float>;
-using TCoord = glm::tvec2<uint16_t>;
-using Color = glm::tvec4<uint8_t>;
 
 struct BackendData;
 
