@@ -5,10 +5,10 @@
 
 #include <glm/vec4.hpp>
 
+#include <TunisVertex.h>
+
 namespace tunis
 {
-
-using Color = glm::tvec4<uint8_t>;
 
 namespace color
 {

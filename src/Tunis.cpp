@@ -58,10 +58,6 @@ void Context::fillRect(float x, float y, float width, float height)
     pushColorRect(x, y, width, height, fillStyle.getInnerColor());
 }
 
-void Context::clearRect(float x, float y, float width, float height)
-{
-    pushColorRect(x, y, width, height, m_pBackend->getClearColor());
-}
 
 void Context::strokeRect(float x, float y, float width, float height)
 {
@@ -78,6 +74,11 @@ void Context::strokeRect(float x, float y, float width, float height)
 
     // right line
     pushColorRect(x+width-hlw, y+hlw, lineWidth, height-lineWidth, strokeStyle.getInnerColor());
+}
+
+void Context::clearRect(float x, float y, float width, float height)
+{
+    pushColorRect(x, y, width, height, m_pBackend->getClearColor());
 }
 
 void Context::pushColorRect(float x, float y, float width, float height, const Color &color)
@@ -157,4 +158,64 @@ void Context::pushColorRect(float x, float y, float width, float height, const C
     m_batches.push(RenderDefault2D, std::move(tex), m_batches.size(), 6);
 }
 
+void Context::beginPath()
+{
+
+}
+
+void Context::closePath()
+{
+
+
+}
+
+void Context::moveTo(float x, float y)
+{
+
+}
+
+void Context::lineTo(float x, float y)
+{
+
+}
+
+void Context::bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x, float y)
+{
+
+}
+
+void Context::quadraticCurveTo(float cpx, float cpy, float x, float y)
+{
+
+}
+
+void Context::arc(float x, float y, float radius, float startAngle, float endAngle, bool anticlockwise)
+{
+
+}
+
+void Context::arcTo(float x1, float y1, float x2, float y2, float radius)
+{
+
+}
+
+void Context::ellipse(float x, float y, float radiusX, float radiusY, float rotation, float startAngle, float endAngle, bool anticlockwise)
+{
+
+}
+
+void Context::rect(float x, float y, float width, float height)
+{
+
+}
+
+void Context::fill(FillRule fillRule)
+{
+
+}
+
+void stroke()
+{
+
+}
 
