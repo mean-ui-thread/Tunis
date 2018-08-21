@@ -95,8 +95,8 @@ Backend::Backend() :
     m_data->default2DShader.frag = glCreateShader(GL_FRAGMENT_SHADER);
     m_data->default2DShader.program = glCreateProgram();
 
-    GLint vert_len = (GLint)strlen(shader_default2D_vert);
-    GLint frag_len = (GLint)strlen(shader_default2D_frag);
+    GLint vert_len = static_cast<GLint>(strlen(shader_default2D_vert));
+    GLint frag_len = static_cast<GLint>(strlen(shader_default2D_frag));
 
     glShaderSource(m_data->default2DShader.vert, 1, &shader_default2D_vert, &vert_len);
     glShaderSource(m_data->default2DShader.frag, 1, &shader_default2D_frag, &frag_len);
@@ -154,9 +154,9 @@ Backend::Backend() :
         glBufferData(GL_ARRAY_BUFFER, TUNIS_VERTEX_MAX * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
 #endif
 
-    glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_position), decltype(Vertex::pos)::length(),    GL_FLOAT,          GL_FALSE, sizeof(Vertex), (const void *)0);
-    glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_texcoord), decltype(Vertex::tcoord)::length(), GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(Vertex), (const void *)(sizeof(Vertex::pos)));
-    glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_color),    decltype(Vertex::color)::length(),  GL_UNSIGNED_BYTE,  GL_TRUE,  sizeof(Vertex), (const void *)(sizeof(Vertex::pos) + sizeof(Vertex::tcoord)));
+    glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_position), decltype(Vertex::pos)::length(),    GL_FLOAT,          GL_FALSE, sizeof(Vertex), reinterpret_cast<const void *>(0));
+    glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_texcoord), decltype(Vertex::tcoord)::length(), GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(Vertex), reinterpret_cast<const void *>(sizeof(Vertex::pos)));
+    glVertexAttribPointer(static_cast<GLuint>(m_data->default2DShader.a_color),    decltype(Vertex::color)::length(),  GL_UNSIGNED_BYTE,  GL_TRUE,  sizeof(Vertex), reinterpret_cast<const void *>(sizeof(Vertex::pos) + sizeof(Vertex::tcoord)));
     glEnableVertexAttribArray(static_cast<GLuint>(m_data->default2DShader.a_position));
     glEnableVertexAttribArray(static_cast<GLuint>(m_data->default2DShader.a_texcoord));
     glEnableVertexAttribArray(static_cast<GLuint>(m_data->default2DShader.a_color));
@@ -186,7 +186,9 @@ void Backend::setViewport(const glm::ivec4 &rect)
     if (m_viewport != rect)
     {
         glViewport(rect.x, rect.y, rect.z, rect.w);
-        glUniform2f(m_data->default2DShader.u_viewSize, (GLfloat)rect.z, (GLfloat)rect.w);
+        glUniform2f(m_data->default2DShader.u_viewSize,
+                    static_cast<GLfloat>(rect.z),
+                    static_cast<GLfloat>(rect.w));
         m_viewport = rect;
     }
 }
@@ -214,16 +216,19 @@ void Backend::reset()
 
 void Backend::flushVertexBuffer()
 {
+    if (vertexBuffer.size() > 0)
+    {
 #if TUNIS_USE_IBO
-    glBufferSubData(GL_ARRAY_BUFFER, 0,
-                    static_cast<GLsizeiptr>(vertexBuffer.size() * sizeof(Vertex)),
-                    &vertexBuffer.front());
+        glBufferSubData(GL_ARRAY_BUFFER, 0,
+                        static_cast<GLsizeiptr>(vertexBuffer.size() * sizeof(Vertex)),
+                        &vertexBuffer.front());
 #else
-    glBufferData(GL_ARRAY_BUFFER,
-                 static_cast<GLsizeiptr>(vertexBuffer.size() * sizeof(Vertex)),
-                 &vertexBuffer.front(),
-                 GL_STREAM_DRAW);
+        glBufferData(GL_ARRAY_BUFFER,
+                     static_cast<GLsizeiptr>(vertexBuffer.size() * sizeof(Vertex)),
+                     &vertexBuffer.front(),
+                     GL_STREAM_DRAW);
 #endif
+    }
 }
 
 void Backend::render(size_t vertexStartIndex, size_t vertexCount)

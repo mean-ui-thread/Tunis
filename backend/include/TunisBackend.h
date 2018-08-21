@@ -5,12 +5,10 @@
 #include <memory>
 #include <vector>
 
-#include <glm/vec2.hpp>
-#include <glm/vec4.hpp>
-
 #include "soa.h"
 
 #include "TunisTexture.h"
+#include "TunisVertex.h"
 
 namespace tunis
 {
@@ -38,13 +36,6 @@ public:
     void bindTexture(const Texture &tex);
 
     void clearFrame();
-
-    struct Vertex
-    {
-        Position pos;
-        TCoord   tcoord;
-        Color    color;
-    };
 
     std::vector<Vertex> vertexBuffer;
 
