@@ -7,6 +7,8 @@
 #include "TunisPaint.h"
 #include "TunisTexture.h"
 
+#include <glm/mat2x3.hpp>
+
 namespace tunis
 {
 
@@ -24,6 +26,9 @@ public:
 
     Context();
     ~Context();
+
+    Context(const Context &) = delete;
+    Context &operator=(const Context &) = delete;
 
     void setBackgroundColor(const Color &color);
 
@@ -243,6 +248,21 @@ private:
     void pushColorRect(float x, float y, float width, float height,
                        const Color &color);
 
+    enum CommandType {
+        MOVE_TO = 0,
+        LINE_TO,
+        BEZIER_TO,
+        CLOSE,
+    };
+
+    struct Command
+    {
+        CommandType type;
+        Point data[6];
+    };
+
+    std::vector<Command, NonInitializingAllocator<Command> > m_commandQueue;
+
     enum RenderType
     {
         RenderDefault2D = 0,
@@ -262,6 +282,8 @@ private:
         size_t,     // _vertexStartOffset
         size_t      // _vertexCount
     > m_batches;
+
+    SVGMatrix m_xform;
 
     std::unique_ptr<Backend> m_pBackend;
     std::vector<Texture> m_textures;

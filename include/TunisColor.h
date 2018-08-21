@@ -3,9 +3,7 @@
 
 #include <cstdint>
 
-#include <glm/vec4.hpp>
-
-#include <TunisVertex.h>
+#include <TunisTypes.h>
 
 namespace tunis
 {

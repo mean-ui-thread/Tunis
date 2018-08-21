@@ -6,6 +6,7 @@
 using namespace tunis;
 
 Context::Context() :
+    m_xform(1.0f),
     m_pBackend(new Backend())
 {
     // Create a default texture atlas.
@@ -16,6 +17,7 @@ Context::Context() :
     m_pBackend->bindTexture(tex);
     setBackgroundColor(color::White);
 
+    m_commandQueue.reserve(1024);
     m_batches.reserve(1024);
 }
 
@@ -160,28 +162,44 @@ void Context::pushColorRect(float x, float y, float width, float height, const C
 
 void Context::beginPath()
 {
-
+    m_commandQueue.resize(0);
 }
 
 void Context::closePath()
 {
-
-
+    m_commandQueue.resize(m_commandQueue.size() + 1);
+    m_commandQueue.back().type = CLOSE;
 }
 
 void Context::moveTo(float x, float y)
 {
+    Point p = m_xform * Point(x, y);
 
+    m_commandQueue.resize(m_commandQueue.size() + 1);
+    m_commandQueue.back().type = MOVE_TO;
+    m_commandQueue.back().data[0] = p;
 }
 
 void Context::lineTo(float x, float y)
 {
+    Point p = m_xform * Point(x, y);
 
+    m_commandQueue.resize(m_commandQueue.size() + 1);
+    m_commandQueue.back().type = LINE_TO;
+    m_commandQueue.back().data[0] = p;
 }
 
 void Context::bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x, float y)
 {
+    Point cp1 = m_xform * Point(cp1x, cp1y);
+    Point cp2 = m_xform * Point(cp2x, cp2y);
+    Point p = m_xform * Point(x, y);
 
+    m_commandQueue.resize(m_commandQueue.size() + 1);
+    m_commandQueue.back().type = BEZIER_TO;
+    m_commandQueue.back().data[0] = cp1;
+    m_commandQueue.back().data[1] = cp2;
+    m_commandQueue.back().data[2] = p;
 }
 
 void Context::quadraticCurveTo(float cpx, float cpy, float x, float y)
