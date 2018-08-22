@@ -14,12 +14,14 @@ add_library(TunisBackend
     include/TunisRenderState.h
     include/TunisTexture.h
 
-    include/soa.h
-    include/mapped_soa.h
+    include/StructureOfArrays/soa.h
+    include/StructureOfArrays/mapped_soa.h
+    include/StructureOfArrays/LICENSE
 )
 
 target_include_directories(TunisBackend
     PUBLIC include
+    PUBLIC include/StructureOfArrays
     PRIVATE ${TUNIS_BACKEND}
 )
 
