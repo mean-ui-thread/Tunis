@@ -1,92 +1,45 @@
-#ifndef TUNIS_H
-#define TUNIS_H
+#ifndef TUNISPATH2D_H
+#define TUNISPATH2D_H
 
-#include <memory>
-
-#include "TunisColor.h"
-#include "TunisPaint.h"
-#include "TunisPath2D.h"
-#include "TunisTexture.h"
-#include "TunisMath.h"
-
-#include <glm/mat2x3.hpp>
+#include <TunisPath2DCommand.h>
+#include <TunisVertex.h>
+#include <TunisPaint.h>
 
 namespace tunis
 {
 
-class Backend;
+namespace detail {
 
-class Context
+enum CommandType {
+    MOVE_TO = 0,
+    LINE_TO,
+    BEZIER_TO,
+    CLOSE,
+};
+
+}
+
+class Path2D : public SOA<std::vector<detail::CommandType>, std::vector<Point>, std::vector<Vertex>, uint8_t, Point, Point, Point >
 {
+    inline std::vector<detail::CommandType> &commands() { return get<0>(); }
+    inline std::vector<Point> &points() { return get<1>(); }
+    inline std::vector<Vertex> &fillVertices() { return get<2>(); }
+    inline uint8_t &fillDirty() { return get<3>(); }
+    inline Point &lastPoint(){ return get<4>(); }
+    inline Point &minPoint(){ return get<5>(); }
+    inline Point &maxPoint(){ return get<6>(); }
+
 public:
 
-    enum FillRule {
-        nonzero, //!< The non-zero winding rule, which is the default rule.
-        evenodd, //!< The even-odd winding rule.
-    };
-
-
-    Context();
-    ~Context();
-
-    Context(const Context &) = delete;
-    Context &operator=(const Context &) = delete;
-
-    void setBackgroundColor(const Color &color);
-
-    void beginFrame(int32_t x, int32_t y, int32_t w, int32_t h);
-    void endFrame();
-
-
-
-    Paint fillStyle = color::Black;
-    Paint strokeStyle = color::Black;
-    float lineWidth = 1.0f;
+    /*!
+     * \brief Path2D Default Constructor.
+     */
+    Path2D();
 
     /*!
-     * \brief fillRect draws a filled rectangle whose starting point is at the
-     * coordinates (x, y) with the specified width and height and whose style is
-     * determined by the fillStyle attribute.
-     *
-     * \param x The x component of the coordinates for the rectangle's starting
-     * point.
-     * \param y The y component of the coordinates for the rectangle's starting
-     * point.
-     * \param width The rectangle's width.
-     * \param height The rectangle's height.
+     * \brief reset clears all the recorded subpath for starting over.
      */
-    void fillRect(float x, float y, float width, float height);
-
-    /*!
-     * \brief strokeRect paints a rectangle which has a starting point at (x, y)
-     * and has a w width and an h height onto the canvas, using the current
-     * stroke style.
-     *
-     * \param x The x axis of the coordinate for the rectangle starting point.
-     * \param y The y axis of the coordinate for the rectangle starting point.
-     * \param width The rectangle's width.
-     * \param height The rectangle's height.
-     */
-    void strokeRect(float x, float y, float width, float height);
-
-    /*!
-     * \brief clearRect sets all pixels in the rectangle defined by starting
-     * point (x, y) and size (width, height) to transparent black, erasing any
-     * previously drawn content.
-     *
-     * \param x The x axis of the coordinate for the rectangle starting point.
-     * \param y The y axis of the coordinate for the rectangle starting point.
-     * \param width The rectangle's width.
-     * \param height The rectangle's height.
-     */
-    void clearRect(float x, float y, float width, float height);
-
-
-    /*!
-     * \brief beginPath starts a new path by emptying the list of sub-paths.
-     * Call this method when you want to create a new path.
-     */
-    void beginPath();
+    void reset();
 
     /*!
      * \brief closePath causes the point of the pen to move back to the start of
@@ -108,6 +61,14 @@ public:
     void moveTo(float x, float y);
 
     /*!
+     * \brief moveTo moves the starting point of a new sub-path to the (x, y)
+     * coordinates.
+     *
+     * \param p The coordinate of the point.
+     */
+    void moveTo(Point p);
+
+    /*!
      * \brief lineTo connects the last point in the sub-path to the x, y
      * coordinates with a straight line (but does not actually draw it).
      *
@@ -115,6 +76,14 @@ public:
      * \param y The y axis of the coordinate for the end of the line.
      */
     void lineTo(float x, float y);
+
+    /*!
+     * \brief lineTo connects the last point in the sub-path to the x, y
+     * coordinates with a straight line (but does not actually draw it).
+     *
+     * \param p The coordinate for the end of the line.
+     */
+    void lineTo(Point p);
 
     /*!
      * \brief bezierCurveTo adds a cubic Bézier curve to the path. It requires
@@ -132,6 +101,20 @@ public:
      */
     void bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x,
                        float y);
+
+    /*!
+     * \brief bezierCurveTo adds a cubic Bézier curve to the path. It requires
+     * three points. The first two points are control points and the third one
+     * is the end point. The starting point is the last point in the current
+     * path, which can be changed using moveTo() before creating the Bézier
+     * curve.
+     *
+     * \param cp1 The coordinate of the first control point.
+     * \param cp2 The coordinate of the second control point.
+     * \param ep The coordinate of the end point.
+     */
+    void bezierCurveTo(Point cp1, Point cp2, Point ep);
+
 
     /*!
      * \brief quadraticCurveTo adds a quadratic Bézier curve to the path. It
@@ -230,55 +213,22 @@ public:
      */
     void rect(float x, float y, float width, float height);
 
+
     /*!
-     * \brief fill fills the current path with the current fill style using the
-     * non-zero or even-odd winding rule.
+     * \brief generateFillVertices returns a generated array of vertices for a
+     * fill operation.
+     * \param style the style to use to decorate the vertices
+     * \return an array of vertices.
      *
-     * \param fillRule The algorithm by which to determine if a point is inside
-     * a path or outside a path.
+     * \note This function is typically called by tunis::Context and shouldn't
+     * need to be called by the user.
      */
-    void fill(FillRule fillRule = nonzero);
-
-    /*!
-     * \brief stroke strokes the current or given path with the current stroke
-     * style using the non-zero winding rule.
-     */
-    void stroke();
-
-private:
-
-    void pushColorRect(float x, float y, float width, float height,
-                       const Color &color);
-
-    Path2D m_currentPath;
-
-    enum RenderType
-    {
-        RenderDefault2D = 0,
-    };
-
-    enum
-    {
-        _renderType = 0,
-        _texture,
-        _vertexStartOffset,
-        _vertexCount
-    };
-
-    SoA<
-        RenderType, // _renderType
-        Texture,    // _texture
-        size_t,     // _vertexStartOffset
-        size_t      // _vertexCount
-    > m_batches;
-
-    SVGMatrix m_xform;
-
-    std::unique_ptr<Backend> m_pBackend;
-    std::vector<Texture> m_textures;
+    const std::vector<Vertex> &generateFillVertices(const Paint &style);
 
 };
 
 }
 
-#endif // TUNIS_H
+#include <TunisPath2D.inl>
+
+#endif // TUNISPATH2D_H
