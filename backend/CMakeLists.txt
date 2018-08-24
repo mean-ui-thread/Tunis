@@ -13,6 +13,10 @@ add_library(TunisBackend
     include/TunisBackend.h
     include/TunisRenderState.h
     include/TunisTexture.h
+    include/TunisTypes.h
+    include/TunisVertex.h
+    include/TunisSOA.h
+    include/TunisSOA.inl
 
     include/StructureOfArrays/soa.h
     include/StructureOfArrays/mapped_soa.h

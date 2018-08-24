@@ -27,8 +27,16 @@ add_library(Tunis
     src/TunisPaint.cpp
     include/TunisPaint.h
 
+    include/TunisPath2D.h
+    include/TunisPath2D.inl
+
+    include/TunisPath2DCommand.h
+    include/TunisPath2DCommand.inl
+
     src/Tunis.cpp
     include/Tunis.h
+
+    include/TunisMath.h
 
 )
 target_include_directories(Tunis PUBLIC include)

@@ -17,7 +17,6 @@ Context::Context() :
     m_pBackend->bindTexture(tex);
     setBackgroundColor(color::White);
 
-    m_commandQueue.reserve(1024);
     m_batches.reserve(1024);
 }
 
@@ -162,44 +161,32 @@ void Context::pushColorRect(float x, float y, float width, float height, const C
 
 void Context::beginPath()
 {
-    m_commandQueue.resize(0);
+    m_currentPath.reset();
 }
 
 void Context::closePath()
 {
-    m_commandQueue.resize(m_commandQueue.size() + 1);
-    m_commandQueue.back().type = CLOSE;
+    m_currentPath.closePath();
 }
 
 void Context::moveTo(float x, float y)
 {
     Point p = m_xform * Point(x, y);
-
-    m_commandQueue.resize(m_commandQueue.size() + 1);
-    m_commandQueue.back().type = MOVE_TO;
-    m_commandQueue.back().data[0] = p;
+    m_currentPath.moveTo(p);
 }
 
 void Context::lineTo(float x, float y)
 {
     Point p = m_xform * Point(x, y);
-
-    m_commandQueue.resize(m_commandQueue.size() + 1);
-    m_commandQueue.back().type = LINE_TO;
-    m_commandQueue.back().data[0] = p;
+    m_currentPath.lineTo(p);
 }
 
 void Context::bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x, float y)
 {
     Point cp1 = m_xform * Point(cp1x, cp1y);
     Point cp2 = m_xform * Point(cp2x, cp2y);
-    Point p = m_xform * Point(x, y);
-
-    m_commandQueue.resize(m_commandQueue.size() + 1);
-    m_commandQueue.back().type = BEZIER_TO;
-    m_commandQueue.back().data[0] = cp1;
-    m_commandQueue.back().data[1] = cp2;
-    m_commandQueue.back().data[2] = p;
+    Point ep = m_xform * Point(x, y);
+    m_currentPath.bezierCurveTo(cp1, cp2, ep);
 }
 
 void Context::quadraticCurveTo(float cpx, float cpy, float x, float y)
@@ -229,10 +216,30 @@ void Context::rect(float x, float y, float width, float height)
 
 void Context::fill(FillRule fillRule)
 {
+    const std::vector<Vertex> &v  = m_currentPath.generateFillVertices(fillStyle);
+    if (v.size() == 0) return;
 
+    std::copy(v.begin(),v.end(),back_inserter(m_pBackend->vertexBuffer));
+
+    if (m_batches.size() > 0)
+    {
+        size_t lastBatchId = m_batches.size() - 1;
+
+        if (m_batches.get<_renderType>(lastBatchId) == RenderDefault2D)
+        {
+            // the batch may continue
+            m_batches.get<_vertexCount>(lastBatchId) += v.size();
+            return;
+        }
+    }
+
+    // start a new batch. RenderDefault2D can use any textures for now, as long
+    // as they have that little white square in them.
+    Texture tex = m_textures.back();
+    m_batches.push(RenderDefault2D, std::move(tex), m_batches.size(), v.size());
 }
 
-void stroke()
+void Context::stroke()
 {
 
 }
