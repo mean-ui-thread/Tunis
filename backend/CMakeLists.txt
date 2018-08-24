@@ -12,12 +12,15 @@ add_library(TunisBackend
 
     include/TunisBackend.h
     include/TunisRenderState.h
+    include/TunisSOA.h
+    include/TunisSOA.inl
+    include/TunisSize.h
+    include/TunisSize.inl
     include/TunisTexture.h
     include/TunisTypes.h
     include/TunisVertex.h
-    include/TunisSOA.h
-    include/TunisSOA.inl
 
+    # From https://github.com/Lunarsong/StructureOfArrays
     include/StructureOfArrays/soa.h
     include/StructureOfArrays/mapped_soa.h
     include/StructureOfArrays/LICENSE
