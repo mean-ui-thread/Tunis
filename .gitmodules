@@ -1,0 +1,3 @@
+[submodule "3rdparty/easy_profiler"]
+	path = 3rdparty/easy_profiler
+	url = https://github.com/yse/easy_profiler.git

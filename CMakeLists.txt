@@ -15,6 +15,7 @@ project(Tunis)
 
 include(BuildOptions)
 
+add_subdirectory(3rdparty)
 add_subdirectory(backend)
 
 add_library(Tunis

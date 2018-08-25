@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+#include <easy/profiler.h>
+
 using namespace tunis::color;
 
 const char *SampleApp::getSampleName() { return "02_DrawingRectangles"; }
@@ -13,6 +15,8 @@ int SampleApp::getScreenHeight() { return 200; }
  */
 void SampleApp::render(int32_t windowWidth, int32_t windowHeight, double frameTime)
 {
+    EASY_FUNCTION()
+
     ctx.beginFrame(0, 0, windowWidth, windowHeight);
 
     ctx.fillRect(25, 25, 100, 100);

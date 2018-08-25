@@ -3,6 +3,8 @@
 #include "TunisBackend.h"
 #include "soa.h"
 
+#include <easy/profiler.h>
+
 using namespace tunis;
 
 Context::Context() :
@@ -33,6 +35,7 @@ void Context::setBackgroundColor(const Color &color)
 
 void Context::beginFrame(int32_t x, int32_t y, int32_t w, int32_t h)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
     m_batches.resize(0);
     m_pBackend->vertexBuffer.resize(0);
 
@@ -42,6 +45,7 @@ void Context::beginFrame(int32_t x, int32_t y, int32_t w, int32_t h)
 
 void Context::endFrame()
 {
+    EASY_FUNCTION(profiler::colors::Teal);
     m_pBackend->flushVertexBuffer();
 
     // render every batches
@@ -56,12 +60,15 @@ void Context::endFrame()
 
 void Context::fillRect(float x, float y, float width, float height)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
     pushColorRect(x, y, width, height, fillStyle.getInnerColor());
 }
 
 
 void Context::strokeRect(float x, float y, float width, float height)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
+
     float hlw = lineWidth * 0.5f;
 
     // top line
@@ -79,11 +86,13 @@ void Context::strokeRect(float x, float y, float width, float height)
 
 void Context::clearRect(float x, float y, float width, float height)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
     pushColorRect(x, y, width, height, m_pBackend->getClearColor());
 }
 
 void Context::pushColorRect(float x, float y, float width, float height, const Color &color)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
     size_t i = m_pBackend->vertexBuffer.size();
 
     // allocate room for 6 new vertices for a pair of triangles.
@@ -161,28 +170,33 @@ void Context::pushColorRect(float x, float y, float width, float height, const C
 
 void Context::beginPath()
 {
+    EASY_FUNCTION(profiler::colors::Teal);
     m_currentPath.reset();
 }
 
 void Context::closePath()
 {
+    EASY_FUNCTION(profiler::colors::Teal);
     m_currentPath.closePath();
 }
 
 void Context::moveTo(float x, float y)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
     Point p = m_xform * Point(x, y);
     m_currentPath.moveTo(p);
 }
 
 void Context::lineTo(float x, float y)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
     Point p = m_xform * Point(x, y);
     m_currentPath.lineTo(p);
 }
 
 void Context::bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x, float y)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
     Point cp1 = m_xform * Point(cp1x, cp1y);
     Point cp2 = m_xform * Point(cp2x, cp2y);
     Point ep = m_xform * Point(x, y);
@@ -191,31 +205,37 @@ void Context::bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, floa
 
 void Context::quadraticCurveTo(float cpx, float cpy, float x, float y)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
 
 }
 
 void Context::arc(float x, float y, float radius, float startAngle, float endAngle, bool anticlockwise)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
 
 }
 
 void Context::arcTo(float x1, float y1, float x2, float y2, float radius)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
 
 }
 
 void Context::ellipse(float x, float y, float radiusX, float radiusY, float rotation, float startAngle, float endAngle, bool anticlockwise)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
 
 }
 
 void Context::rect(float x, float y, float width, float height)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
 
 }
 
 void Context::fill(FillRule fillRule)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
     const std::vector<Vertex> &v  = m_currentPath.generateFillVertices(fillStyle);
     if (v.size() == 0) return;
 
@@ -241,6 +261,7 @@ void Context::fill(FillRule fillRule)
 
 void Context::stroke()
 {
+    EASY_FUNCTION(profiler::colors::Teal);
 
 }
 

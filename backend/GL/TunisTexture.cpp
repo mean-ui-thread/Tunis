@@ -1,9 +1,11 @@
-#include "TunisTexture.h"
-#include "TunisBackend.h"
+#include <TunisTexture.h>
+#include <TunisBackend.h>
 
-#include "TunisGL.h"
+#include <TunisGL.h>
 
-#include "soa.h"
+#include <soa.h>
+
+#include <easy/profiler.h>
 
 using namespace tunis;
 
@@ -36,6 +38,8 @@ Texture::Texture() : id(0)
 
 Texture::Texture(int width, int height, Filtering filtering)
 {
+    EASY_FUNCTION(profiler::colors::Brick)
+
     GLuint handle;
 
     glGenTextures(1, &handle);

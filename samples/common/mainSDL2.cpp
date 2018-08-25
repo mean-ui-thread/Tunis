@@ -5,9 +5,13 @@
 #include <chrono>
 #include <cstdarg>
 
+#include <easy/profiler.h>
 
 int main( int argc, char* args[] )
 {
+    EASY_PROFILER_ENABLE;
+    profiler::startListen();
+
     if (SDL_Init( SDL_INIT_VIDEO ) < 0 )
     {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
@@ -52,6 +56,7 @@ int main( int argc, char* args[] )
     bool quit = false;
     while( !quit )
     {
+        EASY_BLOCK("Events Polling")
         //Handle events on queue
         while( SDL_PollEvent( &e ) != 0 )
         {
@@ -60,14 +65,18 @@ int main( int argc, char* args[] )
                 quit = true;
             }
         }
+        EASY_END_BLOCK
 
+        EASY_BLOCK("Application Rendering",  profiler::colors::Blue500)
         int w, h;
         SDL_GetWindowSize(window, &w, &h);
         double frameTime = (double)(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
-
         app.render(w, h, frameTime);
+        EASY_END_BLOCK
 
+        EASY_BLOCK("Swap Buffer", profiler::colors::Cyan)
         SDL_GL_SwapWindow(window);
+        EASY_END_BLOCK
     }
 
 
