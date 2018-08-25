@@ -7,8 +7,6 @@
 
 #include <vector>
 
-#include <TunisSize.h>
-
 namespace tunis
 {
     using Color = glm::u8vec4;
