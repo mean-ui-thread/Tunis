@@ -11,6 +11,8 @@ add_library(TunisBackend
     ${TUNIS_BACKEND}/TunisTexture.cpp
 
     include/TunisBackend.h
+    include/TunisRect.h
+    include/TunisRect.inl
     include/TunisRenderState.h
     include/TunisSOA.h
     include/TunisSOA.inl
