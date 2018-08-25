@@ -33,3 +33,7 @@ target_include_directories(TunisBackend
 )
 
 target_link_libraries(TunisBackend PUBLIC glm easy_profiler)
+
+if (NOT TUNIS_PROFILING)
+    target_compile_definitions(TunisBackend PUBLIC -DDISABLE_EASY_PROFILER=1)
+endif()
