@@ -5,6 +5,8 @@
 #include <chrono>
 #include <cstdarg>
 
+#include <easy/profiler.h>
+
 void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
@@ -12,6 +14,8 @@ void error_callback(int error, const char* description)
 
 int main( int argc, char* args[] )
 {
+    EASY_PROFILER_ENABLE;
+    profiler::startListen();
 
     glfwSetErrorCallback(error_callback);
 
@@ -45,15 +49,20 @@ int main( int argc, char* args[] )
 
     while (!glfwWindowShouldClose(window))
     {
+        EASY_BLOCK("Events Polling")
         glfwPollEvents();
+        EASY_END_BLOCK
 
+        EASY_BLOCK("Application Rendering",  profiler::colors::Blue500)
         int w, h;
         glfwGetWindowSize(window, &w, &h);
         double frameTime = glfwGetTime();
-
         app.render(w, h, frameTime);
+        EASY_END_BLOCK
 
+        EASY_BLOCK("Swap Buffer", profiler::colors::Cyan)
         glfwSwapBuffers(window);
+        EASY_END_BLOCK
     }
 
 

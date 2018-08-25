@@ -32,4 +32,4 @@ target_include_directories(TunisBackend
     PRIVATE ${TUNIS_BACKEND}
 )
 
-target_link_libraries(TunisBackend PUBLIC glm)
+target_link_libraries(TunisBackend PUBLIC glm easy_profiler)

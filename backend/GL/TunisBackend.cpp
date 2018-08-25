@@ -1,9 +1,11 @@
 #include <TunisBackend.h>
+#include <TunisGL.h>
 
-#include "TunisGL.h"
+#include <easy/profiler.h>
+
 #include <cstring>
-
 #include <cassert>
+
 
 #ifndef TUNIS_VERTEX_MAX
 #define TUNIS_VERTEX_MAX 16384
@@ -176,6 +178,7 @@ void Backend::setClearColor(const Color &color)
 {
     if (m_clearColor != color)
     {
+        EASY_FUNCTION(profiler::colors::Brick)
         glClearColor(color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f);
         m_clearColor = color;
     }
@@ -185,6 +188,7 @@ void Backend::setViewport(const glm::ivec4 &rect)
 {
     if (m_viewport != rect)
     {
+        EASY_FUNCTION(profiler::colors::Brick)
         glViewport(rect.x, rect.y, rect.z, rect.w);
         glUniform2f(m_data->default2DShader.u_viewSize,
                     static_cast<GLfloat>(rect.z),
@@ -195,6 +199,7 @@ void Backend::setViewport(const glm::ivec4 &rect)
 
 void Backend::clearFrame()
 {
+    EASY_FUNCTION(profiler::colors::Brick)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
@@ -202,6 +207,7 @@ void Backend::bindTexture(const Texture &tex)
 {
     if (m_texture != tex)
     {
+        EASY_FUNCTION(profiler::colors::Brick)
         m_texture = tex;
         m_texture.bind();
     }
@@ -218,6 +224,7 @@ void Backend::flushVertexBuffer()
 {
     if (vertexBuffer.size() > 0)
     {
+        EASY_FUNCTION(profiler::colors::Brick)
 #if TUNIS_USE_IBO
         glBufferSubData(GL_ARRAY_BUFFER, 0,
                         static_cast<GLsizeiptr>(vertexBuffer.size() * sizeof(Vertex)),
@@ -233,6 +240,8 @@ void Backend::flushVertexBuffer()
 
 void Backend::render(size_t vertexStartIndex, size_t vertexCount)
 {
+    EASY_FUNCTION(profiler::colors::Brick)
+
 #if TUNIS_USE_IBO
     glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(vertexCount/4*6), GL_UNSIGNED_SHORT, (void*)(vertexStartIndex * sizeof(GLushort)));
 #else

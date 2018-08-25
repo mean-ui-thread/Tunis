@@ -6,6 +6,8 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/trigonometric.hpp>
 
+#include <easy/profiler.h>
+
 namespace tunis
 {
 
@@ -41,17 +43,20 @@ inline void Path2D::reset()
 
 inline void Path2D::closePath()
 {
+    EASY_FUNCTION(profiler::colors::Mint);
     commands().push_back(detail::CLOSE);
     fillDirty() = true;
 }
 
 inline void Path2D::moveTo(float x, float y)
 {
+    EASY_FUNCTION(profiler::colors::Mint);
     moveTo(Point(x, y));
 }
 
 inline void Path2D::moveTo(Point p)
 {
+    EASY_FUNCTION(profiler::colors::Mint);
     commands().push_back(detail::MOVE_TO);
     points().push_back(p);
     lastPoint() = p;
@@ -62,11 +67,13 @@ inline void Path2D::moveTo(Point p)
 
 inline void Path2D::lineTo(float x, float y)
 {
+    EASY_FUNCTION(profiler::colors::Mint);
     lineTo(Point(x, y));
 }
 
 inline void Path2D::lineTo(Point p)
 {
+    EASY_FUNCTION(profiler::colors::Mint);
     commands().push_back(detail::LINE_TO);
     points().push_back(p);
     lastPoint() = p;
@@ -78,11 +85,13 @@ inline void Path2D::lineTo(Point p)
 
 inline void Path2D::bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x, float y)
 {
+    EASY_FUNCTION(profiler::colors::Mint);
     bezierCurveTo(Point(cp1x, cp1y), Point(cp2x, cp2y), Point(x, y));
 }
 
 inline void Path2D::bezierCurveTo(Point cp1, Point cp2, Point ep)
 {
+    EASY_FUNCTION(profiler::colors::Mint);
     commands().push_back(detail::BEZIER_TO);
     points().push_back(cp1);
     points().push_back(cp2);
@@ -103,6 +112,7 @@ inline void Path2D::quadraticCurveTo(float cx, float cy, float x, float y)
 
 inline void Path2D::arc(float cx, float cy, float r, float a0, float a1, bool anticlockwise)
 {
+    EASY_FUNCTION(profiler::colors::Mint);
     const detail::CommandType move = commands().size() > 0 ? detail::LINE_TO : detail::MOVE_TO;
 
     // Clamp angles
@@ -176,6 +186,7 @@ inline void Path2D::arc(float cx, float cy, float r, float a0, float a1, bool an
 
 inline void Path2D::arcTo(float x1, float y1, float x2, float y2, float radius)
 {
+    EASY_FUNCTION(profiler::colors::Mint);
     if (commands().size() == 0)
     {
         return;
@@ -232,11 +243,13 @@ inline void Path2D::arcTo(float x1, float y1, float x2, float y2, float radius)
 
 inline void Path2D::ellipse(float x, float y, float radiusX, float radiusY, float rotation, float startAngle, float endAngle, bool anticlockwise)
 {
+    EASY_FUNCTION(profiler::colors::Mint);
 
 }
 
 inline void Path2D::rect(float x, float y, float width, float height)
 {
+    EASY_FUNCTION(profiler::colors::Mint);
     commands().push_back(detail::MOVE_TO);
     Point p(x, y);
     minPoint() = glm::min(minPoint(), p);
@@ -267,6 +280,7 @@ inline void Path2D::rect(float x, float y, float width, float height)
 
 inline const std::vector<Vertex> &Path2D::generateFillVertices(const Paint &style)
 {
+    EASY_FUNCTION(profiler::colors::Mint);
     auto& cmds = commands();
     auto &vertices = fillVertices();
 
