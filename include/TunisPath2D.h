@@ -1,9 +1,9 @@
 #ifndef TUNISPATH2D_H
 #define TUNISPATH2D_H
 
-#include <TunisPath2DCommand.h>
 #include <TunisVertex.h>
 #include <TunisPaint.h>
+#include <TunisSOA.h>
 
 namespace tunis
 {
