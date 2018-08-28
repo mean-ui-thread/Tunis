@@ -19,15 +19,12 @@ enum CommandType {
 
 }
 
-class Path2D : public SOA<std::vector<detail::CommandType>, std::vector<Point>, std::vector<Vertex>, uint8_t, Point, Point, Point >
+class Path2D : public SOA<std::vector<detail::CommandType>, std::vector<Point>>
 {
+    friend class Context;
+
     inline std::vector<detail::CommandType> &commands() { return get<0>(); }
     inline std::vector<Point> &points() { return get<1>(); }
-    inline std::vector<Vertex> &fillVertices() { return get<2>(); }
-    inline uint8_t &fillDirty() { return get<3>(); }
-    inline Point &lastPoint(){ return get<4>(); }
-    inline Point &minPoint(){ return get<5>(); }
-    inline Point &maxPoint(){ return get<6>(); }
 
 public:
 
@@ -212,18 +209,6 @@ public:
      * \param height The rectangle's height.
      */
     void rect(float x, float y, float width, float height);
-
-
-    /*!
-     * \brief generateFillVertices returns a generated array of vertices for a
-     * fill operation.
-     * \param style the style to use to decorate the vertices
-     * \return an array of vertices.
-     *
-     * \note This function is typically called by tunis::Context and shouldn't
-     * need to be called by the user.
-     */
-    const std::vector<Vertex> &generateFillVertices(const Paint &style);
 
 };
 

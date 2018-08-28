@@ -240,10 +240,28 @@ public:
     void fill(FillRule fillRule = nonzero);
 
     /*!
+     * \brief fill fills the given path with the current fill style using the
+     * non-zero or even-odd winding rule.
+     *
+     * \param path A Path2D path to fill.
+     * \param fillRule The algorithm by which to determine if a point is inside
+     * a path or outside a path.
+     */
+    void fill(Path2D &path, FillRule fillRule = nonzero);
+
+    /*!
      * \brief stroke strokes the current or given path with the current stroke
      * style using the non-zero winding rule.
      */
     void stroke();
+
+    /*!
+     * \brief stroke strokes the given path with the current stroke style using
+     * the non-zero winding rule.
+     *
+     * \param path A Path2D path to stroke.
+     */
+    void stroke(Path2D &path);
 
 private:
 
@@ -280,5 +298,7 @@ private:
 };
 
 }
+
+#include <Tunis.inl>
 
 #endif // TUNIS_H
