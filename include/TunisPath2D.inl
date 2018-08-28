@@ -6,8 +6,6 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/trigonometric.hpp>
 
-#include <easy/profiler.h>
-
 namespace tunis
 {
 
@@ -26,6 +24,7 @@ static float distPtSeg(Point p0, Point p1, Point p2)
 }
 }
 
+
 inline Path2D::Path2D()
 {
     reset();
@@ -33,78 +32,64 @@ inline Path2D::Path2D()
 
 inline void Path2D::reset()
 {
-    commands().resize(0);
-    points().resize(0);
-    lastPoint() = Point(0);
-    minPoint() = Point(FLT_MAX);
-    maxPoint() = Point(-FLT_MAX);
-    fillDirty() = false;
+    commands().resize(1);
+    commands().front() = detail::MOVE_TO;
+
+    points().resize(1);
+    points().front().x = 0.0f;
+    points().front().y = 0.0f;
 }
 
 inline void Path2D::closePath()
 {
-    EASY_FUNCTION(profiler::colors::Mint);
     commands().push_back(detail::CLOSE);
-    fillDirty() = true;
 }
 
 inline void Path2D::moveTo(float x, float y)
 {
-    EASY_FUNCTION(profiler::colors::Mint);
     moveTo(Point(x, y));
 }
 
 inline void Path2D::moveTo(Point p)
 {
-    EASY_FUNCTION(profiler::colors::Mint);
+    if (commands().back() == detail::MOVE_TO)
+    {
+        points().back() = p;
+        return;
+    }
+
     commands().push_back(detail::MOVE_TO);
     points().push_back(p);
-    lastPoint() = p;
-    minPoint() = glm::min(minPoint(), p);
-    maxPoint() = glm::max(maxPoint(), p);
-    fillDirty() = true;
 }
 
 inline void Path2D::lineTo(float x, float y)
 {
-    EASY_FUNCTION(profiler::colors::Mint);
     lineTo(Point(x, y));
 }
 
 inline void Path2D::lineTo(Point p)
 {
-    EASY_FUNCTION(profiler::colors::Mint);
     commands().push_back(detail::LINE_TO);
     points().push_back(p);
-    lastPoint() = p;
-    minPoint() = glm::min(minPoint(), p);
-    maxPoint() = glm::max(maxPoint(), p);
-    fillDirty() = true;
 }
 
 
 inline void Path2D::bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x, float y)
 {
-    EASY_FUNCTION(profiler::colors::Mint);
     bezierCurveTo(Point(cp1x, cp1y), Point(cp2x, cp2y), Point(x, y));
 }
 
 inline void Path2D::bezierCurveTo(Point cp1, Point cp2, Point ep)
 {
-    EASY_FUNCTION(profiler::colors::Mint);
     commands().push_back(detail::BEZIER_TO);
     points().push_back(cp1);
     points().push_back(cp2);
     points().push_back(ep);
-    lastPoint() = ep;
-    minPoint() = glm::min(minPoint(), ep);
-    maxPoint() = glm::max(maxPoint(), ep);
-    fillDirty() = true;
 }
 
 inline void Path2D::quadraticCurveTo(float cx, float cy, float x, float y)
 {
-    Point &p = lastPoint();
+    Point &p = points().back();
     bezierCurveTo(Point(p.x + 2.0f/3.0f*(cx - p.x), p.y + 2.0f/3.0f*(cy - p.y)),
                   Point(x + 2.0f/3.0f*(cx - x), y + 2.0f/3.0f*(cy - y)),
                   Point(x, y));
@@ -112,7 +97,6 @@ inline void Path2D::quadraticCurveTo(float cx, float cy, float x, float y)
 
 inline void Path2D::arc(float cx, float cy, float r, float a0, float a1, bool anticlockwise)
 {
-    EASY_FUNCTION(profiler::colors::Mint);
     const detail::CommandType move = commands().size() > 0 ? detail::LINE_TO : detail::MOVE_TO;
 
     // Clamp angles
@@ -164,8 +148,6 @@ inline void Path2D::arc(float cx, float cy, float r, float a0, float a1, bool an
         {
             commands().push_back(move);
             points().push_back(p);
-            minPoint() = glm::min(minPoint(), p);
-            maxPoint() = glm::max(maxPoint(), p);
         }
         else
         {
@@ -173,26 +155,20 @@ inline void Path2D::arc(float cx, float cy, float r, float a0, float a1, bool an
             points().push_back(prevP + prevTan);
             points().push_back(p - tan);
             points().push_back(p);
-            minPoint() = glm::min(minPoint(), p);
-            maxPoint() = glm::max(maxPoint(), p);
         }
         prevP = p;
         prevTan = tan;
     }
-
-    lastPoint() = prevP;
-    fillDirty() = true;
 }
 
 inline void Path2D::arcTo(float x1, float y1, float x2, float y2, float radius)
 {
-    EASY_FUNCTION(profiler::colors::Mint);
     if (commands().size() == 0)
     {
         return;
     }
 
-    Point p0 = lastPoint();
+    Point p0 = points().back();
     Point p1(x1, y1);
     Point p2(x2, y2);
 
@@ -243,100 +219,17 @@ inline void Path2D::arcTo(float x1, float y1, float x2, float y2, float radius)
 
 inline void Path2D::ellipse(float x, float y, float radiusX, float radiusY, float rotation, float startAngle, float endAngle, bool anticlockwise)
 {
-    EASY_FUNCTION(profiler::colors::Mint);
-
+    // TODO
 }
 
 inline void Path2D::rect(float x, float y, float width, float height)
 {
-    EASY_FUNCTION(profiler::colors::Mint);
-    commands().push_back(detail::MOVE_TO);
-    Point p(x, y);
-    minPoint() = glm::min(minPoint(), p);
-    maxPoint() = glm::max(maxPoint(), p);
-    points().push_back(p);
-
-    commands().push_back(detail::LINE_TO);
-    p = Point(x, y + height);
-    minPoint() = glm::min(minPoint(), p);
-    maxPoint() = glm::max(maxPoint(), p);
-    points().push_back(p);
-
-    commands().push_back(detail::LINE_TO);
-    p = Point(x + width, y + height);
-    minPoint() = glm::min(minPoint(), p);
-    maxPoint() = glm::max(maxPoint(), p);
-    points().push_back(p);
-
-    commands().push_back(detail::LINE_TO);
-    p = Point(x + width, y);
-    minPoint() = glm::min(minPoint(), p);
-    maxPoint() = glm::max(maxPoint(), p);
-    points().push_back(p);
-
-    lastPoint() = p;
-    fillDirty() = true;
-}
-
-inline const std::vector<Vertex> &Path2D::generateFillVertices(const Paint &style)
-{
-    EASY_FUNCTION(profiler::colors::Mint);
-    auto& cmds = commands();
-    auto &vertices = fillVertices();
-
-    if (fillDirty() == false)
-    {
-        return vertices;
-    }
-
-    vertices.resize(0);
-
-    Point range = maxPoint() - minPoint();
-    Point tp;
-
-    size_t i = 0;
-    size_t orig = 0;
-    for (auto& cmd : cmds)
-    {
-        switch(cmd)
-        {
-        case detail::MOVE_TO:
-            tp = glm::round((points()[i] - minPoint()) / range * 16.0f);
-            vertices.push_back({
-                                   points()[i],
-                                   TCoord(static_cast<uint16_t>(tp.x), static_cast<uint16_t>(tp.y)),
-                                   style.getInnerColor()
-                               });
-            orig = i;
-            ++i;
-            break;
-        case detail::LINE_TO:
-            if (i - orig > 2)
-            {
-                vertices.push_back(vertices[i-1]);
-            }
-            tp = glm::round((points()[i] - minPoint()) / range * 16.0f);
-            vertices.push_back({
-                                   points()[i],
-                                   TCoord(static_cast<uint16_t>(tp.x), static_cast<uint16_t>(tp.y)),
-                                   style.getInnerColor()
-                               });
-            if (i - orig > 2)
-            {
-                vertices.push_back(vertices[orig]);
-            }
-            ++i;
-            break;
-        case detail::BEZIER_TO:
-            break;
-        case detail::CLOSE:
-            break;
-        }
-    }
-
-
-    fillDirty() = false;
-    return vertices;
+    moveTo(x,         y);
+    lineTo(x,         y + height);
+    lineTo(x,         y + height);
+    lineTo(x + width, y + height);
+    lineTo(x + width, y);
+    closePath();
 }
 
 }

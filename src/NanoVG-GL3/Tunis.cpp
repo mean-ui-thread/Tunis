@@ -71,106 +71,88 @@ void Context::endFrame()
     nvgEndFrame(ctx);
 }
 
-void Context::fillRect(float x, float y, float width, float height)
-{
-    beginPath();
-    rect(x, y, width, height);
-    fill();
-}
-
-
-void Context::strokeRect(float x, float y, float width, float height)
-{
-    beginPath();
-    rect(x, y, width, height);
-    stroke();
-}
 
 void Context::clearRect(float x, float y, float width, float height)
 {
-    EASY_FUNCTION(profiler::colors::Teal);
-
-    beginPath();
-    rect(x, y, width, height);
+    nvgBeginPath(ctx);
+    nvgRect(ctx, x, y, width, height);
     nvgFillColor(ctx, nvgRGBA(m_pBackend->backgroundColor.r, m_pBackend->backgroundColor.g, m_pBackend->backgroundColor.b, m_pBackend->backgroundColor.a));
     nvgPathWinding(ctx, NVG_SOLID);
     nvgFill(ctx);
 }
 
 
-void Context::beginPath()
+void Context::fill(Path2D &path, FillRule fillRule)
 {
     EASY_FUNCTION(profiler::colors::Teal);
+
     nvgBeginPath(ctx);
-}
 
-void Context::closePath()
-{
-    EASY_FUNCTION(profiler::colors::Teal);
-    nvgClosePath(ctx);
-}
+    size_t pointId = 0;
+    for(auto cmd : path.commands())
+    {
+        switch(cmd)
+        {
+        case detail::MOVE_TO:
+            nvgMoveTo(ctx, path.points()[pointId].x, path.points()[pointId].y);
+            ++pointId;
+            break;
+        case detail::LINE_TO:
+            nvgLineTo(ctx, path.points()[pointId].x, path.points()[pointId].y);
+            ++pointId;
+            break;
+        case detail::BEZIER_TO:
+            nvgBezierTo(ctx,
+                        path.points()[pointId].x,   path.points()[pointId].y,
+                        path.points()[pointId+1].x, path.points()[pointId+1].y,
+                        path.points()[pointId+2].x, path.points()[pointId+2].y);
+            pointId+=3;
+            break;
+        case detail::CLOSE:
+            nvgClosePath(ctx);
+            break;
+        }
+    }
 
-void Context::moveTo(float x, float y)
-{
-    EASY_FUNCTION(profiler::colors::Teal);
-    nvgMoveTo(ctx, x, y);
-}
-
-void Context::lineTo(float x, float y)
-{
-    EASY_FUNCTION(profiler::colors::Teal);
-    nvgLineTo(ctx, x, y);
-}
-
-void Context::bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x, float y)
-{
-    EASY_FUNCTION(profiler::colors::Teal);
-    nvgBezierTo(ctx, cp1x, cp1y, cp2x, cp2y, x, y);
-}
-
-void Context::quadraticCurveTo(float cpx, float cpy, float x, float y)
-{
-    EASY_FUNCTION(profiler::colors::Teal);
-    nvgQuadTo(ctx, cpx, cpy, x, y);
-}
-
-void Context::arc(float x, float y, float radius, float startAngle, float endAngle, bool anticlockwise)
-{
-    EASY_FUNCTION(profiler::colors::Teal);
-    nvgArc(ctx, x, y, radius, startAngle, endAngle, anticlockwise ? NVG_CCW : NVG_CW);
-
-}
-
-void Context::arcTo(float x1, float y1, float x2, float y2, float radius)
-{
-    EASY_FUNCTION(profiler::colors::Teal);
-    nvgArcTo(ctx, x1, y1, x2, y2, radius);
-}
-
-void Context::ellipse(float x, float y, float radiusX, float radiusY, float rotation, float startAngle, float endAngle, bool anticlockwise)
-{
-    EASY_FUNCTION(profiler::colors::Teal);
-    nvgEllipse(ctx, x, y, radiusX, radiusY);
-}
-
-void Context::rect(float x, float y, float width, float height)
-{
-    EASY_FUNCTION(profiler::colors::Teal);
-    nvgRect(ctx, x, y, width, height);
-}
-
-void Context::fill(FillRule fillRule)
-{
-    EASY_FUNCTION(profiler::colors::Teal);
     Color color = fillStyle.getInnerColor();
     nvgFillColor(ctx, nvgRGBA(color.r, color.g, color.b, color.a));
     nvgPathWinding(ctx, fillRule == nonzero ? NVG_SOLID : NVG_HOLE);
     nvgFill(ctx);
 }
 
-void Context::stroke()
+
+void Context::stroke(Path2D &path)
 {
     EASY_FUNCTION(profiler::colors::Teal);
+
+    nvgBeginPath(ctx);
+
+    size_t pointId = 0;
+    for(auto cmd : path.commands())
+    {
+        switch(cmd)
+        {
+        case detail::MOVE_TO:
+            nvgMoveTo(ctx, path.points()[pointId].x, path.points()[pointId].y);
+            ++pointId;
+            break;
+        case detail::LINE_TO:
+            nvgLineTo(ctx, path.points()[pointId].x, path.points()[pointId].y);
+            ++pointId;
+            break;
+        case detail::BEZIER_TO:
+            nvgBezierTo(ctx,
+                        path.points()[pointId].x,   path.points()[pointId].y,
+                        path.points()[pointId+1].x, path.points()[pointId+1].y,
+                        path.points()[pointId+2].x, path.points()[pointId+2].y);
+            pointId+=3;
+            break;
+        case detail::CLOSE:
+            nvgClosePath(ctx);
+            break;
+        }
+    }
+
     Color color = strokeStyle.getInnerColor();
     nvgStrokeColor(ctx, nvgRGBA(color.r, color.g, color.b, color.a));
     nvgStrokeWidth(ctx, lineWidth);
