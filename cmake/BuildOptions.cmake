@@ -1,5 +1,5 @@
 
-set(TUNIS_BACKEND "GL" CACHE STRING "backend implementation to use")
+set(TUNIS_BACKEND "NanoVG-GL3" CACHE STRING "backend implementation to use")
 set_property(CACHE TUNIS_BACKEND PROPERTY STRINGS GL NanoVG-GL3)
 
 option(TUNIS_BUILD_SAMPLES "Build samples" ON)
