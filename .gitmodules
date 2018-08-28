@@ -1,3 +1,6 @@
 [submodule "3rdparty/easy_profiler"]
 	path = 3rdparty/easy_profiler
 	url = https://github.com/yse/easy_profiler.git
+[submodule "3rdparty/nanovg"]
+	path = 3rdparty/nanovg
+	url = https://github.com/memononen/nanovg.git

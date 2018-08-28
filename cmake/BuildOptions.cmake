@@ -1,6 +1,6 @@
 
 set(TUNIS_BACKEND "GL" CACHE STRING "backend implementation to use")
-set_property(CACHE TUNIS_BACKEND PROPERTY STRINGS D3D11 D3D12 GL GLES Metal Vulkan)
+set_property(CACHE TUNIS_BACKEND PROPERTY STRINGS GL NanoVG-GL3)
 
 option(TUNIS_BUILD_SAMPLES "Build samples" ON)
 
