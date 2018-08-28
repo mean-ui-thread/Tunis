@@ -1,4 +1,6 @@
 #include <TunisBackend.h>
+
+#define TUNIS_GL_IMPLEMENTATION
 #include <TunisGL.h>
 
 #include <easy/profiler.h>

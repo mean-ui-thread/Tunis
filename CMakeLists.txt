@@ -16,11 +16,14 @@ project(Tunis)
 include(BuildOptions)
 
 add_subdirectory(3rdparty)
-add_subdirectory(backend)
+
+include(src/${TUNIS_BACKEND}/Sources.cmake)
 
 add_library(Tunis
     cmake/BuildOptions.cmake
     cmake/Hunter/config.cmake
+
+    ${TUNIS_BACKEND_SOURCES}
 
     src/TunisColor.cpp
     include/TunisColor.h
@@ -31,17 +34,40 @@ add_library(Tunis
     include/TunisPath2D.h
     include/TunisPath2D.inl
 
-    include/TunisPath2DCommand.h
-    include/TunisPath2DCommand.inl
-
-    src/Tunis.cpp
     include/Tunis.h
-
     include/TunisMath.h
+    include/TunisRect.h
+    include/TunisRect.inl
+    include/TunisRenderState.h
+    include/TunisSOA.h
+    include/TunisSOA.inl
+    include/TunisSize.h
+    include/TunisSize.inl
+    include/TunisTexture.h
+    include/TunisTypes.h
+    include/TunisVertex.h
 
+    # From https://github.com/Lunarsong/StructureOfArrays
+    include/StructureOfArrays/soa.h
+    include/StructureOfArrays/mapped_soa.h
+    include/StructureOfArrays/LICENSE
 )
-target_include_directories(Tunis PUBLIC include)
-target_link_libraries(Tunis PUBLIC TunisBackend)
+
+target_include_directories(Tunis
+    PUBLIC include
+    PUBLIC include/StructureOfArrays
+    PRIVATE src
+    PRIVATE src/${TUNIS_BACKEND}
+)
+
+hunter_add_package(glm)
+find_package(glm REQUIRED)
+
+target_link_libraries(Tunis PUBLIC glm easy_profiler)
+
+if (NOT TUNIS_PROFILING)
+    target_compile_definitions(Tunis PUBLIC -DDISABLE_EASY_PROFILER=1)
+endif()
 
 if (TUNIS_BUILD_SAMPLES)
     add_subdirectory(samples)
