@@ -12,7 +12,7 @@ int SampleApp::getScreenWidth() { return 320; }
 int SampleApp::getScreenHeight() { return 200; }
 
 /*!
- * Based of https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes#Drawing_a_triangle
+ * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes#Moving_the_pen
  */
 void SampleApp::render(int32_t windowWidth, int32_t windowHeight, double frameTime)
 {

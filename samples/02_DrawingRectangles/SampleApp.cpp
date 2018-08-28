@@ -11,7 +11,7 @@ int SampleApp::getScreenWidth() { return 320; }
 int SampleApp::getScreenHeight() { return 200; }
 
 /*!
- * Based of https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes#Rectangular_shape_example
+ * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes#Rectangular_shape_example
  */
 void SampleApp::render(int32_t windowWidth, int32_t windowHeight, double frameTime)
 {
