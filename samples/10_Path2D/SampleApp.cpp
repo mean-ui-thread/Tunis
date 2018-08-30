@@ -8,17 +8,15 @@ using namespace tunis;
 using namespace tunis::color;
 
 const char *SampleApp::getSampleName() { return "10_Path2D"; }
-int SampleApp::getScreenWidth() { return 320; }
-int SampleApp::getScreenHeight() { return 200; }
+int SampleApp::getWindowWidth() { return 320; }
+int SampleApp::getWindowHeight() { return 200; }
 
 /*!
  * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes#Arcs
  */
-void SampleApp::render(int32_t windowWidth, int32_t windowHeight, double frameTime)
+void SampleApp::render(double)
 {
     EASY_FUNCTION()
-
-    ctx.beginFrame(0, 0, windowWidth, windowHeight);
 
     Path2D rectangle;
     rectangle.rect(10, 10, 50, 50);
@@ -29,6 +27,4 @@ void SampleApp::render(int32_t windowWidth, int32_t windowHeight, double frameTi
 
     ctx.stroke(rectangle);
     ctx.fill(circle);
-
-    ctx.endFrame();
 }

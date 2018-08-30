@@ -1,20 +1,23 @@
 #ifndef TUNIS_H
 #define TUNIS_H
 
-#include <memory>
+#ifdef _WIN32
+#define NOMINMAX 1
+#endif
 
-#include "TunisColor.h"
-#include "TunisPaint.h"
-#include "TunisPath2D.h"
-#include "TunisTexture.h"
-#include "TunisMath.h"
+#include <TunisContextData.h>
+#include <TunisColor.h>
+#include <TunisPaint.h>
+#include <TunisPath2D.h>
+#include <TunisTexture.h>
+#include <TunisMath.h>
 
 #include <glm/mat2x3.hpp>
 
 namespace tunis
 {
 
-class Backend;
+struct ContextData;
 
 class Context
 {
@@ -25,23 +28,23 @@ public:
         evenodd, //!< The even-odd winding rule.
     };
 
-
     Context();
     ~Context();
 
     Context(const Context &) = delete;
     Context &operator=(const Context &) = delete;
 
-    void setBackgroundColor(const Color &color);
+    void clearFrame(int fbLeft, int fbTop,
+                    int fbWidth, int fbHeight,
+                    Color backgroundColor = color::White);
 
-    void beginFrame(int32_t x, int32_t y, int32_t w, int32_t h);
+    void beginFrame(int winWidth, int winHeight, double devicePixelRatio = 1.0);
+
     void endFrame();
-
-
 
     Paint fillStyle = color::Black;
     Paint strokeStyle = color::Black;
-    float lineWidth = 1.0f;
+    double lineWidth = 1.0;
 
     /*!
      * \brief fillRect draws a filled rectangle whose starting point is at the
@@ -55,7 +58,7 @@ public:
      * \param width The rectangle's width.
      * \param height The rectangle's height.
      */
-    void fillRect(float x, float y, float width, float height);
+    void fillRect(double x, double y, double width, double height);
 
     /*!
      * \brief strokeRect paints a rectangle which has a starting point at (x, y)
@@ -67,7 +70,7 @@ public:
      * \param width The rectangle's width.
      * \param height The rectangle's height.
      */
-    void strokeRect(float x, float y, float width, float height);
+    void strokeRect(double x, double y, double width, double height);
 
     /*!
      * \brief clearRect sets all pixels in the rectangle defined by starting
@@ -79,7 +82,7 @@ public:
      * \param width The rectangle's width.
      * \param height The rectangle's height.
      */
-    void clearRect(float x, float y, float width, float height);
+    void clearRect(double x, double y, double width, double height);
 
 
     /*!
@@ -105,7 +108,7 @@ public:
      * \param x The x axis of the point.
      * \param y The y axis of the point.
      */
-    void moveTo(float x, float y);
+    void moveTo(double x, double y);
 
     /*!
      * \brief lineTo connects the last point in the sub-path to the x, y
@@ -114,7 +117,7 @@ public:
      * \param x The x axis of the coordinate for the end of the line.
      * \param y The y axis of the coordinate for the end of the line.
      */
-    void lineTo(float x, float y);
+    void lineTo(double x, double y);
 
     /*!
      * \brief bezierCurveTo adds a cubic Bézier curve to the path. It requires
@@ -130,8 +133,8 @@ public:
      * \param x The x coordinate of the end point.
      * \param y The y coordinate of the end point.
      */
-    void bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x,
-                       float y);
+    void bezierCurveTo(double cp1x, double cp1y, double cp2x, double cp2y,
+                       double x, double y);
 
     /*!
      * \brief quadraticCurveTo adds a quadratic Bézier curve to the path. It
@@ -145,7 +148,7 @@ public:
      * \param x The x axis of the coordinate for the end point.
      * \param y The y axis of the coordinate for the end point.
      */
-    void quadraticCurveTo(float cpx, float cpy, float x, float y);
+    void quadraticCurveTo(double cpx, double cpy, double x, double y);
 
     /*!
      * \brief arc adds an arc to the path which is centered at (x, y) position
@@ -163,7 +166,7 @@ public:
      * to be drawn counter-clockwise between the two angles. By default it is
      * drawn clockwise.
      */
-    void arc(float x, float y, float radius, float startAngle, float endAngle,
+    void arc(double x, double y, double radius, double startAngle, double endAngle,
              bool anticlockwise = false);
 
     /*!
@@ -194,7 +197,7 @@ public:
      * \param y2 y-axis coordinates for the second control point.
      * \param radius The arc's radius.
      */
-    void arcTo(float x1, float y1, float x2, float y2, float radius);
+    void arcTo(double x1, double y1, double x2, double y2, double radius);
 
     /*!
      * \brief ellipse adds an ellipse to the path which is centered at (x, y)
@@ -215,8 +218,8 @@ public:
      * ellipse anticlockwise (counter-clockwise), otherwise in a clockwise
      * direction.
      */
-    void ellipse(float x, float y, float radiusX, float radiusY, float rotation,
-                 float startAngle, float endAngle, bool anticlockwise = false);
+    void ellipse(double x, double y, double radiusX, double radiusY, double rotation,
+                 double startAngle, double endAngle, bool anticlockwise = false);
 
     /*!
      * \brief rect creates a path for a rectangle at position (x, y) with a size
@@ -228,7 +231,7 @@ public:
      * \param width The rectangle's width.
      * \param height The rectangle's height.
      */
-    void rect(float x, float y, float width, float height);
+    void rect(double x, double y, double width, double height);
 
     /*!
      * \brief fill fills the current path with the current fill style using the
@@ -265,35 +268,7 @@ public:
 
 private:
 
-    void pushColorRect(float x, float y, float width, float height,
-                       const Color &color);
-
-    Path2D m_currentPath;
-
-    enum RenderType
-    {
-        RenderDefault2D = 0,
-    };
-
-    enum
-    {
-        _renderType = 0,
-        _texture,
-        _vertexStartOffset,
-        _vertexCount
-    };
-
-    SoA<
-        RenderType, // _renderType
-        Texture,    // _texture
-        size_t,     // _vertexStartOffset
-        size_t      // _vertexCount
-    > m_batches;
-
-    SVGMatrix m_xform;
-
-    std::unique_ptr<Backend> m_pBackend;
-    std::vector<Texture> m_textures;
+    detail::ContextData data;
 
 };
 

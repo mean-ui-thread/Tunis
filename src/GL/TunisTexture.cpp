@@ -1,13 +1,13 @@
 #include <TunisTexture.h>
-#include <TunisBackend.h>
 
-#include <TunisGL.h>
+#include <TunisContextData.h>
 
 #include <soa.h>
 
 #include <easy/profiler.h>
 
-using namespace tunis;
+namespace tunis
+{
 
 enum {
     _handle = 0,
@@ -44,6 +44,7 @@ Texture::Texture(int width, int height, Filtering filtering)
 
     glGenTextures(1, &handle);
     glBindTexture(GL_TEXTURE_2D, handle);
+    detail::globalContextData.textureId = handle;
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
@@ -109,6 +110,12 @@ Texture::~Texture()
 {
     if (--_soa.get<_refCount>(id) == 0)
     {
+        if (detail::globalContextData.textureId == _soa.get<_handle>(id))
+        {
+            detail::globalContextData.textureId = 0;
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
         glDeleteTextures(1, &_soa.get<_handle>(id));
         _available.push_back(id);
     }
@@ -133,5 +140,11 @@ Texture &Texture::operator=(const Texture &other)
 
 void Texture::bind()
 {
-    glBindTexture(GL_TEXTURE_2D, _soa.get<_handle>(id));
+    if (detail::globalContextData.textureId != _soa.get<_handle>(id))
+    {
+        glBindTexture(GL_TEXTURE_2D, _soa.get<_handle>(id));
+        detail::globalContextData.textureId = _soa.get<_handle>(id);
+    }
+}
+
 }

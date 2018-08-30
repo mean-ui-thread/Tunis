@@ -8,17 +8,15 @@ using namespace tunis;
 using namespace tunis::color;
 
 const char *SampleApp::getSampleName() { return "07_QuadraticBezierCurves"; }
-int SampleApp::getScreenWidth() { return 320; }
-int SampleApp::getScreenHeight() { return 200; }
+int SampleApp::getWindowWidth() { return 320; }
+int SampleApp::getWindowHeight() { return 200; }
 
 /*!
  * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes#Bezier_and_quadratic_curves
  */
-void SampleApp::render(int32_t windowWidth, int32_t windowHeight, double frameTime)
+void SampleApp::render(double)
 {
     EASY_FUNCTION()
-
-    ctx.beginFrame(0, 0, windowWidth, windowHeight);
 
     // Quadratric curves example
     ctx.beginPath();
@@ -30,6 +28,4 @@ void SampleApp::render(int32_t windowWidth, int32_t windowHeight, double frameTi
     ctx.quadraticCurveTo(125, 100, 125, 62.5);
     ctx.quadraticCurveTo(125, 25, 75, 25);
     ctx.stroke();
-
-    ctx.endFrame();
 }

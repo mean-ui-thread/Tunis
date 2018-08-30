@@ -7,10 +7,10 @@ class SampleApp
 {
 public:
     static const char *getSampleName();
-    static int getScreenWidth();
-    static int getScreenHeight();
+    static int getWindowWidth();
+    static int getWindowHeight();
 
-    void render(int32_t windowWidth, int32_t windowHeight, double frameTime);
+    void render(double frameTime);
 
     tunis::Context ctx;
 };

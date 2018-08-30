@@ -29,9 +29,9 @@ int main( int argc, char* args[] )
     SDL_Window* window = SDL_CreateWindow(SampleApp::getSampleName(),
                                           SDL_WINDOWPOS_UNDEFINED,
                                           SDL_WINDOWPOS_UNDEFINED,
-                                          SampleApp::getScreenWidth(),
-                                          SampleApp::getScreenHeight(),
-                                          SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN );
+                                          SampleApp::getWindowWidth(),
+                                          SampleApp::getWindowHeight(),
+                                          SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN );
 
     if(!window)
     {
@@ -49,38 +49,51 @@ int main( int argc, char* args[] )
 
     SDL_GL_SetSwapInterval(1);
 
-    // tunis::Context can only be instantiated after a context is created.
-    SampleApp app;
-
-    SDL_Event e = {};
-    Uint64 start = SDL_GetPerformanceCounter();
-
-    bool quit = false;
-    while( !quit )
     {
-        EASY_BLOCK("Events Polling")
-        //Handle events on queue
-        while( SDL_PollEvent( &e ) != 0 )
+        // tunis::Context can only be instantiated after a context is created
+        // and made current
+        SampleApp app;
+
+        SDL_Event e = {};
+        Uint64 start = SDL_GetPerformanceCounter();
+
+        bool quit = false;
+        while( !quit )
         {
-            if( e.type == SDL_QUIT )
+            EASY_BLOCK("Events Polling")
+            //Handle events on queue
+            while( SDL_PollEvent( &e ) != 0 )
             {
-                quit = true;
+                if( e.type == SDL_QUIT )
+                {
+                    quit = true;
+                }
             }
+            EASY_END_BLOCK
+
+            EASY_BLOCK("Application Rendering",  profiler::colors::Blue500)
+
+            int winWidth, winHeight, fbWidth , fbHeight;
+            SDL_GetWindowSize(window, &winWidth, &winHeight);
+            SDL_GL_GetDrawableSize(window, &fbWidth, &fbHeight);
+
+            // Calculate pixel ration for hi-dpi devices.
+            float pxRatio = static_cast<float>(fbWidth) / static_cast<float>(winWidth);
+
+
+            double frameTime = static_cast<double>(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
+            app.ctx.clearFrame(0, 0, fbWidth, fbHeight);
+            app.ctx.beginFrame(winWidth, winHeight, pxRatio);
+            app.render(frameTime);
+            app.ctx.endFrame();
+
+            EASY_END_BLOCK
+
+            EASY_BLOCK("Swap Buffer", profiler::colors::Cyan)
+            SDL_GL_SwapWindow(window);
+            EASY_END_BLOCK
         }
-        EASY_END_BLOCK
-
-        EASY_BLOCK("Application Rendering",  profiler::colors::Blue500)
-        int w, h;
-        SDL_GetWindowSize(window, &w, &h);
-        double frameTime = (double)(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
-        app.render(w, h, frameTime);
-        EASY_END_BLOCK
-
-        EASY_BLOCK("Swap Buffer", profiler::colors::Cyan)
-        SDL_GL_SwapWindow(window);
-        EASY_END_BLOCK
     }
-
 
     SDL_Quit();
 
