@@ -8,19 +8,17 @@ using namespace tunis;
 using namespace tunis::color;
 
 const char *SampleApp::getSampleName() { return "09_MakingCombinations"; }
-int SampleApp::getScreenWidth() { return 150; }
-int SampleApp::getScreenHeight() { return 150; }
+int SampleApp::getWindowWidth() { return 320; }
+int SampleApp::getWindowHeight() { return 200; }
 
 static void roundedRect(tunis::Context &ctx, float x, float y, float width, float height, float radius);
 
 /*!
  * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes#Making_combinations
  */
-void SampleApp::render(int32_t windowWidth, int32_t windowHeight, double frameTime)
+void SampleApp::render(double)
 {
     EASY_FUNCTION()
-
-    ctx.beginFrame(0, 0, windowWidth, windowHeight);
 
     roundedRect(ctx, 12, 12, 150, 150, 15);
     roundedRect(ctx, 19, 19, 150, 150, 9);
@@ -82,8 +80,6 @@ void SampleApp::render(int32_t windowWidth, int32_t windowHeight, double frameTi
     ctx.beginPath();
     ctx.arc(89, 102, 2, 0, Math.PI * 2, true);
     ctx.fill();
-
-    ctx.endFrame();
 }
 
 inline void roundedRect(tunis::Context &ctx, float x, float y, float width, float height, float radius) {

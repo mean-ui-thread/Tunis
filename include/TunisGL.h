@@ -2,7 +2,7 @@
    TunisGL.h
        A Public domain ANSI C (C89) compliant GL/GLES extension wrangler
 
-   Generated using GLBrebis on Mon, 27 Aug 2018 00:29:24 GMT
+   Generated using GLBrebis on Thu, 30 Aug 2018 18:58:16 GMT
    https://github.com/mchiasson/GLBrebis
 
    NO WARRANTY IMPLIED; USE AT YOUR OWN RISK
@@ -450,7 +450,6 @@ typedef enum {
 #error "gltypes.h cannot be included before TunisGL.h"
 #endif
 
-#define __glu_h__ 1
 #define __gl_h_ 1
 #define __gl2_h_ 1
 #define __glcorearb_h_ 1
@@ -465,6 +464,12 @@ typedef enum {
 #define __gl_es20ext_h_ 1
 #define __gl_es30ext_h_ 1
 #define __gltypes_h_ 1
+
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    #define WIN32_LEAN_AND_MEAN 1
+    #include <Windows.h>
+    #undef WIN32_LEAN_AND_MEAN
+#endif
 
 #if !defined(TUNIS_FORCE_INLINE)
     #if defined(_MSC_VER)
@@ -7796,166 +7801,168 @@ typedef enum {
 #define GL_QCOM_perfmon_global_mode 760
 #undef GL_QCOM_shader_framebuffer_fetch_noncoherent
 #define GL_QCOM_shader_framebuffer_fetch_noncoherent 761
+#undef GL_QCOM_shader_framebuffer_fetch_rate
+#define GL_QCOM_shader_framebuffer_fetch_rate 762
 #undef GL_QCOM_tiled_rendering
-#define GL_QCOM_tiled_rendering 762
+#define GL_QCOM_tiled_rendering 763
 #undef GL_QCOM_writeonly_rendering
-#define GL_QCOM_writeonly_rendering 763
+#define GL_QCOM_writeonly_rendering 764
 #undef GL_REND_screen_coordinates
-#define GL_REND_screen_coordinates 764
+#define GL_REND_screen_coordinates 765
 #undef GL_S3_s3tc
-#define GL_S3_s3tc 765
+#define GL_S3_s3tc 766
 #undef GL_SGIS_detail_texture
-#define GL_SGIS_detail_texture 766
+#define GL_SGIS_detail_texture 767
 #undef GL_SGIS_fog_function
-#define GL_SGIS_fog_function 767
+#define GL_SGIS_fog_function 768
 #undef GL_SGIS_generate_mipmap
-#define GL_SGIS_generate_mipmap 768
+#define GL_SGIS_generate_mipmap 769
 #undef GL_SGIS_multisample
-#define GL_SGIS_multisample 769
+#define GL_SGIS_multisample 770
 #undef GL_SGIS_pixel_texture
-#define GL_SGIS_pixel_texture 770
+#define GL_SGIS_pixel_texture 771
 #undef GL_SGIS_point_line_texgen
-#define GL_SGIS_point_line_texgen 771
+#define GL_SGIS_point_line_texgen 772
 #undef GL_SGIS_point_parameters
-#define GL_SGIS_point_parameters 772
+#define GL_SGIS_point_parameters 773
 #undef GL_SGIS_sharpen_texture
-#define GL_SGIS_sharpen_texture 773
+#define GL_SGIS_sharpen_texture 774
 #undef GL_SGIS_texture4D
-#define GL_SGIS_texture4D 774
+#define GL_SGIS_texture4D 775
 #undef GL_SGIS_texture_border_clamp
-#define GL_SGIS_texture_border_clamp 775
+#define GL_SGIS_texture_border_clamp 776
 #undef GL_SGIS_texture_color_mask
-#define GL_SGIS_texture_color_mask 776
+#define GL_SGIS_texture_color_mask 777
 #undef GL_SGIS_texture_edge_clamp
-#define GL_SGIS_texture_edge_clamp 777
+#define GL_SGIS_texture_edge_clamp 778
 #undef GL_SGIS_texture_filter4
-#define GL_SGIS_texture_filter4 778
+#define GL_SGIS_texture_filter4 779
 #undef GL_SGIS_texture_lod
-#define GL_SGIS_texture_lod 779
+#define GL_SGIS_texture_lod 780
 #undef GL_SGIS_texture_select
-#define GL_SGIS_texture_select 780
+#define GL_SGIS_texture_select 781
 #undef GL_SGIX_async
-#define GL_SGIX_async 781
+#define GL_SGIX_async 782
 #undef GL_SGIX_async_histogram
-#define GL_SGIX_async_histogram 782
+#define GL_SGIX_async_histogram 783
 #undef GL_SGIX_async_pixel
-#define GL_SGIX_async_pixel 783
+#define GL_SGIX_async_pixel 784
 #undef GL_SGIX_blend_alpha_minmax
-#define GL_SGIX_blend_alpha_minmax 784
+#define GL_SGIX_blend_alpha_minmax 785
 #undef GL_SGIX_calligraphic_fragment
-#define GL_SGIX_calligraphic_fragment 785
+#define GL_SGIX_calligraphic_fragment 786
 #undef GL_SGIX_clipmap
-#define GL_SGIX_clipmap 786
+#define GL_SGIX_clipmap 787
 #undef GL_SGIX_convolution_accuracy
-#define GL_SGIX_convolution_accuracy 787
+#define GL_SGIX_convolution_accuracy 788
 #undef GL_SGIX_depth_pass_instrument
-#define GL_SGIX_depth_pass_instrument 788
+#define GL_SGIX_depth_pass_instrument 789
 #undef GL_SGIX_depth_texture
-#define GL_SGIX_depth_texture 789
+#define GL_SGIX_depth_texture 790
 #undef GL_SGIX_flush_raster
-#define GL_SGIX_flush_raster 790
+#define GL_SGIX_flush_raster 791
 #undef GL_SGIX_fog_offset
-#define GL_SGIX_fog_offset 791
+#define GL_SGIX_fog_offset 792
 #undef GL_SGIX_fragment_lighting
-#define GL_SGIX_fragment_lighting 792
+#define GL_SGIX_fragment_lighting 793
 #undef GL_SGIX_framezoom
-#define GL_SGIX_framezoom 793
+#define GL_SGIX_framezoom 794
 #undef GL_SGIX_igloo_interface
-#define GL_SGIX_igloo_interface 794
+#define GL_SGIX_igloo_interface 795
 #undef GL_SGIX_instruments
-#define GL_SGIX_instruments 795
+#define GL_SGIX_instruments 796
 #undef GL_SGIX_interlace
-#define GL_SGIX_interlace 796
+#define GL_SGIX_interlace 797
 #undef GL_SGIX_ir_instrument1
-#define GL_SGIX_ir_instrument1 797
+#define GL_SGIX_ir_instrument1 798
 #undef GL_SGIX_list_priority
-#define GL_SGIX_list_priority 798
+#define GL_SGIX_list_priority 799
 #undef GL_SGIX_pixel_texture
-#define GL_SGIX_pixel_texture 799
+#define GL_SGIX_pixel_texture 800
 #undef GL_SGIX_pixel_tiles
-#define GL_SGIX_pixel_tiles 800
+#define GL_SGIX_pixel_tiles 801
 #undef GL_SGIX_polynomial_ffd
-#define GL_SGIX_polynomial_ffd 801
+#define GL_SGIX_polynomial_ffd 802
 #undef GL_SGIX_reference_plane
-#define GL_SGIX_reference_plane 802
+#define GL_SGIX_reference_plane 803
 #undef GL_SGIX_resample
-#define GL_SGIX_resample 803
+#define GL_SGIX_resample 804
 #undef GL_SGIX_scalebias_hint
-#define GL_SGIX_scalebias_hint 804
+#define GL_SGIX_scalebias_hint 805
 #undef GL_SGIX_shadow
-#define GL_SGIX_shadow 805
+#define GL_SGIX_shadow 806
 #undef GL_SGIX_shadow_ambient
-#define GL_SGIX_shadow_ambient 806
+#define GL_SGIX_shadow_ambient 807
 #undef GL_SGIX_sprite
-#define GL_SGIX_sprite 807
+#define GL_SGIX_sprite 808
 #undef GL_SGIX_subsample
-#define GL_SGIX_subsample 808
+#define GL_SGIX_subsample 809
 #undef GL_SGIX_tag_sample_buffer
-#define GL_SGIX_tag_sample_buffer 809
+#define GL_SGIX_tag_sample_buffer 810
 #undef GL_SGIX_texture_add_env
-#define GL_SGIX_texture_add_env 810
+#define GL_SGIX_texture_add_env 811
 #undef GL_SGIX_texture_coordinate_clamp
-#define GL_SGIX_texture_coordinate_clamp 811
+#define GL_SGIX_texture_coordinate_clamp 812
 #undef GL_SGIX_texture_lod_bias
-#define GL_SGIX_texture_lod_bias 812
+#define GL_SGIX_texture_lod_bias 813
 #undef GL_SGIX_texture_multi_buffer
-#define GL_SGIX_texture_multi_buffer 813
+#define GL_SGIX_texture_multi_buffer 814
 #undef GL_SGIX_texture_scale_bias
-#define GL_SGIX_texture_scale_bias 814
+#define GL_SGIX_texture_scale_bias 815
 #undef GL_SGIX_vertex_preclip
-#define GL_SGIX_vertex_preclip 815
+#define GL_SGIX_vertex_preclip 816
 #undef GL_SGIX_ycrcb
-#define GL_SGIX_ycrcb 816
+#define GL_SGIX_ycrcb 817
 #undef GL_SGIX_ycrcb_subsample
-#define GL_SGIX_ycrcb_subsample 817
+#define GL_SGIX_ycrcb_subsample 818
 #undef GL_SGIX_ycrcba
-#define GL_SGIX_ycrcba 818
+#define GL_SGIX_ycrcba 819
 #undef GL_SGI_color_matrix
-#define GL_SGI_color_matrix 819
+#define GL_SGI_color_matrix 820
 #undef GL_SGI_color_table
-#define GL_SGI_color_table 820
+#define GL_SGI_color_table 821
 #undef GL_SGI_texture_color_table
-#define GL_SGI_texture_color_table 821
+#define GL_SGI_texture_color_table 822
 #undef GL_SUNX_constant_data
-#define GL_SUNX_constant_data 822
+#define GL_SUNX_constant_data 823
 #undef GL_SUN_convolution_border_modes
-#define GL_SUN_convolution_border_modes 823
+#define GL_SUN_convolution_border_modes 824
 #undef GL_SUN_global_alpha
-#define GL_SUN_global_alpha 824
+#define GL_SUN_global_alpha 825
 #undef GL_SUN_mesh_array
-#define GL_SUN_mesh_array 825
+#define GL_SUN_mesh_array 826
 #undef GL_SUN_slice_accum
-#define GL_SUN_slice_accum 826
+#define GL_SUN_slice_accum 827
 #undef GL_SUN_triangle_list
-#define GL_SUN_triangle_list 827
+#define GL_SUN_triangle_list 828
 #undef GL_SUN_vertex
-#define GL_SUN_vertex 828
+#define GL_SUN_vertex 829
 #undef GL_VIV_shader_binary
-#define GL_VIV_shader_binary 829
+#define GL_VIV_shader_binary 830
 #undef GL_WIN_phong_shading
-#define GL_WIN_phong_shading 830
+#define GL_WIN_phong_shading 831
 #undef GL_WIN_specular_fog
-#define GL_WIN_specular_fog 831
+#define GL_WIN_specular_fog 832
 #undef GL_EXT_Cg_shader
-#define GL_EXT_Cg_shader 832
+#define GL_EXT_Cg_shader 833
 #undef GL_EXTX_framebuffer_mixed_formats
-#define GL_EXTX_framebuffer_mixed_formats 833
+#define GL_EXTX_framebuffer_mixed_formats 834
 #undef GL_EXT_texture_compression_dxt1
-#define GL_EXT_texture_compression_dxt1 834
+#define GL_EXT_texture_compression_dxt1 835
 #undef GL_EXT_texture_edge_clamp
-#define GL_EXT_texture_edge_clamp 835
+#define GL_EXT_texture_edge_clamp 836
 #undef GL_EXT_texture_storage
-#define GL_EXT_texture_storage 836
+#define GL_EXT_texture_storage 837
 #undef GL_EXT_import_sync_object
-#define GL_EXT_import_sync_object 837
+#define GL_EXT_import_sync_object 838
 #undef GL_KTX_buffer_region
-#define GL_KTX_buffer_region 838
+#define GL_KTX_buffer_region 839
 #undef GL_NV_ES1_1_compatibility
-#define GL_NV_ES1_1_compatibility 839
+#define GL_NV_ES1_1_compatibility 840
 #undef GL_NV_ES3_1_compatibility
-#define GL_NV_ES3_1_compatibility 840
+#define GL_NV_ES3_1_compatibility 841
 #undef GL_EXT_texture_lod
-#define GL_EXT_texture_lod 841
+#define GL_EXT_texture_lod 842
 
 #ifdef __cplusplus
 extern "C" {
@@ -8105,7 +8112,7 @@ typedef void (KHRONOS_APIENTRY *GLVULKANPROCNV)(void);
 
 typedef struct TunisGLConfig
 {
-    khronos_int8_t support[842];
+    khronos_int8_t support[843];
 
     void (KHRONOS_APIENTRY * tunisAccum)(GLenum, GLfloat);
     void (KHRONOS_APIENTRY * tunisAccumxOES)(GLenum, GLfixed);
@@ -14616,16 +14623,11 @@ TUNIS_FORCE_INLINE void  glWriteMaskEXT(GLuint res, GLuint in, GLenum outX, GLen
 #include <string.h>
 
 #if !defined(NDEBUG)
-#include <time.h>
+    #include <time.h>
 #endif
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
-#ifndef WIN32_LEAN_AND_MEAN
-    #define WIN32_LEAN_AND_MEAN 1
-#endif
-#include <Windows.h>
-#elif !defined(__EMSCRIPTEN__)
-#include <dlfcn.h>
+#if !defined(_WIN32) !defined(__EMSCRIPTEN__)
+    #include <dlfcn.h>
 #endif
 
 #ifndef TUNIS_SSCANF
@@ -14907,6 +14909,7 @@ static void tunisGLAddExtension(khronos_int8_t isGLES, const char* const extensi
         if (!tunisGL.support[GL_QCOM_framebuffer_foveated] && (extensionStrLength == 28) && strncmp(extensionStr, "GL_QCOM_framebuffer_foveated", extensionStrLength) == 0) { tunisGL.support[GL_QCOM_framebuffer_foveated] = KHRONOS_TRUE; return; }
         if (!tunisGL.support[GL_QCOM_perfmon_global_mode] && (extensionStrLength == 27) && strncmp(extensionStr, "GL_QCOM_perfmon_global_mode", extensionStrLength) == 0) { tunisGL.support[GL_QCOM_perfmon_global_mode] = KHRONOS_TRUE; return; }
         if (!tunisGL.support[GL_QCOM_shader_framebuffer_fetch_noncoherent] && (extensionStrLength == 44) && strncmp(extensionStr, "GL_QCOM_shader_framebuffer_fetch_noncoherent", extensionStrLength) == 0) { tunisGL.support[GL_QCOM_shader_framebuffer_fetch_noncoherent] = KHRONOS_TRUE; return; }
+        if (!tunisGL.support[GL_QCOM_shader_framebuffer_fetch_rate] && (extensionStrLength == 37) && strncmp(extensionStr, "GL_QCOM_shader_framebuffer_fetch_rate", extensionStrLength) == 0) { tunisGL.support[GL_QCOM_shader_framebuffer_fetch_rate] = KHRONOS_TRUE; return; }
         if (!tunisGL.support[GL_QCOM_texture_foveated] && (extensionStrLength == 24) && strncmp(extensionStr, "GL_QCOM_texture_foveated", extensionStrLength) == 0) { tunisGL.support[GL_QCOM_texture_foveated] = KHRONOS_TRUE; return; }
         if (!tunisGL.support[GL_QCOM_tiled_rendering] && (extensionStrLength == 23) && strncmp(extensionStr, "GL_QCOM_tiled_rendering", extensionStrLength) == 0) { tunisGL.support[GL_QCOM_tiled_rendering] = KHRONOS_TRUE; return; }
         if (!tunisGL.support[GL_QCOM_writeonly_rendering] && (extensionStrLength == 27) && strncmp(extensionStr, "GL_QCOM_writeonly_rendering", extensionStrLength) == 0) { tunisGL.support[GL_QCOM_writeonly_rendering] = KHRONOS_TRUE; return; }

@@ -1,18 +1,35 @@
 #ifndef TUNISPAINT_H
 #define TUNISPAINT_H
 
-#include "TunisColor.h"
-#include "soa.h"
+#include <TunisColor.h>
+#include <TunisSOA.h>
 
 #include <algorithm>
 #include <array>
 
+#include <glm/common.hpp>
+
 namespace tunis
 {
 
-class Paint
+class Paint : public SOA<
+        SVGMatrix,
+        Position,
+        float,
+        float,
+        Color,
+        Color,
+        size_t>
 {
 public:
+
+    inline SVGMatrix &xform() { return get<0>(); }
+    inline Position &extend() { return get<1>(); }
+    inline float & radius() { return get<2>(); }
+    inline float & feather() { return get<3>(); }
+    inline Color & innerColor() { return get<4>(); }
+    inline Color & outerColor() { return get<5>(); }
+    inline size_t & image() { return get<6>(); }
 
     inline static Paint createLinearGradient(float startX, float startY,
                                              float endX, float endY,
@@ -36,165 +53,54 @@ public:
             dy = 1;
         }
 
-        size_t id;
+        Paint paint;
+        paint.xform() = {dy, -dx, dx, dy, startX - dx*large, startY - dy*large};
+        paint.extend() = {large, large + d*0.5f};
+        paint.radius() = 0.0f;
+        paint.feather() = glm::max(1.0f, d);
+        paint.innerColor() = innerColor;
+        paint.outerColor() = outerColor;
+        paint.image() = 0;
 
-        if (_available.size() > 0)
-        {
-            id = _available.back();
-            _available.pop_back();
-        }
-        else
-        {
-            id = _soa.size();
-            _soa.resize(_soa.size()+1);
-        }
-
-        _soa.get<_xform>(id) = {dy, -dx, dx, dy, startX - dx*large, startY - dy*large};
-        _soa.get<_extend>(id) = {large, large + d*0.5f};
-        _soa.get<_radius>(id) = 0.0f;
-        _soa.get<_feather>(id) = std::max(1.0f, d);
-        _soa.get<_innerColor>(id) = innerColor;
-        _soa.get<_outerColor>(id) = outerColor;
-        _soa.get<_image>(id) = 0;
-        _soa.get<_refCount>(id) = 1;
-
-        return Paint(id);
+        return paint;
     }
 
-    inline Paint(const Color &color)
+    inline Paint()
     {
-
-        if (_available.size() > 0)
-        {
-            id = _available.back();
-            _available.pop_back();
-        }
-        else
-        {
-            id = _soa.size();
-            _soa.resize(_soa.size()+1);
-        }
-
-        _soa.get<_xform>(id) = {};
-        _soa.get<_extend>(id) = {};
-        _soa.get<_radius>(id) = 0;
-        _soa.get<_feather>(id) = 0;
-        _soa.get<_innerColor>(id) = color;
-        _soa.get<_outerColor>(id) = color::Transparent;
-        _soa.get<_image>(id) = 0;
-        _soa.get<_refCount>(id) = 1;
-
+        reset();
     }
 
-    inline Paint(const Paint &other) : id(other.id)
+    inline Paint(const Paint &other) : SOA(other)
     {
-        ++_soa.get<_refCount>(id);
     }
 
-    inline ~Paint()
+    inline Paint(const Color &color) : SOA()
     {
-        if (--_soa.get<_refCount>(id) == 0)
-        {
-            _available.push_back(id);
-        }
-    }
-
-    inline Paint &operator=(const Paint &other)
-    {
-        if (this != &other)
-        {
-            int refCount = _soa.get<_refCount>(id);
-            _soa.copy(other.id, id);
-            _soa.get<_refCount>(id) = refCount;
-        }
-
-        return *this;
+        xform() = SVGMatrix(1.0f);
+        extend() = Position(0.0f);
+        radius() = 0.0f;
+        feather() = 1.0f;
+        innerColor() = color;
+        outerColor() = color::Transparent;
+        image() = 0;
     }
 
     inline Paint &operator=(const Color &color)
     {
-        _soa.get<_xform>(id) = {};
-        _soa.get<_extend>(id) = {};
-        _soa.get<_radius>(id) = 0;
-        _soa.get<_feather>(id) = 0;
-        _soa.get<_innerColor>(id) = color;
-        _soa.get<_outerColor>(id) = color::Transparent;
-        _soa.get<_image>(id) = 0;
-
-        return *this;
+        return operator=(Paint(color));
     }
 
-    inline const std::array<float, 6> &getXform() const
+    inline void reset()
     {
-        return _soa.get<_xform>(id);
+        xform() = SVGMatrix(1.0f);
+        extend() = Position(0.0f);
+        radius() = 0.0f;
+        feather() = 1.0f;
+        innerColor() = color::Black;
+        outerColor() = color::Transparent;
+        image() = 0;
     }
 
-    inline const std::array<float, 2> &getExtend() const
-    {
-        return _soa.get<_extend>(id);
-    }
-
-    inline float getRadius() const
-    {
-        return _soa.get<_radius>(id);
-    }
-
-    inline float getFeather() const
-    {
-        return _soa.get<_feather>(id);
-    }
-
-    inline Color getInnerColor() const
-    {
-        return _soa.get<_innerColor>(id);
-    }
-
-    inline Color getOuterColor() const
-    {
-        return _soa.get<_outerColor>(id);
-    }
-
-    inline size_t getImage() const
-    {
-        return _soa.get<_image>(id);
-    }
-
-    inline int getRefCount() const
-    {
-        return _soa.get<_refCount>(id);
-    }
-
-private:
-
-    inline Paint(size_t id) : id(id)
-    {
-    }
-
-    enum {
-        _xform = 0,
-        _extend,
-        _radius,
-        _feather,
-        _innerColor,
-        _outerColor,
-        _image,
-        _refCount
-    };
-
-    static SoA<
-        std::array<float, 6>, // _xform
-        std::array<float, 2>, // _extend
-        float,                // _radius
-        float,                // _feather
-        Color,                // _innerColor
-        Color,                // _outerColor
-        size_t,               // _image
-        int                   // _refCount
-    > _soa;
-
-    static std::vector<size_t> _available;
-
-    size_t id;
 };
 
 }

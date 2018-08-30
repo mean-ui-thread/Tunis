@@ -16,6 +16,8 @@ inline SOA<Elements...>::SOA()
         id = _soa.size();
         _soa.resize(_soa.size()+1);
     }
+
+    _soa.get<_refCount>(id) = 1;
 }
 
 template <typename... Elements>
@@ -39,9 +41,14 @@ inline SOA<Elements...> &SOA<Elements...>::operator=(const SOA &other)
 {
     if (this != &other)
     {
-        int refCount = _soa.get<_refCount>(id); //backup refCount
-        _soa.copy(other.id, id);
-        _soa.get<_refCount>(id) = refCount; //restore refCount
+        if (--_soa.get<_refCount>(id) == 0)
+        {
+            _available.push_back(id);
+        }
+
+        id = other.id;
+
+        ++_soa.get<_refCount>(id);
     }
 
     return *this;
@@ -49,14 +56,14 @@ inline SOA<Elements...> &SOA<Elements...>::operator=(const SOA &other)
 
 template <typename... Elements>
 template <size_t ArrayIndex>
-typename SoA<Elements...>::NthTypeOf<ArrayIndex>& SOA<Elements...>::get() const
+inline typename SoA<Elements...>::NthTypeOf<ArrayIndex>& SOA<Elements...>::get() const
 {
     return _soa.get<ArrayIndex>(id);
 }
 
 
 template <typename... Elements>
-void SOA<Elements...>::reserve(size_t size)
+inline void SOA<Elements...>::reserve(size_t size)
 {
     _soa.reserve(size);
 }

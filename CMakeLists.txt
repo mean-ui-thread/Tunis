@@ -17,25 +17,25 @@ include(BuildOptions)
 
 add_subdirectory(3rdparty)
 
-include(src/${TUNIS_BACKEND}/Sources.cmake)
-
 add_library(Tunis
     cmake/BuildOptions.cmake
     cmake/Hunter/config.cmake
 
-    ${TUNIS_BACKEND_SOURCES}
+    src/${TUNIS_BACKEND}/Backend.cmake
+    src/${TUNIS_BACKEND}/Tunis.cpp
+    src/${TUNIS_BACKEND}/TunisTexture.cpp
 
     src/TunisColor.cpp
     include/TunisColor.h
 
-    src/TunisPaint.cpp
     include/TunisPaint.h
 
     include/TunisPath2D.h
-    include/TunisPath2D.inl
+    include/${TUNIS_BACKEND}/TunisPath2D.inl
 
     include/Tunis.h
-    include/Tunis.inl
+    include/${TUNIS_BACKEND}/Tunis.inl
+    include/${TUNIS_BACKEND}/TunisContextData.h
     include/TunisMath.h
     include/TunisRect.h
     include/TunisRect.inl
@@ -56,6 +56,7 @@ add_library(Tunis
 
 target_include_directories(Tunis
     PUBLIC include
+    PUBLIC include/${TUNIS_BACKEND}
     PUBLIC include/StructureOfArrays
     PRIVATE src
     PRIVATE src/${TUNIS_BACKEND}
@@ -66,8 +67,11 @@ find_package(glm REQUIRED)
 
 target_link_libraries(Tunis PUBLIC glm easy_profiler)
 
+include(src/${TUNIS_BACKEND}/Backend.cmake)
+tunis_backend_dependencies()
+
 if (NOT TUNIS_PROFILING)
-    target_compile_definitions(Tunis PUBLIC -DDISABLE_EASY_PROFILER=1)
+    target_compile_definitions(Tunis PUBLIC DISABLE_EASY_PROFILER=1)
 endif()
 
 if (TUNIS_BUILD_SAMPLES)

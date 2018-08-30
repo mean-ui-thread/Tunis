@@ -1,6 +1,7 @@
 
-#include <GLFW/glfw3.h>
 #include "SampleApp.h"
+
+#include <GLFW/glfw3.h>
 
 #include <chrono>
 #include <cstdarg>
@@ -31,8 +32,8 @@ int main( int argc, char* args[] )
     glfwWindowHint(GLFW_DEPTH_BITS, 24);
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
 
-    GLFWwindow* window = glfwCreateWindow(SampleApp::getScreenWidth(),
-                                          SampleApp::getScreenHeight(),
+    GLFWwindow* window = glfwCreateWindow(SampleApp::getWindowWidth(),
+                                          SampleApp::getWindowHeight(),
                                           SampleApp::getSampleName(),
                                           nullptr, nullptr);
 
@@ -46,25 +47,38 @@ int main( int argc, char* args[] )
 
     glfwSwapInterval(1);
 
-    // tunis::Context can only be instantiated after a context is created.
-    SampleApp app;
-
-    while (!glfwWindowShouldClose(window))
     {
-        EASY_BLOCK("Events Polling")
-        glfwPollEvents();
-        EASY_END_BLOCK
+        // tunis::Context can only be instantiated after a context is created
+        // and made current
+        SampleApp app;
 
-        EASY_BLOCK("Application Rendering",  profiler::colors::Blue500)
-        int w, h;
-        glfwGetWindowSize(window, &w, &h);
-        double frameTime = glfwGetTime();
-        app.render(w, h, frameTime);
-        EASY_END_BLOCK
+        while (!glfwWindowShouldClose(window))
+        {
+            EASY_BLOCK("Events Polling")
+            glfwPollEvents();
+            EASY_END_BLOCK
 
-        EASY_BLOCK("Swap Buffer", profiler::colors::Cyan)
-        glfwSwapBuffers(window);
-        EASY_END_BLOCK
+            EASY_BLOCK("Application Rendering",  profiler::colors::Blue500)
+
+            int winWidth, winHeight, fbWidth , fbHeight;
+            glfwGetWindowSize(window, &winWidth, &winHeight);
+            glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+
+            // Calculate pixel ration for hi-dpi devices.
+            float pxRatio = static_cast<float>(fbWidth) / static_cast<float>(winWidth);
+
+            double frameTime = glfwGetTime();
+            app.ctx.clearFrame(0, 0, fbWidth, fbHeight);
+            app.ctx.beginFrame(winWidth, winHeight, pxRatio);
+            app.render(frameTime);
+            app.ctx.endFrame();
+
+            EASY_END_BLOCK
+
+            EASY_BLOCK("Swap Buffer", profiler::colors::Cyan)
+            glfwSwapBuffers(window);
+            EASY_END_BLOCK
+        }
     }
 
 

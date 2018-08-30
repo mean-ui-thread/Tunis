@@ -13,7 +13,7 @@ public:
     constexpr Rect() noexcept;
     constexpr Rect(const Point &topleft, const Size &size) noexcept;
     constexpr Rect(const Point &topleft, const Point &bottomRight) noexcept;
-    constexpr Rect(float left, float top, float width, float height) noexcept;
+    constexpr Rect(float x, float y, float width, float height) noexcept;
     constexpr Rect(const Rect &rect) noexcept;
     bool isNull() const noexcept;
     constexpr bool isEmpty() const noexcept;
@@ -31,12 +31,12 @@ public:
     constexpr void setTop(float pos) noexcept;
     constexpr void setRight(float pos) noexcept;
     constexpr void setBottom(float pos) noexcept;
-    constexpr void setX(float pos) noexcept { setLeft(pos); }
-    constexpr void setY(float pos) noexcept { setTop(pos); }
-    constexpr Point topLeft() const noexcept { return Point(m_x, m_y); }
-    constexpr Point bottomRight() const noexcept { return Point(m_x+m_width, m_y+m_height); }
-    constexpr Point topRight() const noexcept { return Point(m_x+m_width, m_y); }
-    constexpr Point bottomLeft() const noexcept { return Point(m_x, m_y+m_height); }
+    constexpr void setX(float pos) noexcept;
+    constexpr void setY(float pos) noexcept;
+    constexpr Point topLeft() const noexcept;
+    constexpr Point bottomRight() const noexcept;
+    constexpr Point topRight() const noexcept;
+    constexpr Point bottomLeft() const noexcept;
     constexpr Point center() const noexcept;
     constexpr void setTopLeft(const Point &p) noexcept;
     constexpr void setBottomRight(const Point &p) noexcept;

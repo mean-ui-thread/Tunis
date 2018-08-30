@@ -11,22 +11,33 @@ namespace tunis
 namespace detail {
 
 enum CommandType {
-    MOVE_TO = 0,
+    CLOSE = 0,
+    MOVE_TO,
     LINE_TO,
     BEZIER_TO,
-    CLOSE,
+    QUAD_TO,
+    ARC,
+    ARC_TO,
+    ELLIPSE,
+    RECT,
 };
 
 }
 
-class Path2D : public SOA<std::vector<detail::CommandType>, std::vector<Point>>
+class Path2D : public SOA<std::vector<detail::CommandType>,
+                          std::vector<Point>,
+                          std::vector<Vertex>,
+                          double, double, double, double>
 {
-    friend class Context;
+public:
 
     inline std::vector<detail::CommandType> &commands() { return get<0>(); }
     inline std::vector<Point> &points() { return get<1>(); }
-
-public:
+    inline std::vector<Vertex> &vertexCache() { return get<2>(); }
+    inline double &minBoundX() { return get<3>(); }
+    inline double &minBoundY() { return get<4>(); }
+    inline double &maxBoundX() { return get<5>(); }
+    inline double &maxBoundY() { return get<6>(); }
 
     /*!
      * \brief Path2D Default Constructor.
@@ -55,15 +66,7 @@ public:
      * \param x The x axis of the point.
      * \param y The y axis of the point.
      */
-    void moveTo(float x, float y);
-
-    /*!
-     * \brief moveTo moves the starting point of a new sub-path to the (x, y)
-     * coordinates.
-     *
-     * \param p The coordinate of the point.
-     */
-    void moveTo(Point p);
+    void moveTo(double x, double y);
 
     /*!
      * \brief lineTo connects the last point in the sub-path to the x, y
@@ -72,15 +75,7 @@ public:
      * \param x The x axis of the coordinate for the end of the line.
      * \param y The y axis of the coordinate for the end of the line.
      */
-    void lineTo(float x, float y);
-
-    /*!
-     * \brief lineTo connects the last point in the sub-path to the x, y
-     * coordinates with a straight line (but does not actually draw it).
-     *
-     * \param p The coordinate for the end of the line.
-     */
-    void lineTo(Point p);
+    void lineTo(double x, double y);
 
     /*!
      * \brief bezierCurveTo adds a cubic Bézier curve to the path. It requires
@@ -96,22 +91,8 @@ public:
      * \param x The x coordinate of the end point.
      * \param y The y coordinate of the end point.
      */
-    void bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x,
-                       float y);
-
-    /*!
-     * \brief bezierCurveTo adds a cubic Bézier curve to the path. It requires
-     * three points. The first two points are control points and the third one
-     * is the end point. The starting point is the last point in the current
-     * path, which can be changed using moveTo() before creating the Bézier
-     * curve.
-     *
-     * \param cp1 The coordinate of the first control point.
-     * \param cp2 The coordinate of the second control point.
-     * \param ep The coordinate of the end point.
-     */
-    void bezierCurveTo(Point cp1, Point cp2, Point ep);
-
+    void bezierCurveTo(double cp1x, double cp1y, double cp2x, double cp2y, double x,
+                       double y);
 
     /*!
      * \brief quadraticCurveTo adds a quadratic Bézier curve to the path. It
@@ -125,7 +106,7 @@ public:
      * \param x The x axis of the coordinate for the end point.
      * \param y The y axis of the coordinate for the end point.
      */
-    void quadraticCurveTo(float cpx, float cpy, float x, float y);
+    void quadraticCurveTo(double cpx, double cpy, double x, double y);
 
     /*!
      * \brief arc adds an arc to the path which is centered at (x, y) position
@@ -143,7 +124,7 @@ public:
      * to be drawn counter-clockwise between the two angles. By default it is
      * drawn clockwise.
      */
-    void arc(float x, float y, float radius, float startAngle, float endAngle,
+    void arc(double x, double y, double radius, double startAngle, double endAngle,
              bool anticlockwise = false);
 
     /*!
@@ -174,7 +155,7 @@ public:
      * \param y2 y-axis coordinates for the second control point.
      * \param radius The arc's radius.
      */
-    void arcTo(float x1, float y1, float x2, float y2, float radius);
+    void arcTo(double x1, double y1, double x2, double y2, double radius);
 
     /*!
      * \brief ellipse adds an ellipse to the path which is centered at (x, y)
@@ -195,8 +176,8 @@ public:
      * ellipse anticlockwise (counter-clockwise), otherwise in a clockwise
      * direction.
      */
-    void ellipse(float x, float y, float radiusX, float radiusY, float rotation,
-                 float startAngle, float endAngle, bool anticlockwise = false);
+    void ellipse(double x, double y, double radiusX, double radiusY, double rotation,
+                 double startAngle, double endAngle, bool anticlockwise = false);
 
     /*!
      * \brief rect creates a path for a rectangle at position (x, y) with a size
@@ -208,7 +189,7 @@ public:
      * \param width The rectangle's width.
      * \param height The rectangle's height.
      */
-    void rect(float x, float y, float width, float height);
+    void rect(double x, double y, double width, double height);
 
 };
 
