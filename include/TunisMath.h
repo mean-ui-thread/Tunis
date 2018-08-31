@@ -11,7 +11,7 @@ namespace detail {
     class Math
     {
     public:
-       const float PI = glm::pi<float>();
+       const double PI = glm::pi<double>();
     };
 }
 
