@@ -189,6 +189,7 @@ inline void Context::fill(Path2D &path, FillRule fillRule)
 
     if (path.vertexCache().size() == 0)
     {
+        EASY_BLOCK("GLU");
         detail::globalContextData.tessPath = path;
 
         switch(fillRule)
@@ -524,6 +525,8 @@ inline void ContextData::tessCombine(GLvoid* data, void *vertex_data[4],
 
 inline void ContextData::addLineSegment(Path2D &path, const Point& p0, const Point& p1, const double lineWidth )
 {
+    EASY_FUNCTION(profiler::colors::Teal);
+
     if ( glm::all(glm::epsilonEqual(p0, p1, glm::epsilon<double>())) )
     {
         return;
