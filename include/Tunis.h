@@ -38,13 +38,13 @@ public:
                     int fbWidth, int fbHeight,
                     Color backgroundColor = color::White);
 
-    void beginFrame(int winWidth, int winHeight, double devicePixelRatio = 1.0);
+    void beginFrame(int winWidth, int winHeight, float devicePixelRatio = 1.0);
 
     void endFrame();
 
     Paint fillStyle = color::Black;
     Paint strokeStyle = color::Black;
-    double lineWidth = 1.0;
+    float lineWidth = 1.0f;
 
     /*!
      * \brief fillRect draws a filled rectangle whose starting point is at the
@@ -58,7 +58,7 @@ public:
      * \param width The rectangle's width.
      * \param height The rectangle's height.
      */
-    void fillRect(double x, double y, double width, double height);
+    void fillRect(float x, float y, float width, float height);
 
     /*!
      * \brief strokeRect paints a rectangle which has a starting point at (x, y)
@@ -70,7 +70,7 @@ public:
      * \param width The rectangle's width.
      * \param height The rectangle's height.
      */
-    void strokeRect(double x, double y, double width, double height);
+    void strokeRect(float x, float y, float width, float height);
 
     /*!
      * \brief clearRect sets all pixels in the rectangle defined by starting
@@ -82,7 +82,7 @@ public:
      * \param width The rectangle's width.
      * \param height The rectangle's height.
      */
-    void clearRect(double x, double y, double width, double height);
+    void clearRect(float x, float y, float width, float height);
 
 
     /*!
@@ -108,7 +108,7 @@ public:
      * \param x The x axis of the point.
      * \param y The y axis of the point.
      */
-    void moveTo(double x, double y);
+    void moveTo(float x, float y);
 
     /*!
      * \brief lineTo connects the last point in the sub-path to the x, y
@@ -117,7 +117,7 @@ public:
      * \param x The x axis of the coordinate for the end of the line.
      * \param y The y axis of the coordinate for the end of the line.
      */
-    void lineTo(double x, double y);
+    void lineTo(float x, float y);
 
     /*!
      * \brief bezierCurveTo adds a cubic Bézier curve to the path. It requires
@@ -133,8 +133,8 @@ public:
      * \param x The x coordinate of the end point.
      * \param y The y coordinate of the end point.
      */
-    void bezierCurveTo(double cp1x, double cp1y, double cp2x, double cp2y,
-                       double x, double y);
+    void bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y,
+                       float x, float y);
 
     /*!
      * \brief quadraticCurveTo adds a quadratic Bézier curve to the path. It
@@ -148,7 +148,7 @@ public:
      * \param x The x axis of the coordinate for the end point.
      * \param y The y axis of the coordinate for the end point.
      */
-    void quadraticCurveTo(double cpx, double cpy, double x, double y);
+    void quadraticCurveTo(float cpx, float cpy, float x, float y);
 
     /*!
      * \brief arc adds an arc to the path which is centered at (x, y) position
@@ -166,7 +166,7 @@ public:
      * to be drawn counter-clockwise between the two angles. By default it is
      * drawn clockwise.
      */
-    void arc(double x, double y, double radius, double startAngle, double endAngle,
+    void arc(float x, float y, float radius, float startAngle, float endAngle,
              bool anticlockwise = false);
 
     /*!
@@ -197,7 +197,7 @@ public:
      * \param y2 y-axis coordinates for the second control point.
      * \param radius The arc's radius.
      */
-    void arcTo(double x1, double y1, double x2, double y2, double radius);
+    void arcTo(float x1, float y1, float x2, float y2, float radius);
 
     /*!
      * \brief ellipse adds an ellipse to the path which is centered at (x, y)
@@ -218,8 +218,8 @@ public:
      * ellipse anticlockwise (counter-clockwise), otherwise in a clockwise
      * direction.
      */
-    void ellipse(double x, double y, double radiusX, double radiusY, double rotation,
-                 double startAngle, double endAngle, bool anticlockwise = false);
+    void ellipse(float x, float y, float radiusX, float radiusY, float rotation,
+                 float startAngle, float endAngle, bool anticlockwise = false);
 
     /*!
      * \brief rect creates a path for a rectangle at position (x, y) with a size
@@ -231,7 +231,7 @@ public:
      * \param width The rectangle's width.
      * \param height The rectangle's height.
      */
-    void rect(double x, double y, double width, double height);
+    void rect(float x, float y, float width, float height);
 
     /*!
      * \brief fill fills the current path with the current fill style using the

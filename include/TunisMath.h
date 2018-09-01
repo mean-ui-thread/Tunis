@@ -8,14 +8,13 @@ namespace tunis
 {
 
 namespace detail {
-    class Math
+    struct Math
     {
-    public:
-       const double PI = glm::pi<double>();
+        constexpr static float PI = glm::pi<float>();
     };
 }
 
-const detail::Math Math;
+constexpr detail::Math Math;
 
 
 

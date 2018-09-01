@@ -1,8 +1,7 @@
 #ifndef TUNISPATH2D_H
 #define TUNISPATH2D_H
 
-#include <TunisVertex.h>
-#include <TunisPaint.h>
+#include <TunisTypes.h>
 #include <TunisSOA.h>
 
 namespace tunis
@@ -10,7 +9,10 @@ namespace tunis
 
 namespace detail {
 
-enum CommandType {
+// forward declaration
+struct ContextData;
+
+enum PathCommandType {
     CLOSE = 0,
     MOVE_TO,
     LINE_TO,
@@ -22,22 +24,36 @@ enum CommandType {
     RECT,
 };
 
+struct PathCommandArray : public SoA<PathCommandType, float, float,float, float, float, float, float, float>
+{
+    inline PathCommandType &type(size_t idx) { return get<0>(idx); }
+    inline float &param0(size_t idx) { return get<1>(idx); }
+    inline float &param1(size_t idx) { return get<2>(idx); }
+    inline float &param2(size_t idx) { return get<3>(idx); }
+    inline float &param3(size_t idx) { return get<4>(idx); }
+    inline float &param4(size_t idx) { return get<5>(idx); }
+    inline float &param5(size_t idx) { return get<6>(idx); }
+    inline float &param6(size_t idx) { return get<7>(idx); }
+    inline float &param7(size_t idx) { return get<8>(idx); }
+};
+
+struct PointArray : public SoA<float, float>
+{
+    inline float &x(size_t idx) { return get<0>(idx); }
+    inline float &y(size_t idx) { return get<1>(idx); }
+};
+
 }
 
-class Path2D : public SOA<std::vector<detail::CommandType>,
-                          std::vector<Point>,
-                          std::vector<Vertex>,
-                          double, double, double, double>
+class Path2D : public RefCountedSOA<detail::PathCommandArray, detail::PointArray, uint8_t>
 {
-public:
+    inline detail::PathCommandArray &commands() { return get<0>(); }
+    inline detail::PointArray &points() { return get<1>(); }
+    inline uint8_t &dirty() { return get<2>(); }
 
-    inline std::vector<detail::CommandType> &commands() { return get<0>(); }
-    inline std::vector<Point> &points() { return get<1>(); }
-    inline std::vector<Vertex> &vertexCache() { return get<2>(); }
-    inline double &minBoundX() { return get<3>(); }
-    inline double &minBoundY() { return get<4>(); }
-    inline double &maxBoundX() { return get<5>(); }
-    inline double &maxBoundY() { return get<6>(); }
+    friend detail::ContextData;
+
+public:
 
     /*!
      * \brief Path2D Default Constructor.
@@ -66,7 +82,7 @@ public:
      * \param x The x axis of the point.
      * \param y The y axis of the point.
      */
-    void moveTo(double x, double y);
+    void moveTo(float x, float y);
 
     /*!
      * \brief lineTo connects the last point in the sub-path to the x, y
@@ -75,7 +91,7 @@ public:
      * \param x The x axis of the coordinate for the end of the line.
      * \param y The y axis of the coordinate for the end of the line.
      */
-    void lineTo(double x, double y);
+    void lineTo(float x, float y);
 
     /*!
      * \brief bezierCurveTo adds a cubic Bézier curve to the path. It requires
@@ -91,8 +107,8 @@ public:
      * \param x The x coordinate of the end point.
      * \param y The y coordinate of the end point.
      */
-    void bezierCurveTo(double cp1x, double cp1y, double cp2x, double cp2y, double x,
-                       double y);
+    void bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x,
+                       float y);
 
     /*!
      * \brief quadraticCurveTo adds a quadratic Bézier curve to the path. It
@@ -106,7 +122,7 @@ public:
      * \param x The x axis of the coordinate for the end point.
      * \param y The y axis of the coordinate for the end point.
      */
-    void quadraticCurveTo(double cpx, double cpy, double x, double y);
+    void quadraticCurveTo(float cpx, float cpy, float x, float y);
 
     /*!
      * \brief arc adds an arc to the path which is centered at (x, y) position
@@ -124,7 +140,7 @@ public:
      * to be drawn counter-clockwise between the two angles. By default it is
      * drawn clockwise.
      */
-    void arc(double x, double y, double radius, double startAngle, double endAngle,
+    void arc(float x, float y, float radius, float startAngle, float endAngle,
              bool anticlockwise = false);
 
     /*!
@@ -155,7 +171,7 @@ public:
      * \param y2 y-axis coordinates for the second control point.
      * \param radius The arc's radius.
      */
-    void arcTo(double x1, double y1, double x2, double y2, double radius);
+    void arcTo(float x1, float y1, float x2, float y2, float radius);
 
     /*!
      * \brief ellipse adds an ellipse to the path which is centered at (x, y)
@@ -176,8 +192,8 @@ public:
      * ellipse anticlockwise (counter-clockwise), otherwise in a clockwise
      * direction.
      */
-    void ellipse(double x, double y, double radiusX, double radiusY, double rotation,
-                 double startAngle, double endAngle, bool anticlockwise = false);
+    void ellipse(float x, float y, float radiusX, float radiusY, float rotation,
+                 float startAngle, float endAngle, bool anticlockwise = false);
 
     /*!
      * \brief rect creates a path for a rectangle at position (x, y) with a size
@@ -189,7 +205,7 @@ public:
      * \param width The rectangle's width.
      * \param height The rectangle's height.
      */
-    void rect(double x, double y, double width, double height);
+    void rect(float x, float y, float width, float height);
 
 };
 

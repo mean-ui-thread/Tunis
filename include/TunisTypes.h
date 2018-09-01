@@ -10,7 +10,6 @@
 namespace tunis
 {
     using Color = glm::u8vec4;
-    using Point = glm::dvec3;
     using Position = glm::vec2;
     using SVGMatrix = glm::mat2x3;
     using TCoord = glm::u16vec2;

@@ -12,7 +12,7 @@
 namespace tunis
 {
 
-class Paint : public SOA<
+class Paint : public RefCountedSOA<
         SVGMatrix,
         Position,
         float,
@@ -70,11 +70,11 @@ public:
         reset();
     }
 
-    inline Paint(const Paint &other) : SOA(other)
+    inline Paint(const Paint &other) : RefCountedSOA(other)
     {
     }
 
-    inline Paint(const Color &color) : SOA()
+    inline Paint(const Color &color) : RefCountedSOA()
     {
         xform() = SVGMatrix(1.0f);
         extend() = Position(0.0f);

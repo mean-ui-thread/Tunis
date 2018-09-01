@@ -32,11 +32,11 @@ inline void Context::clearFrame(int fbLeft, int fbTop, int fbWidth, int fbHeight
 }
 
 
-inline void Context::beginFrame(int winWidth, int winHeight, double devicePixelRatio)
+inline void Context::beginFrame(int winWidth, int winHeight, float devicePixelRatio)
 {
     nvgBeginFrame(data.ctx,
-                  static_cast<double>(winWidth),
-                  static_cast<double>(winHeight),
+                  static_cast<float>(winWidth),
+                  static_cast<float>(winHeight),
                   devicePixelRatio);
 }
 
@@ -46,21 +46,21 @@ inline void Context::endFrame()
     nvgEndFrame(data.ctx);
 }
 
-inline void Context::fillRect(double x, double y, double width, double height)
+inline void Context::fillRect(float x, float y, float width, float height)
 {
     beginPath();
     rect(x, y, width, height);
     fill(data.currentPath);
 }
 
-inline void Context::strokeRect(double x, double y, double width, double height)
+inline void Context::strokeRect(float x, float y, float width, float height)
 {
     beginPath();
     rect(x, y, width, height);
     stroke(data.currentPath);
 }
 
-inline void Context::clearRect(double x, double y, double width, double height)
+inline void Context::clearRect(float x, float y, float width, float height)
 {
     nvgBeginPath(data.ctx);
     nvgRect(data.ctx, x, y, width, height);
@@ -82,42 +82,42 @@ inline void Context::closePath()
     data.currentPath.closePath();
 }
 
-inline void Context::moveTo(double x, double y)
+inline void Context::moveTo(float x, float y)
 {
     data.currentPath.moveTo(x, y);
 }
 
-inline void Context::lineTo(double x, double y)
+inline void Context::lineTo(float x, float y)
 {
     data.currentPath.lineTo(x, y);
 }
 
-inline void Context::bezierCurveTo(double cp1x, double cp1y, double cp2x, double cp2y, double x, double y)
+inline void Context::bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x, float y)
 {
     data.currentPath.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
 }
 
-inline void Context::quadraticCurveTo(double cpx, double cpy, double x, double y)
+inline void Context::quadraticCurveTo(float cpx, float cpy, float x, float y)
 {
     data.currentPath.quadraticCurveTo(cpx, cpy, x, y);
 }
 
-inline void Context::arc(double x, double y, double radius, double startAngle, double endAngle, bool anticlockwise)
+inline void Context::arc(float x, float y, float radius, float startAngle, float endAngle, bool anticlockwise)
 {
     data.currentPath.arc(x, y, radius, startAngle, endAngle, anticlockwise);
 }
 
-inline void Context::arcTo(double x1, double y1, double x2, double y2, double radius)
+inline void Context::arcTo(float x1, float y1, float x2, float y2, float radius)
 {
     data.currentPath.arcTo(x1, y1, x2, y2, radius);
 }
 
-inline void Context::ellipse(double x, double y, double radiusX, double radiusY, double rotation, double startAngle, double endAngle, bool anticlockwise)
+inline void Context::ellipse(float x, float y, float radiusX, float radiusY, float rotation, float startAngle, float endAngle, bool anticlockwise)
 {
     data.currentPath.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise);
 }
 
-inline void Context::rect(double x, double y, double width, double height)
+inline void Context::rect(float x, float y, float width, float height)
 {
     data.currentPath.rect(x, y, width, height);
 }
@@ -163,61 +163,52 @@ inline void ContextData::pathToNVG(Path2D &path)
 {
     nvgBeginPath(ctx);
 
-    size_t pointId = 0;
-    for(auto cmd : path.commands())
+    for(size_t i = 0; i < path.commands().size(); ++i)
     {
-        switch(cmd)
+        switch(path.commands().type(i))
         {
         case detail::CLOSE:
             nvgClosePath(ctx);
             break;
         case detail::MOVE_TO:
-            nvgMoveTo(ctx, path.points()[pointId].x, path.points()[pointId].y);
-            ++pointId;
+            nvgMoveTo(ctx, path.commands().param0(i), path.commands().param1(i));
             break;
         case detail::LINE_TO:
-            nvgLineTo(ctx, path.points()[pointId].x, path.points()[pointId].y);
-            ++pointId;
+            nvgLineTo(ctx, path.commands().param0(i), path.commands().param1(i));
             break;
         case detail::BEZIER_TO:
             nvgBezierTo(ctx,
-                        path.points()[pointId].x,   path.points()[pointId].y,
-                        path.points()[pointId].z, path.points()[pointId+1].x,
-                        path.points()[pointId+1].y, path.points()[pointId+1].z);
-            pointId+=2;
+                        path.commands().param0(i), path.commands().param1(i),
+                        path.commands().param2(i), path.commands().param3(i),
+                        path.commands().param4(i), path.commands().param5(i));
             break;
         case detail::QUAD_TO:
             nvgQuadTo(ctx,
-                      path.points()[pointId].x,   path.points()[pointId].y,
-                      path.points()[pointId+1].x, path.points()[pointId+1].y);
-            pointId+=2;
+                      path.commands().param0(i), path.commands().param1(i),
+                      path.commands().param2(i), path.commands().param3(i));
             break;
         case detail::ARC:
             nvgArc(ctx,
-                   path.points()[pointId].x,   path.points()[pointId].y,
-                   path.points()[pointId].z,   path.points()[pointId+1].x,
-                   path.points()[pointId+1].y, path.points()[pointId+1].z > 0.5 ? NVG_CCW : NVG_CW);
-            pointId+=2;
+                   path.commands().param0(i), path.commands().param1(i),
+                   path.commands().param2(i), path.commands().param3(i),
+                   path.commands().param4(i), path.commands().param5(i) > 0.5f ? NVG_CCW : NVG_CW);
             break;
         case detail::ARC_TO:
             nvgArcTo(ctx,
-                   path.points()[pointId].x,   path.points()[pointId].y,
-                   path.points()[pointId].z,   path.points()[pointId+1].x,
-                   path.points()[pointId+1].y);
-            pointId+=2;
+                     path.commands().param0(i), path.commands().param1(i),
+                     path.commands().param2(i), path.commands().param3(i),
+                     path.commands().param4(i));
             break;
         case detail::ELLIPSE:
             // TODO figure out how to use rotation, startAngle, endAngle, anticlockwise here...
             nvgEllipse(ctx,
-                       path.points()[pointId].x,   path.points()[pointId].y,
-                       path.points()[pointId].z,   path.points()[pointId+1].x);
-            pointId+=3;
+                       path.commands().param0(i), path.commands().param1(i),
+                       path.commands().param2(i), path.commands().param3(i));
             break;
         case detail::RECT:
             nvgRect(ctx,
-                    path.points()[pointId].x,   path.points()[pointId].y,
-                    path.points()[pointId+1].x,   path.points()[pointId+1].y);
-            pointId+=2;
+                    path.commands().param0(i), path.commands().param1(i),
+                    path.commands().param2(i), path.commands().param3(i));
             break;
         }
     }

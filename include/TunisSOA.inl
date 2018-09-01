@@ -4,51 +4,51 @@ namespace tunis
 {
 
 template <typename... Elements>
-inline SOA<Elements...>::SOA()
+inline RefCountedSOA<Elements...>::RefCountedSOA()
 {
     if (_available.size() > 0)
     {
-        id = _available.back();
+        _id = _available.back();
         _available.pop_back();
     }
     else
     {
-        id = _soa.size();
+        _id = _soa.size();
         _soa.resize(_soa.size()+1);
     }
 
-    _soa.get<_refCount>(id) = 1;
+    _soa.get<_refCount>(_id) = 1;
 }
 
 template <typename... Elements>
-inline SOA<Elements...>::SOA(const SOA &other) :
-    id(other.id)
+inline RefCountedSOA<Elements...>::RefCountedSOA(const RefCountedSOA &other) :
+    _id(other._id)
 {
-    ++_soa.get<_refCount>(id);
+    ++_soa.get<_refCount>(_id);
 }
 
 template <typename... Elements>
-inline SOA<Elements...>::~SOA()
+inline RefCountedSOA<Elements...>::~RefCountedSOA()
 {
-    if (--_soa.get<_refCount>(id) == 0)
+    if (--_soa.get<_refCount>(_id) == 0)
     {
-        _available.push_back(id);
+        _available.push_back(_id);
     }
 }
 
 template <typename... Elements>
-inline SOA<Elements...> &SOA<Elements...>::operator=(const SOA &other)
+inline RefCountedSOA<Elements...> &RefCountedSOA<Elements...>::operator=(const RefCountedSOA &other)
 {
     if (this != &other)
     {
-        if (--_soa.get<_refCount>(id) == 0)
+        if (--_soa.get<_refCount>(_id) == 0)
         {
-            _available.push_back(id);
+            _available.push_back(_id);
         }
 
-        id = other.id;
+        _id = other._id;
 
-        ++_soa.get<_refCount>(id);
+        ++_soa.get<_refCount>(_id);
     }
 
     return *this;
@@ -56,23 +56,23 @@ inline SOA<Elements...> &SOA<Elements...>::operator=(const SOA &other)
 
 template <typename... Elements>
 template <size_t ArrayIndex>
-inline typename SoA<Elements...>::NthTypeOf<ArrayIndex>& SOA<Elements...>::get() const
+inline typename SoA<Elements...>::NthTypeOf<ArrayIndex>& RefCountedSOA<Elements...>::get() const
 {
-    return _soa.get<ArrayIndex>(id);
+    return _soa.get<ArrayIndex>(_id);
 }
 
 
 template <typename... Elements>
-inline void SOA<Elements...>::reserve(size_t size)
+inline void RefCountedSOA<Elements...>::reserve(size_t size)
 {
     _soa.reserve(size);
 }
 
 template <typename... Elements>
-SoA<Elements..., typename SOA<Elements...>::RefCount> SOA<Elements...>::_soa;
+SoA<Elements..., typename RefCountedSOA<Elements...>::RefCount> RefCountedSOA<Elements...>::_soa;
 
 template <typename... Elements>
-std::vector<size_t> SOA<Elements...>::_available;
+std::vector<size_t> RefCountedSOA<Elements...>::_available;
 
 
 }
