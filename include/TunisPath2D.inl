@@ -1,11 +1,5 @@
 #include <TunisPath2D.h>
 
-#include <glm/common.hpp>
-
-#include <glm/gtc/epsilon.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/trigonometric.hpp>
-
 namespace tunis
 {
 

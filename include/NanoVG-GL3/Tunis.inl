@@ -34,6 +34,7 @@ inline void Context::clearFrame(int fbLeft, int fbTop, int fbWidth, int fbHeight
 
 inline void Context::beginFrame(int winWidth, int winHeight, float devicePixelRatio)
 {
+    EASY_FUNCTION(profiler::colors::Teal);
     nvgBeginFrame(data.ctx,
                   static_cast<float>(winWidth),
                   static_cast<float>(winHeight),
