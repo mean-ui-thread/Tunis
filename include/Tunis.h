@@ -12,8 +12,6 @@
 #include <TunisTexture.h>
 #include <TunisMath.h>
 
-#include <glm/mat2x3.hpp>
-
 namespace tunis
 {
 

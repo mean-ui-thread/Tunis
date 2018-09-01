@@ -44,7 +44,7 @@ Texture::Texture(int width, int height, Filtering filtering)
 
     glGenTextures(1, &handle);
     glBindTexture(GL_TEXTURE_2D, handle);
-    detail::globalContextData.textureId = handle;
+    detail::global.textureId = handle;
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
@@ -110,9 +110,9 @@ Texture::~Texture()
 {
     if (--_soa.get<_refCount>(id) == 0)
     {
-        if (detail::globalContextData.textureId == _soa.get<_handle>(id))
+        if (detail::global.textureId == _soa.get<_handle>(id))
         {
-            detail::globalContextData.textureId = 0;
+            detail::global.textureId = 0;
             glBindTexture(GL_TEXTURE_2D, 0);
         }
 
@@ -140,10 +140,10 @@ Texture &Texture::operator=(const Texture &other)
 
 void Texture::bind()
 {
-    if (detail::globalContextData.textureId != _soa.get<_handle>(id))
+    if (detail::global.textureId != _soa.get<_handle>(id))
     {
         glBindTexture(GL_TEXTURE_2D, _soa.get<_handle>(id));
-        detail::globalContextData.textureId = _soa.get<_handle>(id);
+        detail::global.textureId = _soa.get<_handle>(id);
     }
 }
 

@@ -9,9 +9,9 @@ inline void Context::clearFrame(int fbLeft, int fbTop, int fbWidth, int fbHeight
     EASY_FUNCTION(profiler::colors::Teal);
 
     // update the clear color if necessary
-    if (detail::globalContextData.backgroundColor != backgroundColor)
+    if (detail::global.backgroundColor != backgroundColor)
     {
-        detail::globalContextData.backgroundColor = backgroundColor;
+        detail::global.backgroundColor = backgroundColor;
 
         glClearColor(backgroundColor.r/255.0f,
                      backgroundColor.g/255.0f,
@@ -21,9 +21,9 @@ inline void Context::clearFrame(int fbLeft, int fbTop, int fbWidth, int fbHeight
 
     // update the viewport if necessary
     Viewport viewport(fbLeft, fbTop, fbWidth, fbHeight);
-    if (detail::globalContextData.viewport != viewport)
+    if (detail::global.viewport != viewport)
     {
-        detail::globalContextData.viewport = viewport;
+        detail::global.viewport = viewport;
 
         glViewport(fbLeft, fbTop, fbWidth, fbHeight);
     }
@@ -64,10 +64,10 @@ inline void Context::clearRect(float x, float y, float width, float height)
 {
     nvgBeginPath(data.ctx);
     nvgRect(data.ctx, x, y, width, height);
-    nvgFillColor(data.ctx, nvgRGBA(detail::globalContextData.backgroundColor.r,
-                                   detail::globalContextData.backgroundColor.g,
-                                   detail::globalContextData.backgroundColor.b,
-                                   detail::globalContextData.backgroundColor.a));
+    nvgFillColor(data.ctx, nvgRGBA(detail::global.backgroundColor.r,
+                                   detail::global.backgroundColor.g,
+                                   detail::global.backgroundColor.b,
+                                   detail::global.backgroundColor.a));
     nvgPathWinding(data.ctx, NVG_SOLID);
     nvgFill(data.ctx);
 }
@@ -84,47 +84,47 @@ inline void Context::closePath()
 
 inline void Context::moveTo(float x, float y)
 {
-    data.currentPath.moveTo(x, y);
+    data.currentPath.moveTo(std::move(x), std::move(y));
 }
 
 inline void Context::lineTo(float x, float y)
 {
-    data.currentPath.lineTo(x, y);
+    data.currentPath.lineTo(std::move(x), std::move(y));
 }
 
 inline void Context::bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x, float y)
 {
-    data.currentPath.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
+    data.currentPath.bezierCurveTo(std::move(cp1x), std::move(cp1y), std::move(cp2x), std::move(cp2y), std::move(x), std::move(y));
 }
 
 inline void Context::quadraticCurveTo(float cpx, float cpy, float x, float y)
 {
-    data.currentPath.quadraticCurveTo(cpx, cpy, x, y);
+    data.currentPath.quadraticCurveTo(std::move(cpx), std::move(cpy), std::move(x), std::move(y));
 }
 
 inline void Context::arc(float x, float y, float radius, float startAngle, float endAngle, bool anticlockwise)
 {
-    data.currentPath.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+    data.currentPath.arc(std::move(x), std::move(y), std::move(radius), std::move(startAngle), std::move(endAngle), std::move(anticlockwise));
 }
 
 inline void Context::arcTo(float x1, float y1, float x2, float y2, float radius)
 {
-    data.currentPath.arcTo(x1, y1, x2, y2, radius);
+    data.currentPath.arcTo(std::move(x1), std::move(y1), std::move(x2), std::move(y2), std::move(radius));
 }
 
 inline void Context::ellipse(float x, float y, float radiusX, float radiusY, float rotation, float startAngle, float endAngle, bool anticlockwise)
 {
-    data.currentPath.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise);
+    data.currentPath.ellipse(std::move(x), std::move(y), std::move(radiusX), std::move(radiusY), std::move(rotation), std::move(startAngle), std::move(endAngle), std::move(anticlockwise));
 }
 
 inline void Context::rect(float x, float y, float width, float height)
 {
-    data.currentPath.rect(x, y, width, height);
+    data.currentPath.rect(std::move(x), std::move(y), std::move(width), std::move(height));
 }
 
 inline void Context::fill(FillRule fillRule)
 {
-    fill(data.currentPath, fillRule);
+    fill(data.currentPath, std::move(fillRule));
 }
 
 inline void Context::stroke()

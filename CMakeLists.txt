@@ -31,7 +31,7 @@ add_library(Tunis
     include/TunisPaint.h
 
     include/TunisPath2D.h
-    include/${TUNIS_BACKEND}/TunisPath2D.inl
+    include/TunisPath2D.inl
 
     include/Tunis.h
     include/${TUNIS_BACKEND}/Tunis.inl

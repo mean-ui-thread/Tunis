@@ -4,4 +4,4 @@
 
 
 #include <TunisContextData.h>
-tunis::detail::GlobalContextData tunis::detail::globalContextData;
+tunis::detail::GlobalContextData tunis::detail::global;

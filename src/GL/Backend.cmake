@@ -1,7 +1,3 @@
 function(tunis_backend_dependencies)
-    find_package(OpenGL)
-    if (TARGET OpenGL::GLU)
-        target_compile_definitions(Tunis PRIVATE -DHAS_SYSTEM_GLU=1)
-        target_link_libraries(Tunis PUBLIC OpenGL::GLU)
-    endif()
+
 endfunction()

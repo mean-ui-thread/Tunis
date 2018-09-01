@@ -20,7 +20,7 @@ struct GlobalContextData
     Viewport viewport = Viewport(0, 0, 100, 100);
 };
 
-extern GlobalContextData globalContextData;
+extern GlobalContextData global;
 
 struct ContextData
 {

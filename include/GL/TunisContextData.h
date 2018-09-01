@@ -4,10 +4,9 @@
 #include <TunisPath2D.h>
 #include <TunisColor.h>
 #include <TunisTypes.h>
+#include <TunisVertex.h>
 #include <TunisTexture.h>
 #include <TunisGL.h>
-
-#include <GL/glu.h>
 
 #ifndef TUNIS_VERTEX_MAX
 #define TUNIS_VERTEX_MAX 16384
@@ -39,12 +38,12 @@ struct GlobalContextData
 {
     Color backgroundColor = color::Transparent;
     Viewport viewport = Viewport(0, 0, 100, 100);
-    size_t textureId = 0;
+    GLuint textureId = 0;
+    GLuint programId = 0;
     int32_t maxTexSize = 0;
-    Path2D tessPath;
 };
 
-extern GlobalContextData globalContextData;
+extern GlobalContextData global;
 
 struct Default2DShader
 {
@@ -98,18 +97,9 @@ struct Default2DShader
             "}\n";
 };
 
-enum RenderType
+struct BatchArray : public SoA<GLuint, Texture, GLint, GLsizei>
 {
-    Default2D = 0,
-};
-
-struct Batch : public SoA<
-    RenderType,
-    Texture,
-    GLint,
-    GLsizei>
-{
-    inline RenderType &renderType(size_t i) { return get<0>(i); }
+    inline GLuint &program(size_t i) { return get<0>(i); }
     inline Texture &texture(size_t i) { return get<1>(i); }
     inline GLint &vertexStartOffset(size_t i) { return get<2>(i); }
     inline GLsizei &vertexCount(size_t i) { return get<3>(i); }
@@ -117,13 +107,8 @@ struct Batch : public SoA<
 
 struct ContextData
 {
-    ContextData(Context *pub);
-    ~ContextData();
-
     Path2D currentPath;
 
-    Context *pub;
-    Viewport viewport = Viewport(0,0,0,0);
     std::vector<Texture> textures;
 
     Default2DShader default2DShader;
@@ -133,17 +118,9 @@ struct ContextData
     GLuint ibo = 0;
 #endif
 
-    std::vector<Vertex> vertexBuffer;
+    std::vector<Vertex> vertexBuffer; // write-only interleaved VBO data. DO NOT USE SoA on this member!!!
 
-    Batch batches;
-
-    GLUtesselator *tesselator;
-
-    static void CALLBACK tessEdgeFlag(void);
-    static void CALLBACK tessVertex( GLvoid* data, GLvoid* user );
-    static void CALLBACK tessCombine(GLvoid* data, void *vertex_data[4], GLfloat weight[4], void **outData, void *user);
-
-    void addLineSegment(Path2D &path, const Point& p0, const Point& p1, const double lineWidth );
+    BatchArray batches;
 };
 
 }

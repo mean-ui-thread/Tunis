@@ -7,6 +7,8 @@
 namespace tunis
 {
 
+class Context;
+
 namespace detail {
 
 // forward declaration
@@ -51,6 +53,7 @@ class Path2D : public RefCountedSOA<detail::PathCommandArray, detail::PointArray
     inline detail::PointArray &points() { return get<1>(); }
     inline uint8_t &dirty() { return get<2>(); }
 
+    friend Context;
     friend detail::ContextData;
 
 public:
