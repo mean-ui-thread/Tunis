@@ -2,11 +2,6 @@
 
 #include <stdio.h>
 
-#include <easy/profiler.h>
-
-using namespace tunis;
-using namespace tunis::color;
-
 const char *SampleApp::getSampleName() { return "05_Lines"; }
 int SampleApp::getWindowWidth() { return 320; }
 int SampleApp::getWindowHeight() { return 200; }
@@ -16,8 +11,6 @@ int SampleApp::getWindowHeight() { return 200; }
  */
 void SampleApp::render(double)
 {
-    EASY_FUNCTION()
-
     // Filled triangle
     ctx.beginPath();
     ctx.moveTo(25, 25);

@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-#define RGBA_COLOR(COLOR_NAME, r, g, b, a) const tunis::Color tunis::color::COLOR_NAME = tunis::Color(r, g, b, a)
-#define RGB_COLOR(COLOR_NAME, r, g, b) RGBA_COLOR(COLOR_NAME, r, g, b, 255)
+#define RGBA_COLOR(COLOR_NAME, r, g, b, a) const tunis::Color tunis::COLOR_NAME = tunis::Color(r, g, b, a)
+#define RGB_COLOR(COLOR_NAME, r, g, b) RGBA_COLOR(COLOR_NAME, r, g, b, 1.0f)
 
 RGBA_COLOR(Transparent, 0, 0, 0, 0);
 
@@ -170,7 +170,7 @@ RGB_COLOR(SlateGray, 112, 128, 144);
 RGB_COLOR(DarkSlateGray, 47, 79, 79);
 RGB_COLOR(Black, 0, 0, 0);
 
-tunis::Color tunis::color::fromString(const char* colorName)
+tunis::Color::Color(const char* colorName)
 {
     if (colorName[0] == '#')
     {
@@ -181,29 +181,32 @@ tunis::Color tunis::color::fromString(const char* colorName)
         if (colorNameLength == 6) /* "#RRGGBB" */
         {
                               /* R G B */
-            color.r = ((word & 0xFF0000) >> 16);
-            color.g = ((word & 0x00FF00) >> 8);
-            color.b = ((word & 0x0000FF) >> 0);
-            color.a = 255;
-            return color;
+            b = ((word & 0x0000FF) >> 0);
+            g = ((word & 0x00FF00) >> 8);
+            r = ((word & 0xFF0000) >> 16);
+            a = 255;
+            return;
         }
         else if (colorNameLength == 8) /* "#AARRGGBB" */
         {
-                              /* A R G B */
-            color.a = ((word & 0xFF000000) >> 24);
-            color.r = ((word & 0x00FF0000) >> 16);
-            color.g = ((word & 0x0000FF00) >> 8);
-            color.b = ((word & 0x000000FF) >> 0);
-            return color;
+            b = ((word & 0x000000FF) >> 0);
+            g = ((word & 0x0000FF00) >> 8);
+            r = ((word & 0x00FF0000) >> 16);
+            a = ((word & 0xFF000000) >> 24);
+            return;
         }
 
-        goto unknownColor;
+        // parse error
+        r=0.0f;
+        g=0.0f;
+        b=0.0f;
+        a=0.0f;
     }
 
 #if defined(_MSC_VER)
-    #define RETURN_IF_MATCH(COLOR_NAME) do { if(_stricmp(colorName, #COLOR_NAME) == 0) return tunis::color::COLOR_NAME; } while((void)0, 0)
+    #define RETURN_IF_MATCH(COLOR_NAME) do { if(_stricmp(colorName, #COLOR_NAME) == 0) r=COLOR_NAME.r; g=COLOR_NAME.g; b=COLOR_NAME.b; a=COLOR_NAME.a;  return; } while((void)0, 0)
 #else
-    #define RETURN_IF_MATCH(COLOR_NAME) do { if(strcasecmp(colorName, #COLOR_NAME) == 0) return tunis::color::COLOR_NAME; } while((void)0, 0)
+    #define RETURN_IF_MATCH(COLOR_NAME) do { if(strcasecmp(colorName, #COLOR_NAME) == 0) r=COLOR_NAME.r; g=COLOR_NAME.g; b=COLOR_NAME.b; a=COLOR_NAME.a;  return; } while((void)0, 0)
 #endif
 
     RETURN_IF_MATCH(Transparent);
@@ -371,7 +374,8 @@ tunis::Color tunis::color::fromString(const char* colorName)
     RETURN_IF_MATCH(DarkSlateGray);
     RETURN_IF_MATCH(Black);
 
-unknownColor:
-    std::cerr << "Unknown color '" << colorName << "'. Returning 'Black' instead." << std::endl;
-    return tunis::color::Black;
+    r=0.0f;
+    g=0.0f;
+    b=0.0f;
+    a=0.0f;
 }

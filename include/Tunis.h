@@ -1,10 +1,6 @@
 #ifndef TUNIS_H
 #define TUNIS_H
 
-#ifdef _WIN32
-#define NOMINMAX 1
-#endif
-
 #include <TunisContextData.h>
 #include <TunisColor.h>
 #include <TunisPaint.h>
@@ -17,14 +13,10 @@ namespace tunis
 
 struct ContextData;
 
-class Context
+class Context : public detail::ContextState
 {
 public:
 
-    enum FillRule {
-        nonzero, //!< The non-zero winding rule, which is the default rule.
-        evenodd, //!< The even-odd winding rule.
-    };
 
     Context();
     ~Context();
@@ -32,17 +24,26 @@ public:
     Context(const Context &) = delete;
     Context &operator=(const Context &) = delete;
 
-    void clearFrame(int fbLeft, int fbTop,
-                    int fbWidth, int fbHeight,
-                    Color backgroundColor = color::White);
+    void clearFrame(int32_t fbLeft, int32_t fbTop,
+                    int32_t fbWidth, int32_t fbHeight,
+                    Color backgroundColor = White);
 
-    void beginFrame(int winWidth, int winHeight, float devicePixelRatio = 1.0);
+    void beginFrame(int32_t winWidth, int32_t winHeight, float devicePixelRatio = 1.0);
 
     void endFrame();
 
-    Paint fillStyle = color::Black;
-    Paint strokeStyle = color::Black;
-    float lineWidth = 1.0f;
+    /*!
+     * \brief save saves the entire state of the canvas by pushing the current
+     * state onto a stack.
+     */
+    void save();
+
+    /*!
+     * \brief restore restores the most recently saved canvas state by popping
+     * the top entry in the drawing state stack. If there is no saved state,
+     * this method does nothing.
+     */
+    void restore();
 
     /*!
      * \brief fillRect draws a filled rectangle whose starting point is at the
@@ -60,7 +61,7 @@ public:
 
     /*!
      * \brief strokeRect paints a rectangle which has a starting point at (x, y)
-     * and has a w width and an h height onto the canvas, using the current
+     * and has a w width and an h height onto the window, using the current
      * stroke style.
      *
      * \param x The x axis of the coordinate for the rectangle starting point.
@@ -238,7 +239,7 @@ public:
      * \param fillRule The algorithm by which to determine if a point is inside
      * a path or outside a path.
      */
-    void fill(FillRule fillRule = nonzero);
+    void fill(Fill fillRule = FillNonZero);
 
     /*!
      * \brief fill fills the given path with the current fill style using the
@@ -248,7 +249,7 @@ public:
      * \param fillRule The algorithm by which to determine if a point is inside
      * a path or outside a path.
      */
-    void fill(Path2D &path, FillRule fillRule = nonzero);
+    void fill(Path2D &path, Fill fillRule = FillNonZero);
 
     /*!
      * \brief stroke strokes the current or given path with the current stroke
@@ -266,8 +267,7 @@ public:
 
 private:
 
-    detail::ContextData data;
-
+    detail::ContextData ctx;
 };
 
 }

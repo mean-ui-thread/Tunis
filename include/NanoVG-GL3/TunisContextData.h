@@ -15,7 +15,7 @@ namespace detail
 {
 struct GlobalContextData
 {
-    NVGcontext *ctx = nullptr;
+    NVGcontext *nvg = nullptr;
     Color backgroundColor = color::Transparent;
     Viewport viewport = Viewport(0, 0, 100, 100);
 };
@@ -24,7 +24,7 @@ extern GlobalContextData global;
 
 struct ContextData
 {
-    NVGcontext *ctx = nullptr;
+    NVGcontext *nvg = nullptr;
     Path2D currentPath;
 
     void pathToNVG(Path2D &path);

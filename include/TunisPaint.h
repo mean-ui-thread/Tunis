@@ -81,7 +81,7 @@ public:
         radius() = 0.0f;
         feather() = 1.0f;
         innerColor() = color;
-        outerColor() = color::Transparent;
+        outerColor() = Transparent;
         image() = 0;
     }
 
@@ -96,8 +96,8 @@ public:
         extend() = Position(0.0f);
         radius() = 0.0f;
         feather() = 1.0f;
-        innerColor() = color::Black;
-        outerColor() = color::Transparent;
+        innerColor() = Black;
+        outerColor() = Transparent;
         image() = 0;
     }
 

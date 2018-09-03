@@ -7,9 +7,24 @@
 
 namespace tunis
 {
-
-namespace color
+class Color : public glm::u8vec4
 {
+public:
+    Color() : glm::u8vec4() {}
+    Color(uint8_t r, uint8_t g, uint8_t b, float a = 1.0f) : glm::u8vec4(r, g, b, a*255) {}
+    Color(const char* colorName);
+};
+
+inline Color rgb(uint8_t r, uint8_t g, uint8_t b)
+{
+    return Color(r, g, b, 1.0f);
+}
+
+inline Color rgba(uint8_t r, uint8_t g, uint8_t b, float a)
+{
+    return Color(r, g, b, a);
+}
+
 
 extern const Color Transparent;
 
@@ -175,20 +190,6 @@ extern const Color LightSlateGray;
 extern const Color SlateGray;
 extern const Color DarkSlateGray;
 extern const Color Black;
-
-inline Color rgb(uint8_t r, uint8_t g, uint8_t b)
-{
-    return Color(r, g, b, 255);
-}
-
-inline Color rgba(uint8_t r, uint8_t g, uint8_t b, float a)
-{
-    return Color(r, g, b, static_cast<uint8_t>(a*255));
-}
-
-extern Color fromString(const char* colorName);
-
-}
 
 }
 

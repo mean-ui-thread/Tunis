@@ -7,6 +7,7 @@
 namespace tunis
 {
 
+// forward declaration
 class Context;
 
 namespace detail {
@@ -26,6 +27,16 @@ enum PathCommandType {
     RECT,
 };
 
+enum
+{
+    PointCorner = 0x01,
+    PointLeft = 0x02,
+    PointBevel = 0x04,
+    PointInnerBevel = 0x08,
+};
+using PointMask = uint8_t;
+
+
 struct PathCommandArray : public SoA<PathCommandType, float, float,float, float, float, float, float, float>
 {
     inline PathCommandType &type(size_t idx) { return get<0>(idx); }
@@ -39,19 +50,38 @@ struct PathCommandArray : public SoA<PathCommandType, float, float,float, float,
     inline float &param7(size_t idx) { return get<8>(idx); }
 };
 
-struct PointArray : public SoA<float, float>
+
+struct PointArray : public SoA<float, float, float, float, float, float, float, PointMask>
 {
     inline float &x(size_t idx) { return get<0>(idx); }
     inline float &y(size_t idx) { return get<1>(idx); }
+    inline float &dx(size_t idx) { return get<2>(idx); }
+    inline float &dy(size_t idx) { return get<3>(idx); }
+    inline float &len(size_t idx) { return get<4>(idx); }
+    inline float &dmx(size_t idx) { return get<5>(idx); }
+    inline float &dmy(size_t idx) { return get<6>(idx); }
+    inline PointMask &flags(size_t idx) { return get<7>(idx); }
+};
+
+struct SubPath2DArray : public SoA<PointArray, uint8_t, size_t>
+{
+    inline PointArray &points(size_t idx) { return get<0>(idx); }
+    inline uint8_t &closed(size_t idx) { return get<1>(idx); }
+    inline size_t &nbevel(size_t idx) { return get<2>(idx); }
 };
 
 }
 
-class Path2D : public RefCountedSOA<detail::PathCommandArray, detail::PointArray, uint8_t>
+class Path2D : public RefCountedSOA<detail::PathCommandArray, detail::SubPath2DArray, uint8_t, Fill, float, float, float, float>
 {
     inline detail::PathCommandArray &commands() { return get<0>(); }
-    inline detail::PointArray &points() { return get<1>(); }
+    inline detail::SubPath2DArray &subpaths() { return get<1>(); }
     inline uint8_t &dirty() { return get<2>(); }
+    inline Fill &fillRule() { return get<3>(); }
+    inline float &boundTop() { return get<4>(); }
+    inline float &boundRight() { return get<5>(); }
+    inline float &boundBottom() { return get<6>(); }
+    inline float &boundLeft() { return get<7>(); }
 
     friend Context;
     friend detail::ContextData;

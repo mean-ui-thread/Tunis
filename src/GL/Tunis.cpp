@@ -4,4 +4,4 @@
 
 
 #include <TunisContextData.h>
-tunis::detail::GlobalContextData tunis::detail::global;
+tunis::detail::GraphicStates tunis::detail::gfxStates;

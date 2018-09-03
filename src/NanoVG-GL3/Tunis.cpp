@@ -17,7 +17,7 @@ namespace detail
 Context::Context()
 {
 
-    if (!detail::global.ctx)
+    if (!detail::global.nvg)
     {
         tunisGLInit();
 
@@ -29,19 +29,19 @@ Context::Context()
         flags |= NVG_DEBUG;
 #endif
 
-        detail::global.ctx = nvgCreateGL3(flags);
+        detail::global.nvg = nvgCreateGL3(flags);
 
     }
 
-    data.ctx = detail::global.ctx;
+    ctx.nvg = detail::global.nvg;
 }
 
 Context::~Context()
 {
-    nvgDeleteGL3(data.ctx);
+    nvgDeleteGL3(ctx.nvg);
 
-    data.ctx = nullptr;
-    detail::global.ctx = nullptr;
+    ctx.nvg = nullptr;
+    detail::global.nvg = nullptr;
 
     tunisGLShutdown();
 }

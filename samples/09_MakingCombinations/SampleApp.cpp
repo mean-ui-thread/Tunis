@@ -2,11 +2,6 @@
 
 #include <stdio.h>
 
-#include <easy/profiler.h>
-
-using namespace tunis;
-using namespace tunis::color;
-
 const char *SampleApp::getSampleName() { return "09_MakingCombinations"; }
 int SampleApp::getWindowWidth() { return 320; }
 int SampleApp::getWindowHeight() { return 200; }
@@ -18,8 +13,6 @@ static void roundedRect(tunis::Context &ctx, float x, float y, float width, floa
  */
 void SampleApp::render(double)
 {
-    EASY_FUNCTION()
-
     roundedRect(ctx, 12, 12, 150, 150, 15);
     roundedRect(ctx, 19, 19, 150, 150, 9);
     roundedRect(ctx, 53, 53, 49, 33, 10);

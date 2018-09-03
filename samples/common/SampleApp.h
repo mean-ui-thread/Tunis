@@ -3,6 +3,8 @@
 
 #include <Tunis.h>
 
+using namespace tunis;
+
 class SampleApp
 {
 public:

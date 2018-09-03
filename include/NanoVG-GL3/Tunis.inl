@@ -35,7 +35,7 @@ inline void Context::clearFrame(int fbLeft, int fbTop, int fbWidth, int fbHeight
 inline void Context::beginFrame(int winWidth, int winHeight, float devicePixelRatio)
 {
     EASY_FUNCTION(profiler::colors::Teal);
-    nvgBeginFrame(data.ctx,
+    nvgBeginFrame(ctx.nvg,
                   static_cast<float>(winWidth),
                   static_cast<float>(winHeight),
                   devicePixelRatio);
@@ -44,105 +44,105 @@ inline void Context::beginFrame(int winWidth, int winHeight, float devicePixelRa
 inline void Context::endFrame()
 {
     EASY_FUNCTION(profiler::colors::Teal);
-    nvgEndFrame(data.ctx);
+    nvgEndFrame(ctx.nvg);
 }
 
 inline void Context::fillRect(float x, float y, float width, float height)
 {
     beginPath();
     rect(x, y, width, height);
-    fill(data.currentPath);
+    fill(ctx.currentPath);
 }
 
 inline void Context::strokeRect(float x, float y, float width, float height)
 {
     beginPath();
     rect(x, y, width, height);
-    stroke(data.currentPath);
+    stroke(ctx.currentPath);
 }
 
 inline void Context::clearRect(float x, float y, float width, float height)
 {
-    nvgBeginPath(data.ctx);
-    nvgRect(data.ctx, x, y, width, height);
-    nvgFillColor(data.ctx, nvgRGBA(detail::global.backgroundColor.r,
+    nvgBeginPath(ctx.nvg);
+    nvgRect(ctx.nvg, x, y, width, height);
+    nvgFillColor(ctx.nvg, nvgRGBA(detail::global.backgroundColor.r,
                                    detail::global.backgroundColor.g,
                                    detail::global.backgroundColor.b,
                                    detail::global.backgroundColor.a));
-    nvgPathWinding(data.ctx, NVG_SOLID);
-    nvgFill(data.ctx);
+    nvgPathWinding(ctx.nvg, NVG_SOLID);
+    nvgFill(ctx.nvg);
 }
 
 inline void Context::beginPath()
 {
-    data.currentPath.reset();
+    ctx.currentPath.reset();
 }
 
 inline void Context::closePath()
 {
-    data.currentPath.closePath();
+    ctx.currentPath.closePath();
 }
 
 inline void Context::moveTo(float x, float y)
 {
-    data.currentPath.moveTo(std::move(x), std::move(y));
+    ctx.currentPath.moveTo(std::move(x), std::move(y));
 }
 
 inline void Context::lineTo(float x, float y)
 {
-    data.currentPath.lineTo(std::move(x), std::move(y));
+    ctx.currentPath.lineTo(std::move(x), std::move(y));
 }
 
 inline void Context::bezierCurveTo(float cp1x, float cp1y, float cp2x, float cp2y, float x, float y)
 {
-    data.currentPath.bezierCurveTo(std::move(cp1x), std::move(cp1y), std::move(cp2x), std::move(cp2y), std::move(x), std::move(y));
+    ctx.currentPath.bezierCurveTo(std::move(cp1x), std::move(cp1y), std::move(cp2x), std::move(cp2y), std::move(x), std::move(y));
 }
 
 inline void Context::quadraticCurveTo(float cpx, float cpy, float x, float y)
 {
-    data.currentPath.quadraticCurveTo(std::move(cpx), std::move(cpy), std::move(x), std::move(y));
+    ctx.currentPath.quadraticCurveTo(std::move(cpx), std::move(cpy), std::move(x), std::move(y));
 }
 
 inline void Context::arc(float x, float y, float radius, float startAngle, float endAngle, bool anticlockwise)
 {
-    data.currentPath.arc(std::move(x), std::move(y), std::move(radius), std::move(startAngle), std::move(endAngle), std::move(anticlockwise));
+    ctx.currentPath.arc(std::move(x), std::move(y), std::move(radius), std::move(startAngle), std::move(endAngle), std::move(anticlockwise));
 }
 
 inline void Context::arcTo(float x1, float y1, float x2, float y2, float radius)
 {
-    data.currentPath.arcTo(std::move(x1), std::move(y1), std::move(x2), std::move(y2), std::move(radius));
+    ctx.currentPath.arcTo(std::move(x1), std::move(y1), std::move(x2), std::move(y2), std::move(radius));
 }
 
 inline void Context::ellipse(float x, float y, float radiusX, float radiusY, float rotation, float startAngle, float endAngle, bool anticlockwise)
 {
-    data.currentPath.ellipse(std::move(x), std::move(y), std::move(radiusX), std::move(radiusY), std::move(rotation), std::move(startAngle), std::move(endAngle), std::move(anticlockwise));
+    ctx.currentPath.ellipse(std::move(x), std::move(y), std::move(radiusX), std::move(radiusY), std::move(rotation), std::move(startAngle), std::move(endAngle), std::move(anticlockwise));
 }
 
 inline void Context::rect(float x, float y, float width, float height)
 {
-    data.currentPath.rect(std::move(x), std::move(y), std::move(width), std::move(height));
+    ctx.currentPath.rect(std::move(x), std::move(y), std::move(width), std::move(height));
 }
 
 inline void Context::fill(FillRule fillRule)
 {
-    fill(data.currentPath, std::move(fillRule));
+    fill(ctx.currentPath, std::move(fillRule));
 }
 
 inline void Context::stroke()
 {
-    stroke(data.currentPath);
+    stroke(ctx.currentPath);
 }
 
 inline void Context::fill(Path2D &path, FillRule fillRule)
 {
     EASY_FUNCTION(profiler::colors::Teal);
 
-    data.pathToNVG(path);
+    ctx.pathToNVG(path);
 
     Color color = fillStyle.innerColor();
-    nvgFillColor(data.ctx, nvgRGBA(color.r, color.g, color.b, color.a));
-    nvgPathWinding(data.ctx, fillRule == nonzero ? NVG_SOLID : NVG_HOLE);
-    nvgFill(data.ctx);
+    nvgFillColor(ctx.nvg, nvgRGBA(color.r, color.g, color.b, color.a));
+    nvgPathWinding(ctx.nvg, fillRule == nonzero ? NVG_SOLID : NVG_HOLE);
+    nvgFill(ctx.nvg);
 }
 
 
@@ -150,64 +150,64 @@ inline void Context::stroke(Path2D &path)
 {
     EASY_FUNCTION(profiler::colors::Teal);
 
-    data.pathToNVG(path);
+    ctx.pathToNVG(path);
 
     Color color = strokeStyle.innerColor();
-    nvgStrokeColor(data.ctx, nvgRGBA(color.r, color.g, color.b, color.a));
-    nvgStrokeWidth(data.ctx, lineWidth);
-    nvgStroke(data.ctx);
+    nvgStrokeColor(ctx.nvg, nvgRGBA(color.r, color.g, color.b, color.a));
+    nvgStrokeWidth(ctx.nvg, lineWidth);
+    nvgStroke(ctx.nvg);
 }
 
 namespace detail
 {
 inline void ContextData::pathToNVG(Path2D &path)
 {
-    nvgBeginPath(ctx);
+    nvgBeginPath(nvg);
 
     for(size_t i = 0; i < path.commands().size(); ++i)
     {
         switch(path.commands().type(i))
         {
         case detail::CLOSE:
-            nvgClosePath(ctx);
+            nvgClosePath(nvg);
             break;
         case detail::MOVE_TO:
-            nvgMoveTo(ctx, path.commands().param0(i), path.commands().param1(i));
+            nvgMoveTo(nvg, path.commands().param0(i), path.commands().param1(i));
             break;
         case detail::LINE_TO:
-            nvgLineTo(ctx, path.commands().param0(i), path.commands().param1(i));
+            nvgLineTo(nvg, path.commands().param0(i), path.commands().param1(i));
             break;
         case detail::BEZIER_TO:
-            nvgBezierTo(ctx,
+            nvgBezierTo(nvg,
                         path.commands().param0(i), path.commands().param1(i),
                         path.commands().param2(i), path.commands().param3(i),
                         path.commands().param4(i), path.commands().param5(i));
             break;
         case detail::QUAD_TO:
-            nvgQuadTo(ctx,
+            nvgQuadTo(nvg,
                       path.commands().param0(i), path.commands().param1(i),
                       path.commands().param2(i), path.commands().param3(i));
             break;
         case detail::ARC:
-            nvgArc(ctx,
+            nvgArc(nvg,
                    path.commands().param0(i), path.commands().param1(i),
                    path.commands().param2(i), path.commands().param3(i),
                    path.commands().param4(i), path.commands().param5(i) > 0.5f ? NVG_CCW : NVG_CW);
             break;
         case detail::ARC_TO:
-            nvgArcTo(ctx,
+            nvgArcTo(nvg,
                      path.commands().param0(i), path.commands().param1(i),
                      path.commands().param2(i), path.commands().param3(i),
                      path.commands().param4(i));
             break;
         case detail::ELLIPSE:
             // TODO figure out how to use rotation, startAngle, endAngle, anticlockwise here...
-            nvgEllipse(ctx,
+            nvgEllipse(nvg,
                        path.commands().param0(i), path.commands().param1(i),
                        path.commands().param2(i), path.commands().param3(i));
             break;
         case detail::RECT:
-            nvgRect(ctx,
+            nvgRect(nvg,
                     path.commands().param0(i), path.commands().param1(i),
                     path.commands().param2(i), path.commands().param3(i));
             break;
