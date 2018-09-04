@@ -132,7 +132,7 @@ inline void Context::beginFrame(int32_t winWidth, int32_t winHeight, float devic
 
     // reset the states.
     ctx.states.resize(0);
-    *static_cast<ContextState*>(this) = detail::ContextState();
+    *static_cast<ContextState*>(this) = ContextState();
 
     ctx.renderViewport(std::move(winWidth), std::move(winHeight), std::move(devicePixelRatio));
 }
@@ -270,76 +270,13 @@ inline void Context::stroke()
 inline void Context::fill(Path2D &path, Fill fillRule)
 {
     EASY_FUNCTION(profiler::colors::Coral);
-
-    ctx.flattenPaths(path, fillRule);
-
-    //ctx.calculateJoins(path, lineJoin, miterLimit);
-
-    // Calculate max vertex usage.
-    size_t cverts = 0;
-    for (size_t i = 0; i < path.subpaths().size(); ++i)
-    {
-        cverts += path.subpaths().points(i).size() + path.subpaths().nbevel(i);
-    }
-
-    ctx.addBatch(&ctx.default2DProgram,
-                 ctx.textures.back(),
-                 static_cast<GLuint>(ctx.indexBuffer.size()),
-                 static_cast<GLsizei>(cverts));
-
-    size_t dst = ctx.vertexBuffer.size();
-    ctx.vertexBuffer.resize(ctx.vertexBuffer.size() + cverts);
-
-    float rangeX = path.boundRight() - path.boundLeft();
-    float rangeY = path.boundBottom() - path.boundTop();
-
-    for (size_t i = 0; i < path.subpaths().size(); i++)
-    {
-        auto &pts = path.subpaths().points(i);
-
-        for (size_t j = 0; j < pts.size(); ++j)
-        {
-            ctx.vertexBuffer[dst].pos.x = pts.x(j);
-            ctx.vertexBuffer[dst].pos.y = pts.y(j);
-            ctx.vertexBuffer[dst].tcoord.s = static_cast<uint16_t>(((((pts.x(j) - path.boundLeft()) / rangeX) * 16.0f) / detail::gfxStates.maxTexSize) * 0xFFFF);
-            ctx.vertexBuffer[dst].tcoord.t = static_cast<uint16_t>(((((pts.y(j) - path.boundTop()) / rangeY) * 16.0f) / detail::gfxStates.maxTexSize) * 0xFFFF);
-            ctx.vertexBuffer[dst].color = fillStyle.innerColor();
-            ctx.indexBuffer.push_back(static_cast<uint16_t>(dst));
-            ++dst;
-        }
-    }
-
-
+    ctx.fill(path, fillRule, fillStyle);
 }
 
 inline void Context::stroke(Path2D &path)
 {
     EASY_FUNCTION(profiler::colors::Coral);
-
-    if (path.dirty())
-    {
-        // TODO fill path's contour points cache.
-
-        path.dirty() = false;
-    }
-
-    if (path.subpaths().size() < 3)
-    {
-        return; // cannot fill with less than 3 points.
-
-    }
-
-    std::vector<Vertex> vertices;
-
-    // TODO contour points into vertices using trokeStyle to populate the u/v coordinates correctly.
-
-    ctx.addBatch(&ctx.default2DProgram,
-                 ctx.textures.back(),
-                 static_cast<GLuint>(ctx.vertexBuffer.size()),
-                 static_cast<GLsizei>(vertices.size()));
-
-    ctx.vertexBuffer.insert(ctx.vertexBuffer.end(), vertices.begin(), vertices.end());
-
+    //ctx.stroke(path, strokeStyle, lineJoin, miterLimit);
 }
 
 

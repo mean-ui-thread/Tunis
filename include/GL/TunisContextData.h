@@ -5,6 +5,7 @@
 #define NOMINMAX 1
 #endif
 
+#include <TunisContextState.h>
 #include <TunisPath2D.h>
 #include <TunisPaint.h>
 #include <TunisTypes.h>
@@ -23,6 +24,8 @@
 //#ifndef TUNIS_MAX_TEXTURE_SIZE
 #define TUNIS_MAX_TEXTURE_SIZE 2048
 //#endif
+
+#define TUNIS_CURVE_RECURSION_LIMIT 14
 
 namespace tunis
 {
@@ -217,158 +220,6 @@ struct BatchArray : public SoA<ShaderProgram*, Texture, size_t, size_t>
     inline size_t &count(size_t i) { return get<3>(i); }
 };
 
-class ContextState
-{
-public:
-
-    /*!
-     * \brief currentTransform the current transformation matrix.
-     */
-    SVGMatrix currentTransform = SVGMatrix(1.0f);
-
-    /*!
-     * \brief strokeStyle specifies the color or style to use for the lines
-     * around shapes. The default is the color black.
-     */
-    Paint strokeStyle = Black;
-
-    /*!
-     * \brief fillStyle specifies the color or style to use inside shapes. The
-     * default is the color black.
-     */
-    Paint fillStyle = Black;
-
-    /*!
-     * \brief globalAlpha specifies the alpha value that is applied to shapes
-     * and images before they are drawn onto the window. The value is in the
-     * range from 0.0 (fully transparent) to 1.0 (fully opaque). The default
-     * value is 1.0.
-     */
-    float globalAlpha = 1.0f;
-
-    /*!
-     * \brief lineWidth sets the thickness of lines in space units. When
-     * getting, it returns the current value (1.0 by default). When setting,
-     * zero, negative, Infinity and NaN values are ignored; otherwise the
-     * current value is set to the new value.
-     */
-    float lineWidth = 1.0f;
-
-    /*!
-     * \brief lineCap determines how the end points of every line are drawn.
-     * There are three possible values for this property and those are: butt,
-     * round and square. By default this property is set to butt.
-     */
-    LineCap lineCap = LineCapButt;
-
-    /*!
-     * \brief lineJoin determines how two connecting segments (of lines, arcs or
-     * curves) with non-zero lengths in a shape are joined together (degenerate
-     * segments with zero lengths, whose specified endpoints and control points
-     * are exactly at the same position, are skipped). There are three possible
-     * values for this property: round, bevel and miter. By default this
-     * property is set to miter.
-     *
-     * \note the lineJoin setting has no effect if the two connected segments
-     * have the same direction, because no joining area will be added in this
-     * case.
-     */
-    LineJoin lineJoin = LineJoinMiter;
-
-    /*!
-     * \brief miterLimit sets the miter limit ratio in space units. When
-     * getting, it returns the current value (10.0 by default). When setting,
-     * zero, negative, Infinity and NaN values are ignored; otherwise the
-     * current value is set to the new value.
-     */
-    float miterLimit = 10.0f;
-
-    /*!
-     * \brief lineDashOffset  sets the line dash pattern offset or "phase" to
-     * achieve a "marching ants" effect, for example.
-     */
-    float lineDashOffset = 0.0f;
-
-    /*!
-     * \brief shadowOffsetX specifies the distance that the shadow will be
-     * offset in horizontal distance.
-     */
-    float shadowOffsetX = 0.0f;
-
-    /*!
-     * \brief shadowOffsetY specifies the distance
-     * that the shadow will be offset in vertical distance.
-     */
-    float shadowOffsetY = 0.0f;
-
-    /*!
-     * \brief shadowBlur specifies the level of the blurring effect; this value
-     * doesn't correspond to a number of pixels and is not affected by the
-     * current transformation matrix. The default value is 0.
-     */
-    float shadowBlur = 0.0f;
-
-    /*!
-     * \brief shadowColor specifies the color of the shadow. The default value
-     * is fully-transparent black.
-     */
-    Color shadowColor = Transparent;
-
-    /*!
-     * \brief globalCompositeOperation sets the type of compositing operation to
-     * apply when drawing new shapes, where type is a string identifying which
-     * of the compositing or blending mode operations to use. The default is
-     * CompositeOpSourceOver
-     */
-    CompositeOp globalCompositeOperation = CompositeOpSourceOver;
-
-    /*!
-     * \brief font specifies the current text style being used when drawing
-     * text. This string uses the same syntax as the CSS font specifier. The
-     * default font is '10px sans-serif'.
-     */
-    std::string font = "10px sans-serif";
-
-    /*!
-     * \brief textAlign specifies the current text alignment being used when
-     * drawing text. Beware that the alignment is based on the x value of the
-     * fillText() method. So if textAlign is "center", then the text would be
-     * drawn at x - (width / 2). The default value is TextAlignStart.
-     */
-    TextAlign textAlign = TextAlignStart;
-
-    /*!
-     * \brief textBaseline  specifies the current text baseline being used when
-     * drawing text. The default value is TextBaselineAlphabetic.
-     */
-    TextBaseline textBaseline = TextBaselineAlphabetic;
-
-    /*!
-     * \brief direction I specifies the current text direction used when drawing
-     * text.
-     */
-    Direction direction = DirectionInherit;
-
-    /*!
-     * \brief imageSmoothingEnabled can be set to change if images are smoothed
-     * (true, default) or not (false). On getting the imageSmoothingEnabled
-     * property, the last value it was set to, is returned.
-     *
-     * This property is useful for pixel-art themed games, when scaling the
-     * window for example. The default resizing algorithm can create blurry
-     * effects and ruins the beautiful pixels. Set this property to false in
-     * that case.
-     */
-    bool imageSmoothingEnabled = true;
-
-protected:
-
-
-    Path2D clipRegion;
-    std::vector<float> lineDashes;
-
-};
-
 struct ContextData
 {
     std::vector<ContextState> states;
@@ -453,7 +304,7 @@ struct ContextData
 
         indexBuffer.insert(indexBuffer.end(), {
                                tl, bl, br,   // first triangle
-                               br, tr, tl    // second triangle
+                               tl, br, tr    // second triangle
                            });
 
         /*
@@ -521,12 +372,12 @@ struct ContextData
     }
 
 
-    size_t addSubPath(Path2D &path, float startX, float startY)
+    size_t addSubPath(detail::SubPath2DArray &subpaths, float startX, float startY)
     {
         detail::PointArray points;
         addPoint(points, std::move(startX), std::move(startY), PointCorner);
-        path.subpaths().push(std::move(points), false, 0);
-        return path.subpaths().size();
+        subpaths.push(std::move(points), false, 0);
+        return subpaths.size();
     }
 
     void addPoint(detail::PointArray &points, float x, float y, PointMask flags)
@@ -545,54 +396,140 @@ struct ContextData
         points.push(std::move(x), std::move(y), 0, 0, 0, 0, 0, std::move(flags));
     }
 
-    void tesselateBezier(detail::PointArray &points,
-                         float x1, float y1, float x2, float y2,
-                         float x3, float y3, float x4, float y4,
-                         int level, PointMask type)
+    float calcSqrtDistance(float x1, float y1, float x2, float y2)
     {
-        float x12,y12,x23,y23,x34,y34,x123,y123,x234,y234,x1234,y1234;
-        float dx,dy,d2,d3;
+        float dx = x2-x1;
+        float dy = y2-y1;
+        return dx * dx + dy * dy;
+    }
 
-        if (level > 10) return;
+    // based of http://antigrain.com/__code/src/agg_curves.cpp.html by Maxim Shemanarev
+    inline void recursiveBezier(detail::PointArray &points,
+                                float x1, float y1,
+                                float x2, float y2,
+                                float x3, float y3,
+                                float x4, float y4,
+                                unsigned level, PointMask type)
+    {
+        static constexpr float curve_angle_tolerance_epsilon = 0.01f;
+        static constexpr unsigned curve_recursion_limit = 32;
 
-        x12 = (x1+x2)*0.5f;
-        y12 = (y1+y2)*0.5f;
-        x23 = (x2+x3)*0.5f;
-        y23 = (y2+y3)*0.5f;
-        x34 = (x3+x4)*0.5f;
-        y34 = (y3+y4)*0.5f;
-        x123 = (x12+x23)*0.5f;
-        y123 = (y12+y23)*0.5f;
-
-        dx = x4 - x1;
-        dy = y4 - y1;
-        d2 = glm::abs(((x2 - x4) * dy - (y2 - y4) * dx));
-        d3 = glm::abs(((x3 - x4) * dy - (y3 - y4) * dx));
-
-        if ((d2 + d3)*(d2 + d3) < tessTol * (dx*dx + dy*dy))
+        if(level > curve_recursion_limit)
         {
-            addPoint(points, std::move(x4), std::move(y4), std::move(type));
             return;
         }
 
-        x234 = (x23+x34)*0.5f;
-        y234 = (y23+y34)*0.5f;
-        x1234 = (x123+x234)*0.5f;
-        y1234 = (y123+y234)*0.5f;
+        // Calculate all the mid-points of the line segments
+        //----------------------
+        float x12   = (x1 + x2) / 2;
+        float y12   = (y1 + y2) / 2;
+        float x23   = (x2 + x3) / 2;
+        float y23   = (y2 + y3) / 2;
+        float x34   = (x3 + x4) / 2;
+        float y34   = (y3 + y4) / 2;
+        float x123  = (x12 + x23) / 2;
+        float y123  = (y12 + y23) / 2;
+        float x234  = (x23 + x34) / 2;
+        float y234  = (y23 + y34) / 2;
+        float x1234 = (x123 + x234) / 2;
+        float y1234 = (y123 + y234) / 2;
 
-        tesselateBezier(points,
-                        std::move(x1), std::move(y1),
-                        std::move(x12), std::move(y12),
-                        std::move(x123), std::move(y123),
-                        x1234, y1234,
-                        level+1, 0);
+        // Try to approximate the full cubic curve by a single straight line
+        //------------------
+        float dx = x4-x1;
+        float dy = y4-y1;
 
-        tesselateBezier(points, std::move(x1234), std::move(y1234),
-                        x234, y234,
-                        x34, y34,
-                        x4, y4,
-                        level+1, type);
+        float d2 = glm::abs(((x2 - x4) * dy - (y2 - y4) * dx));
+        float d3 = glm::abs(((x3 - x4) * dy - (y3 - y4) * dx));
+        float da1, da2, k;
 
+        switch((int(d2 > glm::epsilon<float>()) << 1) + int(d3 > glm::epsilon<float>()))
+        {
+        case 0:
+            // All collinear OR p1==p4
+            //----------------------
+            k = dx*dx + dy*dy;
+            if(glm::epsilonEqual(k, 0.0f, glm::epsilon<float>()))
+            {
+                d2 = calcSqrtDistance(x1, y1, x2, y2);
+                d3 = calcSqrtDistance(x4, y4, x3, y3);
+            }
+            else
+            {
+                k   = 1 / k;
+                da1 = x2 - x1;
+                da2 = y2 - y1;
+                d2  = k * (da1*dx + da2*dy);
+                da1 = x3 - x1;
+                da2 = y3 - y1;
+                d3  = k * (da1*dx + da2*dy);
+                if(d2 > 0 && d2 < 1 && d3 > 0 && d3 < 1)
+                {
+                    // Simple collinear case, 1---2---3---4
+                    // We can leave just two endpoints
+                    return;
+                }
+                     if(d2 <= 0) d2 = calcSqrtDistance(x2, y2, x1, y1);
+                else if(d2 >= 1) d2 = calcSqrtDistance(x2, y2, x4, y4);
+                else             d2 = calcSqrtDistance(x2, y2, x1 + d2*dx, y1 + d2*dy);
+
+                     if(d3 <= 0) d3 = calcSqrtDistance(x3, y3, x1, y1);
+                else if(d3 >= 1) d3 = calcSqrtDistance(x3, y3, x4, y4);
+                else             d3 = calcSqrtDistance(x3, y3, x1 + d3*dx, y1 + d3*dy);
+            }
+            if(d2 > d3)
+            {
+                if(d2 < tessTol)
+                {
+                    addPoint(points, x2, y2, type);
+                    return;
+                }
+            }
+            else
+            {
+                if(d3 < tessTol)
+                {
+                    addPoint(points, x3, y3, type);
+                    return;
+                }
+            }
+            break;
+
+        case 1:
+            // p1,p2,p4 are collinear, p3 is significant
+            //----------------------
+            if(d3 * d3 <= tessTol * (dx*dx + dy*dy))
+            {
+                addPoint(points, x23, y23, type);
+                return;
+            }
+            break;
+
+        case 2:
+            // p1,p3,p4 are collinear, p2 is significant
+            //----------------------
+            if(d2 * d2 <= tessTol * (dx*dx + dy*dy))
+            {
+                addPoint(points, x23, y23, type);
+                return;
+            }
+            break;
+
+        case 3:
+            // Regular case
+            //-----------------
+            if((d2 + d3)*(d2 + d3) <= tessTol * (dx*dx + dy*dy))
+            {
+                addPoint(points, x23, y23, type);
+                return;
+            }
+            break;
+        }
+
+        // Continue subdivision
+        //----------------------
+        recursiveBezier(points, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1, 0);
+        recursiveBezier(points, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1, type);
     }
 
     float triarea2(float ax, float ay, float bx, float by, float cx, float cy)
@@ -611,7 +548,7 @@ struct ContextData
         {
             area += triarea2(pts.x(0), pts.y(0),
                              pts.x(i-1), pts.y(i-1),
-                             pts.x(i), pts.x(i));
+                             pts.x(i), pts.y(i));
         }
         return area * 0.5f;
     }
@@ -639,48 +576,53 @@ struct ContextData
         return d;
     }
 
-    void flattenPaths(Path2D &path, Fill fillRule)
+    void updatePath(Path2D &path, Fill fillRule)
     {
         uint8_t &dirty = path.dirty();
         Fill &rFillRule = path.fillRule();
 
         if (dirty || rFillRule != fillRule)
         {
-            size_t ptID;
-            size_t npaths = 0;
+            detail::SubPath2DArray &subpaths = path.subpaths();
+            detail::PathCommandArray &commands = path.commands();
+            float &boundTop = path.boundTop();
+            float &boundRight = path.boundRight();
+            float &boundBottom = path.boundBottom();
+            float &boundLeft = path.boundLeft();
 
-            auto &subpaths = path.subpaths();
-            auto &commands = path.commands();
+            size_t lastPointID;
+            size_t subPathCount = 0;
 
+            // reset to default.
             subpaths.resize(0);
+            boundTop = FLT_MAX;
+            boundRight = -FLT_MAX;
+            boundBottom = -FLT_MAX;
+            boundLeft = FLT_MAX;
 
             for(size_t i = 0; i < commands.size(); ++i)
             {
                 switch(commands.type(i))
                 {
                 case detail::CLOSE:
-                    if (npaths > 0)
+                    if (subPathCount > 0)
                     {
-                        subpaths.closed(npaths-1) = true;
+                        subpaths.closed(subPathCount-1) = true;
                     }
                     break;
                 case detail::MOVE_TO:
-                {
-                    npaths = addSubPath(path, commands.param0(i), commands.param1(i));
+                    subPathCount = addSubPath(subpaths, commands.param0(i), commands.param1(i));
                     break;
-                }
                 case detail::LINE_TO:
-                {
-                    if (npaths == 0) { npaths = addSubPath(path, 0, 0); }
-                    addPoint(subpaths.points(npaths-1), commands.param0(i), commands.param1(i), PointCorner);
+                    if (subPathCount == 0) { subPathCount = addSubPath(subpaths, 0, 0); }
+                    addPoint(subpaths.points(subPathCount-1), commands.param0(i), commands.param1(i), PointCorner);
                     break;
-                }
                 case detail::BEZIER_TO:
-                    if (npaths == 0) { npaths = addSubPath(path, 0, 0); }
-                    ptID = subpaths.points(npaths-1).size() - 1;
-                    tesselateBezier(subpaths.points(npaths-1),
-                                    subpaths.points(npaths-1).x(ptID),
-                                    subpaths.points(npaths-1).y(ptID),
+                    if (subPathCount == 0) { subPathCount = addSubPath(subpaths, 0, 0); }
+                    lastPointID = subpaths.points(subPathCount-1).size() - 1;
+                    recursiveBezier(subpaths.points(subPathCount-1),
+                                    subpaths.points(subPathCount-1).x(lastPointID),
+                                    subpaths.points(subPathCount-1).y(lastPointID),
                                     commands.param0(i), commands.param1(i),
                                     commands.param2(i), commands.param3(i),
                                     commands.param4(i), commands.param5(i),
@@ -689,10 +631,10 @@ struct ContextData
                     break;
                 case detail::QUAD_TO:
                 {
-                    if (npaths == 0) { npaths = addSubPath(path, 0, 0); }
-                    ptID = subpaths.points(npaths-1).size() - 1;
-                    float x0 = subpaths.points(npaths-1).x(ptID);
-                    float y0 = subpaths.points(npaths-1).y(ptID);
+                    if (subPathCount == 0) { subPathCount = addSubPath(subpaths, 0, 0); }
+                    lastPointID = subpaths.points(subPathCount-1).size() - 1;
+                    float x0 = subpaths.points(subPathCount-1).x(lastPointID);
+                    float y0 = subpaths.points(subPathCount-1).y(lastPointID);
                     float cx = commands.param0(i);
                     float cy = commands.param1(i);
                     float x = commands.param2(i);
@@ -701,7 +643,7 @@ struct ContextData
                     float c1y = y0 + 2.0f/3.0f*(cy - y0);
                     float c2x = x + 2.0f/3.0f*(cx - x);
                     float c2y = y + 2.0f/3.0f*(cy - y);
-                    tesselateBezier(subpaths.points(npaths-1),
+                    recursiveBezier(subpaths.points(subPathCount-1),
                                     std::move(x0), std::move(y0),
                                     std::move(c1x), std::move(c1y),
                                     std::move(c2x), std::move(c2y),
@@ -724,139 +666,155 @@ struct ContextData
                 }
             }
 
-            auto &boundTop = path.boundTop();
-            auto &boundRight = path.boundRight();
-            auto &boundBottom = path.boundBottom();
-            auto &boundLeft = path.boundLeft();
+            // From this point, all of the commands have all been executed and
+            // we should have 1 or more subpaths with contour points in them.
 
-            boundTop = FLT_MAX;
-            boundRight = -FLT_MAX;
-            boundBottom = -FLT_MAX;
-            boundLeft = FLT_MAX;
-
-            // Calculate the direction and length of line segments.
-            for (size_t j = 0; j < npaths; ++j)
+            for (size_t i = 0; i < subPathCount; ++i)
             {
-                auto &pts = subpaths.points(j);
-                size_t ptCount = pts.size();
-                size_t p0 = ptCount - 1;
-                size_t p1 = 0;
+                auto &points = subpaths.points(i);
+                size_t &bevelCount = subpaths.bevelCount(i);
 
-                // If the first and last points are the same, remove the last, mark as closed path.
-                if (glm::epsilonEqual(pts.x(p0), pts.x(p1), distTol) &&
-                        glm::epsilonEqual(pts.y(p0), pts.y(p1), distTol))
+                bevelCount = 0;
+                lastPointID = points.size() - 1;
+
+                // Check if the first and last point are the same. Get rid of
+                // the last point if that is the case, and close the subpath.
+                if (glm::epsilonEqual(points.x(0), points.x(lastPointID), distTol) &&
+                        glm::epsilonEqual(points.y(0), points.y(lastPointID), distTol))
                 {
-                    pts.pop_back();
-                    subpaths.closed(j) = true;
+                    points.pop_back();
+                    subpaths.closed(i) = true;
                 }
 
-//                // Enforce winding.
-//                if (ptCount > 2)
-//                {
-//                    float area = polyArea(pts);
-
-//                    if (fillRule == FillNonZero && area > 0.0f)
-//                    {
-//                        polyReverse(pts);
-//                    }
-//                    else if(fillRule == FillEvenOdd && area < 0.0f)
-//                    {
-//                        polyReverse(pts);
-//                    }
-//                }
-
-                for(size_t i = 0; i < ptCount; ++i)
+                // check if we're still a polygon, reset the subpath if we lost
+                // this status.
+                if (points.size() <= 2)
                 {
-                    // Calculate segment direction and length
-                    pts.dx(p0) = pts.x(p1) - pts.x(p0);
-                    pts.dy(p0) = pts.y(p1) - pts.y(p0);
-                    pts.len(p0) = normalize(pts.dx(p0), pts.dy(p0));
-
-                    // Update bounds
-                    boundLeft = glm::min(boundLeft, pts.x(p0));
-                    boundTop = glm::min(boundTop, pts.y(p0));
-                    boundRight = glm::max(boundRight, pts.x(p0));
-                    boundBottom = glm::max(boundBottom, pts.y(p0));
-
-                    // Advance
-                    p0 = p1++;
+                    points.resize(0);
+                    continue;
                 }
+
+                // make sure the polygon contour vertices are always
+                // counter-clock wise. a negative polygon area is going to
+                // indicate that situation.
+                if (polyArea(points) < 0.0f)
+                {
+                    polyReverse(points);
+                }
+
+                // Calculate direction vectors and update subpath's bounding box
+                size_t prevPointID = lastPointID;
+                for(size_t j = 0; j < points.size(); ++j)
+                {
+                    float &currX = points.x(j);
+                    float &currY = points.y(j);
+                    float &prevX = points.x(prevPointID);
+                    float &prevY = points.y(prevPointID);
+                    float &prevDirX = points.dirX(prevPointID);
+                    float &prevDirY = points.dirY(prevPointID);
+                    float &prevLenght = points.dirLen(prevPointID);
+                    prevDirX = currX - prevX;
+                    prevDirY = currY - prevY;
+                    prevLenght = normalize(prevDirX, prevDirY);
+
+                    boundLeft = glm::min(boundLeft, prevX);
+                    boundTop = glm::min(boundTop, prevY);
+                    boundRight = glm::max(boundRight, prevX);
+                    boundBottom = glm::max(boundBottom, prevY);
+
+                    prevPointID = j;
+                }
+
             }
 
-            path.dirty() = false;
-            path.fillRule() = std::move(fillRule);
+            dirty = false;
+            rFillRule = std::move(fillRule);
         }
     }
 
-    void calculateJoins(Path2D &path, LineJoin lineJoin, float miterLimit)
+    inline void fill(Path2D &path, Fill fillRule, Paint &fillStyle)
     {
-        // Calculate which joins needs extra vertices to append, and gather vertex count.
-        for (size_t i = 0; i < path.subpaths().size(); ++i)
+        updatePath(path, fillRule);
+
+        auto &subpaths = path.subpaths();
+
+        // convexity calculations
+        size_t vertexCount = 0;
+        bool convex = true;
+        for(size_t i = 0; i < subpaths.size(); ++i)
         {
-            auto &pts = path.subpaths().points(i);
+            auto &points = subpaths.points(i);
+            vertexCount += points.size();
 
-            size_t p0 = pts.size() - 1;
-            size_t p1 = 0;
-            int nleft = 0;
-
-            path.subpaths().nbevel(i) = 0;
-
-            for (size_t j = 0; j < pts.size(); j++)
+            if (convex)
             {
-                float dlx0, dly0, dlx1, dly1, dmr2, cross, limit;
-                dlx0 = pts.dy(p0);
-                dly0 = -pts.dx(p0);
-                dlx1 = pts.dy(p1);
-                dly1 = -pts.dx(p1);
-
-                // Calculate extrusions
-                pts.dmx(p1) = (dlx0 + dlx1) * 0.5f;
-                pts.dmy(p1) = (dly0 + dly1) * 0.5f;
-                dmr2 = pts.dmx(p1) * pts.dmx(p1) + pts.dmy(p1) * pts.dmy(p1);
-                if (dmr2 > 0.000001f)
+                size_t leftTurnCount = 0;
+                size_t prevPointID = points.size() - 1;
+                for (size_t j = 0; j < points.size(); j++)
                 {
-                    float scale = 1.0f / dmr2;
-                    if (scale > 600.0f)
+                    float &dirX = points.dirX(j);
+                    float &dirY = points.dirY(j);
+                    float &prevDirX = points.dirX(prevPointID);
+                    float &prevDirY = points.dirY(prevPointID);
+                    float cross = dirX * prevDirY - prevDirX * dirY;
+                    if (cross > 0.0f)
                     {
-                        scale = 600.0f;
+                        ++leftTurnCount;
                     }
-                    pts.dmx(p1) *= scale;
-                    pts.dmy(p1) *= scale;
+
+                    prevPointID = j;
                 }
 
-                // Clear flags, but keep the corner.
-                pts.flags(p1) = (pts.flags(p1) & PointCorner) ? PointCorner : 0;
-
-                // Keep track of left turns.
-                cross = pts.dx(p1) * pts.dy(p0) - pts.dx(p0) * pts.dy(p1);
-                if (cross > 0.0f)
-                {
-                    nleft++;
-                    pts.flags(p1) |= PointLeft;
-                }
-
-                // Calculate if we should use bevel or miter for inner join.
-                limit = 1.01f;
-                if ((dmr2 * limit*limit) < 1.0f)
-                    pts.flags(p1) |= PointInnerBevel;
-
-                // Check to see if the corner needs to be beveled.
-                if (pts.flags(p1) & PointCorner)
-                {
-                    if ((dmr2 * miterLimit*miterLimit) < 1.0f || lineJoin == LineJoinBevel || lineJoin == LineJoinRound)
-                    {
-                        pts.flags(p1) |= PointBevel;
-                    }
-                }
-
-                if ((pts.flags(p1) & (PointBevel | PointInnerBevel)) != 0)
-                    path.subpaths().nbevel(i)++;
-
-                p0 = p1++;
+                convex = leftTurnCount == points.size();
             }
         }
-    }
 
+        if (convex)
+        {
+            size_t offset = indexBuffer.size();
+            size_t elemCount = (vertexCount - 2) * 3;
+
+            size_t vstart = vertexBuffer.size();
+            size_t vend = vstart + vertexCount;
+
+            addBatch(&default2DProgram,
+                         textures.back(),
+                         static_cast<GLuint>(offset),
+                         static_cast<GLsizei>(elemCount));
+
+            indexBuffer.resize(offset + elemCount);
+            vertexBuffer.resize(vend);
+
+            float rangeX = path.boundRight() - path.boundLeft();
+            float rangeY = path.boundBottom() - path.boundTop();
+
+            for (size_t i = 0; i < subpaths.size(); i++)
+            {
+                auto &pts = subpaths.points(i);
+
+                for (size_t j = vstart; j < vend; ++j)
+                {
+                    vertexBuffer[j].pos.x = pts.x(j);
+                    vertexBuffer[j].pos.y = pts.y(j);
+                    vertexBuffer[j].tcoord.s = static_cast<uint16_t>(((((pts.x(j) - path.boundLeft()) / rangeX) * 16.0f) / detail::gfxStates.maxTexSize) * 0xFFFF);
+                    vertexBuffer[j].tcoord.t = static_cast<uint16_t>(((((pts.y(j) - path.boundTop()) / rangeY) * 16.0f) / detail::gfxStates.maxTexSize) * 0xFFFF);
+                    vertexBuffer[j].color = fillStyle.innerColor();
+
+                    if (j > 2)
+                    {
+                        indexBuffer[offset++] = static_cast<uint16_t>(vstart);
+                        indexBuffer[offset++] = static_cast<uint16_t>(j - 1);
+                    }
+                    indexBuffer[offset++] = static_cast<uint16_t>(j);
+                }
+            }
+        }
+        else
+        {
+            // TODO : Concave shape by triangulation using libtess2
+        }
+
+    }
 
 };
 

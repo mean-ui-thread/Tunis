@@ -16,7 +16,7 @@ namespace detail
 struct GlobalContextData
 {
     NVGcontext *nvg = nullptr;
-    Color backgroundColor = color::Transparent;
+    Color backgroundColor = Transparent;
     Viewport viewport = Viewport(0, 0, 100, 100);
 };
 

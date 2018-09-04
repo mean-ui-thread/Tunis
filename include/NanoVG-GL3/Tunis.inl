@@ -123,7 +123,7 @@ inline void Context::rect(float x, float y, float width, float height)
     ctx.currentPath.rect(std::move(x), std::move(y), std::move(width), std::move(height));
 }
 
-inline void Context::fill(FillRule fillRule)
+inline void Context::fill(Fill fillRule)
 {
     fill(ctx.currentPath, std::move(fillRule));
 }
@@ -133,7 +133,7 @@ inline void Context::stroke()
     stroke(ctx.currentPath);
 }
 
-inline void Context::fill(Path2D &path, FillRule fillRule)
+inline void Context::fill(Path2D &path, Fill fillRule)
 {
     EASY_FUNCTION(profiler::colors::Teal);
 
@@ -141,7 +141,7 @@ inline void Context::fill(Path2D &path, FillRule fillRule)
 
     Color color = fillStyle.innerColor();
     nvgFillColor(ctx.nvg, nvgRGBA(color.r, color.g, color.b, color.a));
-    nvgPathWinding(ctx.nvg, fillRule == nonzero ? NVG_SOLID : NVG_HOLE);
+    nvgPathWinding(ctx.nvg, fillRule == FillNonZero ? NVG_SOLID : NVG_HOLE);
     nvgFill(ctx.nvg);
 }
 

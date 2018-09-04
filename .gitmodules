@@ -4,3 +4,9 @@
 [submodule "3rdparty/nanovg"]
 	path = 3rdparty/nanovg
 	url = https://github.com/memononen/nanovg.git
+[submodule "3rdparty/libtess2"]
+	path = 3rdparty/libtess2
+	url = https://github.com/memononen/libtess2
+[submodule "3rdparty/StructureOfArrays"]
+	path = 3rdparty/StructureOfArrays
+	url = https://github.com/Lunarsong/StructureOfArrays.git

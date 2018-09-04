@@ -1,6 +1,7 @@
 #ifndef TUNIS_H
 #define TUNIS_H
 
+#include <TunisContextState.h>
 #include <TunisContextData.h>
 #include <TunisColor.h>
 #include <TunisPaint.h>
@@ -13,7 +14,7 @@ namespace tunis
 
 struct ContextData;
 
-class Context : public detail::ContextState
+class Context : public ContextState
 {
 public:
 

@@ -55,9 +55,9 @@ struct PointArray : public SoA<float, float, float, float, float, float, float, 
 {
     inline float &x(size_t idx) { return get<0>(idx); }
     inline float &y(size_t idx) { return get<1>(idx); }
-    inline float &dx(size_t idx) { return get<2>(idx); }
-    inline float &dy(size_t idx) { return get<3>(idx); }
-    inline float &len(size_t idx) { return get<4>(idx); }
+    inline float &dirX(size_t idx) { return get<2>(idx); }
+    inline float &dirY(size_t idx) { return get<3>(idx); }
+    inline float &dirLen(size_t idx) { return get<4>(idx); }
     inline float &dmx(size_t idx) { return get<5>(idx); }
     inline float &dmy(size_t idx) { return get<6>(idx); }
     inline PointMask &flags(size_t idx) { return get<7>(idx); }
@@ -67,7 +67,7 @@ struct SubPath2DArray : public SoA<PointArray, uint8_t, size_t>
 {
     inline PointArray &points(size_t idx) { return get<0>(idx); }
     inline uint8_t &closed(size_t idx) { return get<1>(idx); }
-    inline size_t &nbevel(size_t idx) { return get<2>(idx); }
+    inline size_t &bevelCount(size_t idx) { return get<2>(idx); }
 };
 
 }

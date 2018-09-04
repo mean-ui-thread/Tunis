@@ -1,7 +1,5 @@
 #include "SampleApp.h"
 
-#include <stdio.h>
-
 const char *SampleApp::getSampleName() { return "04_MovingThePen"; }
 int SampleApp::getWindowWidth() { return 320; }
 int SampleApp::getWindowHeight() { return 200; }

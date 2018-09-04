@@ -48,16 +48,34 @@ add_library(Tunis
     include/TunisTypes.h
     include/TunisVertex.h
 
-    # From https://github.com/Lunarsong/StructureOfArrays
-    include/StructureOfArrays/soa.h
-    include/StructureOfArrays/mapped_soa.h
-    include/StructureOfArrays/LICENSE
+    # libtess2
+    3rdparty/libtess2/Include/tesselator.h
+    3rdparty/libtess2/Source/
+    3rdparty/libtess2/Source/bucketalloc.c
+    3rdparty/libtess2/Source/bucketalloc.h
+    3rdparty/libtess2/Source/dict.c
+    3rdparty/libtess2/Source/dict.h
+    3rdparty/libtess2/Source/geom.c
+    3rdparty/libtess2/Source/geom.h
+    3rdparty/libtess2/Source/mesh.c
+    3rdparty/libtess2/Source/mesh.h
+    3rdparty/libtess2/Source/priorityq.c
+    3rdparty/libtess2/Source/priorityq.h
+    3rdparty/libtess2/Source/sweep.c
+    3rdparty/libtess2/Source/sweep.h
+    3rdparty/libtess2/Source/tess.c
+    3rdparty/libtess2/Source/tess.h
+
+    # StructureOfArrays from https://github.com/Lunarsong/StructureOfArrays
+    3rdparty/StructureOfArrays/include/mapped_soa.h
+    3rdparty/StructureOfArrays/include/soa.h
 )
 
 target_include_directories(Tunis
     PUBLIC include
     PUBLIC include/${TUNIS_BACKEND}
-    PUBLIC include/StructureOfArrays
+    PUBLIC 3rdparty/libtess2/Include
+    PUBLIC 3rdparty/StructureOfArrays/include
     PRIVATE src
     PRIVATE src/${TUNIS_BACKEND}
 )
