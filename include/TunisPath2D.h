@@ -51,16 +51,11 @@ struct PathCommandArray : public SoA<PathCommandType, float, float,float, float,
 };
 
 
-struct PointArray : public SoA<float, float, float, float, float, float, float, PointMask>
+struct PointArray : public SoA<glm::vec2, glm::vec2, PointMask>
 {
-    inline float &x(size_t idx) { return get<0>(idx); }
-    inline float &y(size_t idx) { return get<1>(idx); }
-    inline float &dirX(size_t idx) { return get<2>(idx); }
-    inline float &dirY(size_t idx) { return get<3>(idx); }
-    inline float &dirLen(size_t idx) { return get<4>(idx); }
-    inline float &dmx(size_t idx) { return get<5>(idx); }
-    inline float &dmy(size_t idx) { return get<6>(idx); }
-    inline PointMask &flags(size_t idx) { return get<7>(idx); }
+    inline glm::vec2 &pos(size_t idx) { return get<0>(idx); }
+    inline glm::vec2 &dir(size_t idx) { return get<1>(idx); }
+    inline PointMask &flags(size_t idx) { return get<2>(idx); }
 };
 
 struct SubPath2DArray : public SoA<PointArray, uint8_t, size_t>
@@ -72,16 +67,14 @@ struct SubPath2DArray : public SoA<PointArray, uint8_t, size_t>
 
 }
 
-class Path2D : public RefCountedSOA<detail::PathCommandArray, detail::SubPath2DArray, uint8_t, Fill, float, float, float, float>
+class Path2D : public RefCountedSOA<detail::PathCommandArray, detail::SubPath2DArray, uint8_t, Fill, glm::vec2, glm::vec2>
 {
     inline detail::PathCommandArray &commands() { return get<0>(); }
     inline detail::SubPath2DArray &subpaths() { return get<1>(); }
     inline uint8_t &dirty() { return get<2>(); }
     inline Fill &fillRule() { return get<3>(); }
-    inline float &boundTop() { return get<4>(); }
-    inline float &boundRight() { return get<5>(); }
-    inline float &boundBottom() { return get<6>(); }
-    inline float &boundLeft() { return get<7>(); }
+    inline glm::vec2 &boundTopLeft() { return get<4>(); }
+    inline glm::vec2 &boundBottomRight() { return get<5>(); }
 
     friend Context;
     friend detail::ContextData;

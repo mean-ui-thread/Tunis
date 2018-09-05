@@ -21,22 +21,14 @@ add_library(Tunis
     cmake/BuildOptions.cmake
     cmake/Hunter/config.cmake
 
-    src/${TUNIS_BACKEND}/Backend.cmake
-    src/${TUNIS_BACKEND}/Tunis.cpp
-    src/${TUNIS_BACKEND}/TunisTexture.cpp
-
-    src/TunisColor.cpp
-    include/TunisColor.h
-
-    include/TunisPaint.h
-
-    include/TunisPath2D.h
-    include/TunisPath2D.inl
-
-    include/Tunis.h
     include/${TUNIS_BACKEND}/Tunis.inl
     include/${TUNIS_BACKEND}/TunisContextData.h
+    include/Tunis.h
+    include/TunisColor.h
     include/TunisMath.h
+    include/TunisPaint.h
+    include/TunisPath2D.h
+    include/TunisPath2D.inl
     include/TunisRect.h
     include/TunisRect.inl
     include/TunisRenderState.h
@@ -47,6 +39,10 @@ add_library(Tunis
     include/TunisTexture.h
     include/TunisTypes.h
     include/TunisVertex.h
+    src/${TUNIS_BACKEND}/Backend.cmake
+    src/${TUNIS_BACKEND}/Tunis.cpp
+    src/${TUNIS_BACKEND}/TunisTexture.cpp
+    src/TunisColor.cpp
 
     # libtess2
     3rdparty/libtess2/Include/tesselator.h

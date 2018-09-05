@@ -197,10 +197,10 @@ tunis::Color::Color(const char* colorName)
         }
 
         // parse error
-        r=0.0f;
-        g=0.0f;
-        b=0.0f;
-        a=0.0f;
+        r=0;
+        g=0;
+        b=0;
+        a=0;
     }
 
 #if defined(_MSC_VER)

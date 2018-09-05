@@ -14,8 +14,8 @@
 #include <TunisGL.h>
 
 #include <easy/profiler.h>
-
 #include <glm/gtc/epsilon.hpp>
+#include <tesselator.h>
 
 #ifndef TUNIS_VERTEX_MAX
 #define TUNIS_VERTEX_MAX 16384
@@ -36,6 +36,13 @@ namespace detail
 {
 
 struct ShaderProgram;
+
+struct MemPool
+{
+    uint8_t* buf;
+    size_t cap;
+    size_t size;
+};
 
 struct GraphicStates
 {
@@ -245,12 +252,49 @@ struct ContextData
 
     BatchArray batches;
 
+    TESSalloc ma;
+    TESStesselator* tess = nullptr;
+    MemPool pool;
+    std::vector<uint8_t> mem;
+
     float tessTol = 0.25f;
     float distTol = 0.01f;
 
-    void addBatch(ShaderProgram *program, Texture texture, size_t offset, size_t count)
+    void addBatch(ShaderProgram *program, Texture texture, size_t vertexCount, Vertex **out)
     {
         EASY_FUNCTION(profiler::colors::DarkRed);
+
+        assert(vertexCount >= 3);
+
+        size_t elemCount = (vertexCount - 2) * 3;
+
+        size_t offset = indexBuffer.size();
+        size_t iend = offset + elemCount;
+
+        size_t vstart = vertexBuffer.size();
+        size_t vend = vstart + vertexCount;
+
+        indexBuffer.resize(iend);
+        vertexBuffer.resize(vend);
+
+        *out = &vertexBuffer[vstart];
+
+        /*
+         * Note:
+         *
+         * Vertex is Position(2floats=8bytes)+TCoord(2xshort=4bytes)+Color(4bytes) = 16 bytes
+         *
+         * A rectangle is 4 vertices = 64 bytes + 6 indicies (12 bytes) = 76 bytes per rectangle.
+         *
+         * Without an IBO, it would have been 6 vertices = 96 bytes, so using an ibo
+         * saves us 20 bytes per rectangles.
+         */
+        for (size_t i = offset, v = vstart; i < iend; i+=3, ++v)
+        {
+            indexBuffer[i] = static_cast<uint16_t>(vstart);
+            indexBuffer[i+1]= static_cast<uint16_t>(v+1);
+            indexBuffer[i+2] = static_cast<uint16_t>(v+2);
+        }
 
         if (batches.size() > 0)
         {
@@ -259,7 +303,7 @@ struct ContextData
             if (batches.program(id) == program && batches.texture(id) == texture)
             {
                 // the batch may continue
-                batches.count(id) += count;
+                batches.count(id) += elemCount;
                 return;
             }
         }
@@ -269,7 +313,7 @@ struct ContextData
         batches.push(std::move(program),
                      std::move(texture),
                      std::move(offset),
-                     std::move(count));
+                     std::move(elemCount));
     }
 
     void pushColorRect(float x, float y, float w, float h, const Color &color)
@@ -287,37 +331,13 @@ struct ContextData
             (bl)-------->(br)
         */
 
-        // TODO prevent 16bit index overflow here.
-        uint16_t tl = static_cast<uint16_t>(vertexBuffer.size());
-        uint16_t bl = tl+1;
-        uint16_t br = tl+2;
-        uint16_t tr = tl+3;
+        Vertex *vertices;
+        addBatch(&default2DProgram, textures.back(), 4, &vertices);
 
-        addBatch(&default2DProgram, textures.back(), indexBuffer.size(), 6); // two triangles, 6 points
-
-        vertexBuffer.insert(vertexBuffer.end(), {
-                                {{x,   y  }, {0, 0}, color}, // top left
-                                {{x,   y+h}, {0, 1}, color}, // bottom left
-                                {{x+w, y+h}, {1, 1}, color}, // bottom right
-                                {{x+w, y  }, {1, 0}, color}, // top right
-                            });
-
-        indexBuffer.insert(indexBuffer.end(), {
-                               tl, bl, br,   // first triangle
-                               tl, br, tr    // second triangle
-                           });
-
-        /*
-         * Note:
-         *
-         * Vertex is Position(2floats=8bytes)+TCoord(2xshort=4bytes)+Color(4bytes) = 16 bytes
-         *
-         * A rectangle is 4 vertices = 64 bytes + 6 indicies (12 bytes) = 76 bytes per rectangle.
-         *
-         * Without an IBO, it would have been 6 vertices = 96 bytes, so using an ibo
-         * saves us 20 bytes per rectangles.
-         */
-
+        vertices[0] = {{x,   y  }, {0, 0}, color}; // top left
+        vertices[1] = {{x,   y+h}, {0, 1}, color}; // bottom left
+        vertices[2] = {{x+w, y+h}, {1, 1}, color}; // bottom right
+        vertices[3] = {{x+w, y  }, {1, 0}, color}; // top right
     }
 
     void renderViewport(int w, int h, float devicePixelRatio)
@@ -372,28 +392,31 @@ struct ContextData
     }
 
 
-    size_t addSubPath(detail::SubPath2DArray &subpaths, float startX, float startY)
+    size_t addSubPath(detail::SubPath2DArray &subpaths, glm::vec2 &&startPos)
     {
+        size_t id = subpaths.size();
         detail::PointArray points;
-        addPoint(points, std::move(startX), std::move(startY), PointCorner);
+        addPoint(points, std::move(startPos), PointCorner);
         subpaths.push(std::move(points), false, 0);
-        return subpaths.size();
+        return id;
     }
 
-    void addPoint(detail::PointArray &points, float x, float y, PointMask flags)
+    size_t addPoint(detail::PointArray &points, glm::vec2 &&pos, PointMask &&flags)
     {
         size_t ptID = points.size();
-        if (ptID-- > 0)
+        if (ptID > 0)
         {
-            if (glm::epsilonEqual(points.x(ptID), x, distTol) &&
-                glm::epsilonEqual(points.y(ptID), y, distTol))
+            --ptID;
+
+            if (glm::all(glm::epsilonEqual(points.pos(ptID), pos, distTol)))
             {
                 points.flags(ptID) |= flags;
-                return;
+                return ptID;
             }
         }
 
-        points.push(std::move(x), std::move(y), 0, 0, 0, 0, 0, std::move(flags));
+        points.push(std::move(pos), glm::vec2(), std::move(flags));
+        return ptID;
     }
 
     float calcSqrtDistance(float x1, float y1, float x2, float y2)
@@ -409,9 +432,8 @@ struct ContextData
                                 float x2, float y2,
                                 float x3, float y3,
                                 float x4, float y4,
-                                unsigned level, PointMask type)
+                                unsigned &&level, PointMask &&type)
     {
-        static constexpr float curve_angle_tolerance_epsilon = 0.01f;
         static constexpr unsigned curve_recursion_limit = 32;
 
         if(level > curve_recursion_limit)
@@ -481,7 +503,7 @@ struct ContextData
             {
                 if(d2 < tessTol)
                 {
-                    addPoint(points, x2, y2, type);
+                    addPoint(points, glm::vec2(x2, y2), std::move(type));
                     return;
                 }
             }
@@ -489,7 +511,7 @@ struct ContextData
             {
                 if(d3 < tessTol)
                 {
-                    addPoint(points, x3, y3, type);
+                    addPoint(points, glm::vec2(x3, y3), std::move(type));
                     return;
                 }
             }
@@ -500,7 +522,7 @@ struct ContextData
             //----------------------
             if(d3 * d3 <= tessTol * (dx*dx + dy*dy))
             {
-                addPoint(points, x23, y23, type);
+                addPoint(points, glm::vec2(x23, y23), std::move(type));
                 return;
             }
             break;
@@ -510,7 +532,7 @@ struct ContextData
             //----------------------
             if(d2 * d2 <= tessTol * (dx*dx + dy*dy))
             {
-                addPoint(points, x23, y23, type);
+                addPoint(points, glm::vec2(x23, y23), std::move(type));
                 return;
             }
             break;
@@ -520,7 +542,7 @@ struct ContextData
             //-----------------
             if((d2 + d3)*(d2 + d3) <= tessTol * (dx*dx + dy*dy))
             {
-                addPoint(points, x23, y23, type);
+                addPoint(points, glm::vec2(x23, y23), std::move(type));
                 return;
             }
             break;
@@ -529,15 +551,15 @@ struct ContextData
         // Continue subdivision
         //----------------------
         recursiveBezier(points, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1, 0);
-        recursiveBezier(points, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1, type);
+        recursiveBezier(points, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1, std::move(type));
     }
 
-    float triarea2(float ax, float ay, float bx, float by, float cx, float cy)
+    float triarea2(glm::vec2 &a, glm::vec2 &b, glm::vec2 &c)
     {
-        float abx = bx - ax;
-        float aby = by - ay;
-        float acx = cx - ax;
-        float acy = cy - ay;
+        float abx = b.x - a.x;
+        float aby = b.y - a.y;
+        float acx = c.x - a.x;
+        float acy = c.y - a.y;
         return acx*aby - abx*acy;
     }
 
@@ -546,9 +568,9 @@ struct ContextData
         float area = 0;
         for (size_t i = 2; i < pts.size(); ++i)
         {
-            area += triarea2(pts.x(0), pts.y(0),
-                             pts.x(i-1), pts.y(i-1),
-                             pts.x(i), pts.y(i));
+            area += triarea2(pts.pos(0),
+                             pts.pos(i-1),
+                             pts.pos(i));
         }
         return area * 0.5f;
     }
@@ -585,56 +607,56 @@ struct ContextData
         {
             detail::SubPath2DArray &subpaths = path.subpaths();
             detail::PathCommandArray &commands = path.commands();
-            float &boundTop = path.boundTop();
-            float &boundRight = path.boundRight();
-            float &boundBottom = path.boundBottom();
-            float &boundLeft = path.boundLeft();
+            glm::vec2 &boundTopLeft = path.boundTopLeft();
+            glm::vec2 &boundBottomRight = path.boundBottomRight();
 
             size_t lastPointID;
-            size_t subPathCount = 0;
+            size_t currSubpathID = 0;
 
             // reset to default.
             subpaths.resize(0);
-            boundTop = FLT_MAX;
-            boundRight = -FLT_MAX;
-            boundBottom = -FLT_MAX;
-            boundLeft = FLT_MAX;
+            boundTopLeft = glm::vec2(FLT_MAX);
+            boundBottomRight = glm::vec2(-FLT_MAX);
 
             for(size_t i = 0; i < commands.size(); ++i)
             {
                 switch(commands.type(i))
                 {
                 case detail::CLOSE:
-                    if (subPathCount > 0)
+                    if (subpaths.size() > 0)
                     {
-                        subpaths.closed(subPathCount-1) = true;
+                        subpaths.closed(currSubpathID) = true;
                     }
                     break;
                 case detail::MOVE_TO:
-                    subPathCount = addSubPath(subpaths, commands.param0(i), commands.param1(i));
+                    currSubpathID = addSubPath(subpaths, glm::vec2(commands.param0(i), commands.param1(i)));
                     break;
                 case detail::LINE_TO:
-                    if (subPathCount == 0) { subPathCount = addSubPath(subpaths, 0, 0); }
-                    addPoint(subpaths.points(subPathCount-1), commands.param0(i), commands.param1(i), PointCorner);
+                    if (subpaths.size() == 0) { currSubpathID = addSubPath(subpaths, glm::vec2(0, 0)); }
+                    addPoint(subpaths.points(currSubpathID), glm::vec2(commands.param0(i), commands.param1(i)), PointCorner);
                     break;
                 case detail::BEZIER_TO:
-                    if (subPathCount == 0) { subPathCount = addSubPath(subpaths, 0, 0); }
-                    lastPointID = subpaths.points(subPathCount-1).size() - 1;
-                    recursiveBezier(subpaths.points(subPathCount-1),
-                                    subpaths.points(subPathCount-1).x(lastPointID),
-                                    subpaths.points(subPathCount-1).y(lastPointID),
+                {
+                    if (subpaths.size() == 0) { currSubpathID = addSubPath(subpaths, glm::vec2(0, 0)); }
+                    PointArray &points = subpaths.points(currSubpathID);
+                    glm::vec2 &prevPos = points.pos(points.size() - 1);
+                    recursiveBezier(points,
+                                    prevPos.x,
+                                    prevPos.y,
                                     commands.param0(i), commands.param1(i),
                                     commands.param2(i), commands.param3(i),
                                     commands.param4(i), commands.param5(i),
                                     0, PointCorner);
 
                     break;
+                }
                 case detail::QUAD_TO:
                 {
-                    if (subPathCount == 0) { subPathCount = addSubPath(subpaths, 0, 0); }
-                    lastPointID = subpaths.points(subPathCount-1).size() - 1;
-                    float x0 = subpaths.points(subPathCount-1).x(lastPointID);
-                    float y0 = subpaths.points(subPathCount-1).y(lastPointID);
+                    if (subpaths.size() == 0) { currSubpathID = addSubPath(subpaths, glm::vec2(0, 0)); }
+                    PointArray &points = subpaths.points(currSubpathID);
+                    glm::vec2 &prevPos = points.pos(points.size() - 1);
+                    float x0 = prevPos.x;
+                    float y0 = prevPos.y;
                     float cx = commands.param0(i);
                     float cy = commands.param1(i);
                     float x = commands.param2(i);
@@ -643,7 +665,7 @@ struct ContextData
                     float c1y = y0 + 2.0f/3.0f*(cy - y0);
                     float c2x = x + 2.0f/3.0f*(cx - x);
                     float c2y = y + 2.0f/3.0f*(cy - y);
-                    recursiveBezier(subpaths.points(subPathCount-1),
+                    recursiveBezier(points,
                                     std::move(x0), std::move(y0),
                                     std::move(c1x), std::move(c1y),
                                     std::move(c2x), std::move(c2y),
@@ -669,7 +691,7 @@ struct ContextData
             // From this point, all of the commands have all been executed and
             // we should have 1 or more subpaths with contour points in them.
 
-            for (size_t i = 0; i < subPathCount; ++i)
+            for (size_t i = 0; i < subpaths.size(); ++i)
             {
                 auto &points = subpaths.points(i);
                 size_t &bevelCount = subpaths.bevelCount(i);
@@ -679,8 +701,7 @@ struct ContextData
 
                 // Check if the first and last point are the same. Get rid of
                 // the last point if that is the case, and close the subpath.
-                if (glm::epsilonEqual(points.x(0), points.x(lastPointID), distTol) &&
-                        glm::epsilonEqual(points.y(0), points.y(lastPointID), distTol))
+                if (glm::all(glm::epsilonEqual(points.pos(0), points.pos(lastPointID), distTol)))
                 {
                     points.pop_back();
                     subpaths.closed(i) = true;
@@ -706,21 +727,13 @@ struct ContextData
                 size_t prevPointID = lastPointID;
                 for(size_t j = 0; j < points.size(); ++j)
                 {
-                    float &currX = points.x(j);
-                    float &currY = points.y(j);
-                    float &prevX = points.x(prevPointID);
-                    float &prevY = points.y(prevPointID);
-                    float &prevDirX = points.dirX(prevPointID);
-                    float &prevDirY = points.dirY(prevPointID);
-                    float &prevLenght = points.dirLen(prevPointID);
-                    prevDirX = currX - prevX;
-                    prevDirY = currY - prevY;
-                    prevLenght = normalize(prevDirX, prevDirY);
+                    glm::vec2 &currPos = points.pos(j);
+                    glm::vec2 &prevPos = points.pos(prevPointID);
 
-                    boundLeft = glm::min(boundLeft, prevX);
-                    boundTop = glm::min(boundTop, prevY);
-                    boundRight = glm::max(boundRight, prevX);
-                    boundBottom = glm::max(boundBottom, prevY);
+                    points.dir(prevPointID) = glm::normalize(currPos - prevPos);
+
+                    boundTopLeft = glm::min(boundTopLeft, currPos);
+                    boundBottomRight = glm::min(boundBottomRight, currPos);
 
                     prevPointID = j;
                 }
@@ -746,17 +759,19 @@ struct ContextData
             auto &points = subpaths.points(i);
             vertexCount += points.size();
 
+            // keep testing for convexity until we find a subpath that is not
+            // convex, which will force us to triangulate the concave polygon
+            // using libtess2
             if (convex)
             {
                 size_t leftTurnCount = 0;
                 size_t prevPointID = points.size() - 1;
                 for (size_t j = 0; j < points.size(); j++)
                 {
-                    float &dirX = points.dirX(j);
-                    float &dirY = points.dirY(j);
-                    float &prevDirX = points.dirX(prevPointID);
-                    float &prevDirY = points.dirY(prevPointID);
-                    float cross = dirX * prevDirY - prevDirX * dirY;
+                    glm::vec2 &dir = points.dir(j);
+                    glm::vec2 &prevDir = points.dir(prevPointID);
+
+                    float cross = dir.x * prevDir.y - prevDir.x * dir.y;
                     if (cross > 0.0f)
                     {
                         ++leftTurnCount;
@@ -771,46 +786,34 @@ struct ContextData
 
         if (convex)
         {
-            size_t offset = indexBuffer.size();
-            size_t elemCount = (vertexCount - 2) * 3;
 
             size_t vstart = vertexBuffer.size();
-            size_t vend = vstart + vertexCount;
 
-            addBatch(&default2DProgram,
-                         textures.back(),
-                         static_cast<GLuint>(offset),
-                         static_cast<GLsizei>(elemCount));
+            Vertex *verticies;
+            addBatch(&default2DProgram, textures.back(), vertexCount, &verticies);
 
-            indexBuffer.resize(offset + elemCount);
-            vertexBuffer.resize(vend);
-
-            float rangeX = path.boundRight() - path.boundLeft();
-            float rangeY = path.boundBottom() - path.boundTop();
+            glm::vec2 range = path.boundBottomRight() - path.boundTopLeft();
 
             for (size_t i = 0; i < subpaths.size(); i++)
             {
                 auto &pts = subpaths.points(i);
 
-                for (size_t j = vstart; j < vend; ++j)
+                for (size_t j = 0; j < vertexCount; ++j)
                 {
-                    vertexBuffer[j].pos.x = pts.x(j);
-                    vertexBuffer[j].pos.y = pts.y(j);
-                    vertexBuffer[j].tcoord.s = static_cast<uint16_t>(((((pts.x(j) - path.boundLeft()) / rangeX) * 16.0f) / detail::gfxStates.maxTexSize) * 0xFFFF);
-                    vertexBuffer[j].tcoord.t = static_cast<uint16_t>(((((pts.y(j) - path.boundTop()) / rangeY) * 16.0f) / detail::gfxStates.maxTexSize) * 0xFFFF);
-                    vertexBuffer[j].color = fillStyle.innerColor();
+                    glm::vec2 &pos = pts.pos(vstart+j);
 
-                    if (j > 2)
-                    {
-                        indexBuffer[offset++] = static_cast<uint16_t>(vstart);
-                        indexBuffer[offset++] = static_cast<uint16_t>(j - 1);
-                    }
-                    indexBuffer[offset++] = static_cast<uint16_t>(j);
+                    glm::vec2 tcoord = TCoord(((pos.x - path.boundTopLeft()) / range) * 16.0f / static_cast<float>(detail::gfxStates.maxTexSize) * static_cast<float>(0xFFFF));
+
+                    verticies[j].pos = pos;
+                    verticies[j].tcoord.x = static_cast<uint16_t>(tcoord.s);
+                    verticies[j].tcoord.t = static_cast<uint16_t>(tcoord.t);
+                    verticies[j].color = fillStyle.innerColor();
                 }
             }
         }
         else
         {
+            //tessAddContour()
             // TODO : Concave shape by triangulation using libtess2
         }
 

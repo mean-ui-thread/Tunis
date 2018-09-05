@@ -18,10 +18,8 @@ inline void Path2D::reset()
     subpaths().resize(0);
     dirty() = false;
     fillRule() = FillNonZero;
-    boundTop() = FLT_MAX;
-    boundRight() = -FLT_MAX;
-    boundBottom() = -FLT_MAX;
-    boundLeft() = FLT_MAX;
+    boundTopLeft() = glm::vec2(FLT_MAX);
+    boundBottomRight() = glm::vec2(-FLT_MAX);
 }
 
 inline void Path2D::closePath()
