@@ -15,6 +15,7 @@
 
 #include <easy/profiler.h>
 #include <glm/gtc/epsilon.hpp>
+
 #include <tesselator.h>
 
 #ifndef TUNIS_VERTEX_MAX
@@ -37,12 +38,7 @@ namespace detail
 
 struct ShaderProgram;
 
-struct MemPool
-{
-    uint8_t* buf;
-    size_t cap;
-    size_t size;
-};
+using MemPool = std::vector<uint8_t>;
 
 struct GraphicStates
 {
@@ -90,9 +86,9 @@ struct ShaderProgram
             "\n"
             "void main()\n"
             "{\n"
-            "    v_texcoord  = a_texcoord;\n"
-            "    v_color     = a_color;\n"
-            "    gl_Position = vec4(2.0*a_position.x/u_viewSize.x - 1.0, 1.0 - 2.0*a_position.y/u_viewSize.y, 0, 1);\n"
+            "    v_texcoord   = a_texcoord;\n"
+            "    v_color      = a_color;\n"
+            "    gl_Position  = vec4(2.0*a_position.x/u_viewSize.x - 1.0, 1.0 - 2.0*a_position.y/u_viewSize.y, 0, 1);\n"
             "}\n";
 
     constexpr static const char * fragSrc =
@@ -253,9 +249,7 @@ struct ContextData
     BatchArray batches;
 
     TESSalloc ma;
-    TESStesselator* tess = nullptr;
     MemPool pool;
-    std::vector<uint8_t> mem;
 
     float tessTol = 0.25f;
     float distTol = 0.01f;
@@ -382,10 +376,23 @@ struct ContextData
             batches.program(i)->setViewSizeUniform(viewWidth, viewHeight);
             batches.texture(i).bind();
 
-            glDrawElements(GL_TRIANGLES,
-                           static_cast<GLsizei>(batches.count(i)),
-                           GL_UNSIGNED_SHORT,
-                           reinterpret_cast<void*>(batches.offset(i) * sizeof(GLushort)));
+            size_t count = (batches.count(i)/3+2);
+
+            glDrawArrays(GL_TRIANGLES,
+                         static_cast<GLint>(batches.offset(i)),
+                         static_cast<GLsizei>(count));
+
+//            glDrawElements(GL_TRIANGLES,
+//                           static_cast<GLsizei>(batches.count(i)),
+//                           GL_UNSIGNED_SHORT,
+//                           reinterpret_cast<void*>(batches.offset(i) * sizeof(GLushort)));
+
+//            for (size_t j = 0; j < count/3; ++j)
+//            {
+//                glDrawArrays(GL_LINE_LOOP,
+//                             static_cast<GLint>(batches.offset(i)+(j*3)),
+//                             static_cast<GLsizei>(3));
+//            }
         }
 
         batches.resize(0);
@@ -733,7 +740,7 @@ struct ContextData
                     points.dir(prevPointID) = glm::normalize(currPos - prevPos);
 
                     boundTopLeft = glm::min(boundTopLeft, currPos);
-                    boundBottomRight = glm::min(boundBottomRight, currPos);
+                    boundBottomRight = glm::max(boundBottomRight, currPos);
 
                     prevPointID = j;
                 }
@@ -745,80 +752,7 @@ struct ContextData
         }
     }
 
-    inline void fill(Path2D &path, Fill fillRule, Paint &fillStyle)
-    {
-        updatePath(path, fillRule);
-
-        auto &subpaths = path.subpaths();
-
-        // convexity calculations
-        size_t vertexCount = 0;
-        bool convex = true;
-        for(size_t i = 0; i < subpaths.size(); ++i)
-        {
-            auto &points = subpaths.points(i);
-            vertexCount += points.size();
-
-            // keep testing for convexity until we find a subpath that is not
-            // convex, which will force us to triangulate the concave polygon
-            // using libtess2
-            if (convex)
-            {
-                size_t leftTurnCount = 0;
-                size_t prevPointID = points.size() - 1;
-                for (size_t j = 0; j < points.size(); j++)
-                {
-                    glm::vec2 &dir = points.dir(j);
-                    glm::vec2 &prevDir = points.dir(prevPointID);
-
-                    float cross = dir.x * prevDir.y - prevDir.x * dir.y;
-                    if (cross > 0.0f)
-                    {
-                        ++leftTurnCount;
-                    }
-
-                    prevPointID = j;
-                }
-
-                convex = leftTurnCount == points.size();
-            }
-        }
-
-        if (convex)
-        {
-
-            size_t vstart = vertexBuffer.size();
-
-            Vertex *verticies;
-            addBatch(&default2DProgram, textures.back(), vertexCount, &verticies);
-
-            glm::vec2 range = path.boundBottomRight() - path.boundTopLeft();
-
-            for (size_t i = 0; i < subpaths.size(); i++)
-            {
-                auto &pts = subpaths.points(i);
-
-                for (size_t j = 0; j < vertexCount; ++j)
-                {
-                    glm::vec2 &pos = pts.pos(vstart+j);
-
-                    glm::vec2 tcoord = TCoord(((pos.x - path.boundTopLeft()) / range) * 16.0f / static_cast<float>(detail::gfxStates.maxTexSize) * static_cast<float>(0xFFFF));
-
-                    verticies[j].pos = pos;
-                    verticies[j].tcoord.x = static_cast<uint16_t>(tcoord.s);
-                    verticies[j].tcoord.t = static_cast<uint16_t>(tcoord.t);
-                    verticies[j].color = fillStyle.innerColor();
-                }
-            }
-        }
-        else
-        {
-            //tessAddContour()
-            // TODO : Concave shape by triangulation using libtess2
-        }
-
-    }
-
+    void fill(Path2D &path, Fill fillRule, Paint &fillStyle);
 };
 
 }

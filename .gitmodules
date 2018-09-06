@@ -10,3 +10,6 @@
 [submodule "3rdparty/StructureOfArrays"]
 	path = 3rdparty/StructureOfArrays
 	url = https://github.com/Lunarsong/StructureOfArrays.git
+[submodule "3rdparty/fast-poly2tri"]
+	path = 3rdparty/fast-poly2tri
+	url = https://github.com/MetricPanda/fast-poly2tri.git

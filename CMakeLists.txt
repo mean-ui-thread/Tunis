@@ -62,6 +62,9 @@ add_library(Tunis
     3rdparty/libtess2/Source/tess.c
     3rdparty/libtess2/Source/tess.h
 
+    # fast-poly2tri
+    3rdparty/fast-poly2tri/MPE_fastpoly2tri.h
+
     # StructureOfArrays from https://github.com/Lunarsong/StructureOfArrays
     3rdparty/StructureOfArrays/include/mapped_soa.h
     3rdparty/StructureOfArrays/include/soa.h
@@ -72,6 +75,7 @@ target_include_directories(Tunis
     PUBLIC include/${TUNIS_BACKEND}
     PUBLIC 3rdparty/libtess2/Include
     PUBLIC 3rdparty/StructureOfArrays/include
+    PUBLIC 3rdparty/fast-poly2tri
     PRIVATE src
     PRIVATE src/${TUNIS_BACKEND}
 )

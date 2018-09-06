@@ -1,8 +1,7 @@
 #ifndef TUNISVERTEX_H
 #define TUNISVERTEX_H
 
-#include "TunisTypes.h"
-
+#include "TunisColor.h"
 
 namespace tunis
 {
