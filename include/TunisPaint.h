@@ -2,6 +2,7 @@
 #define TUNISPAINT_H
 
 #include <TunisColor.h>
+#include <TunisTypes.h>
 #include <TunisSOA.h>
 
 #include <algorithm>

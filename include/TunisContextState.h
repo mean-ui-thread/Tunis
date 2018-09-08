@@ -49,7 +49,7 @@ public:
      * There are three possible values for this property and those are: butt,
      * round and square. By default this property is set to butt.
      */
-    LineCap lineCap = LineCapButt;
+    LineCap lineCap = butt;
 
     /*!
      * \brief lineJoin determines how two connecting segments (of lines, arcs or
@@ -63,7 +63,7 @@ public:
      * have the same direction, because no joining area will be added in this
      * case.
      */
-    LineJoin lineJoin = LineJoinMiter;
+    LineJoin lineJoin = miter;
 
     /*!
      * \brief miterLimit sets the miter limit ratio in space units. When
@@ -110,7 +110,7 @@ public:
      * of the compositing or blending mode operations to use. The default is
      * CompositeOpSourceOver
      */
-    CompositeOp globalCompositeOperation = CompositeOpSourceOver;
+    CompositeOp globalCompositeOperation = source_over;
 
     /*!
      * \brief font specifies the current text style being used when drawing
@@ -125,19 +125,19 @@ public:
      * fillText() method. So if textAlign is "center", then the text would be
      * drawn at x - (width / 2). The default value is TextAlignStart.
      */
-    TextAlign textAlign = TextAlignStart;
+    TextAlign textAlign = start;
 
     /*!
      * \brief textBaseline  specifies the current text baseline being used when
      * drawing text. The default value is TextBaselineAlphabetic.
      */
-    TextBaseline textBaseline = TextBaselineAlphabetic;
+    TextBaseline textBaseline = alphabetic;
 
     /*!
      * \brief direction I specifies the current text direction used when drawing
      * text.
      */
-    Direction direction = DirectionInherit;
+    Direction direction = inherit;
 
     /*!
      * \brief imageSmoothingEnabled can be set to change if images are smoothed

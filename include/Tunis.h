@@ -2,7 +2,6 @@
 #define TUNIS_H
 
 #include <TunisContextState.h>
-#include <TunisContextData.h>
 #include <TunisColor.h>
 #include <TunisPaint.h>
 #include <TunisPath2D.h>
@@ -12,12 +11,14 @@
 namespace tunis
 {
 
-struct ContextData;
+namespace detail
+{
+    struct ContextPriv;
+}
 
 class Context : public ContextState
 {
 public:
-
 
     Context();
     ~Context();
@@ -240,7 +241,7 @@ public:
      * \param fillRule The algorithm by which to determine if a point is inside
      * a path or outside a path.
      */
-    void fill(Fill fillRule = FillNonZero);
+    void fill(FillRule fillRule = nonzero);
 
     /*!
      * \brief fill fills the given path with the current fill style using the
@@ -250,7 +251,7 @@ public:
      * \param fillRule The algorithm by which to determine if a point is inside
      * a path or outside a path.
      */
-    void fill(Path2D &path, Fill fillRule = FillNonZero);
+    void fill(Path2D &path, FillRule fillRule = nonzero);
 
     /*!
      * \brief stroke strokes the current or given path with the current stroke
@@ -268,7 +269,9 @@ public:
 
 private:
 
-    detail::ContextData ctx;
+    Path2D currentPath;
+
+    std::unique_ptr<detail::ContextPriv> ctx;
 };
 
 }

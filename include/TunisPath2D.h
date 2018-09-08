@@ -13,7 +13,7 @@ class Context;
 namespace detail {
 
 // forward declaration
-struct ContextData;
+struct ContextPriv;
 
 enum PathCommandType {
     CLOSE = 0,
@@ -67,17 +67,17 @@ struct SubPath2DArray : public SoA<PointArray, uint8_t, size_t>
 
 }
 
-class Path2D : public RefCountedSOA<detail::PathCommandArray, detail::SubPath2DArray, uint8_t, Fill, glm::vec2, glm::vec2>
+class Path2D : public RefCountedSOA<detail::PathCommandArray, detail::SubPath2DArray, uint8_t, FillRule, glm::vec2, glm::vec2>
 {
     inline detail::PathCommandArray &commands() { return get<0>(); }
     inline detail::SubPath2DArray &subpaths() { return get<1>(); }
     inline uint8_t &dirty() { return get<2>(); }
-    inline Fill &fillRule() { return get<3>(); }
+    inline FillRule &fillRule() { return get<3>(); }
     inline glm::vec2 &boundTopLeft() { return get<4>(); }
     inline glm::vec2 &boundBottomRight() { return get<5>(); }
 
     friend Context;
-    friend detail::ContextData;
+    friend detail::ContextPriv;
 
 public:
 

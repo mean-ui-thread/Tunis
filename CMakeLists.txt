@@ -21,8 +21,7 @@ add_library(Tunis
     cmake/BuildOptions.cmake
     cmake/Hunter/config.cmake
 
-    include/${TUNIS_BACKEND}/Tunis.inl
-    include/${TUNIS_BACKEND}/TunisContextData.h
+    include/Tunis.inl
     include/Tunis.h
     include/TunisColor.h
     include/TunisMath.h
@@ -42,25 +41,8 @@ add_library(Tunis
     src/${TUNIS_BACKEND}/Backend.cmake
     src/${TUNIS_BACKEND}/Tunis.cpp
     src/${TUNIS_BACKEND}/TunisTexture.cpp
+    src/${TUNIS_BACKEND}/TunisGraphicStates.h
     src/TunisColor.cpp
-
-    # libtess2
-    3rdparty/libtess2/Include/tesselator.h
-    3rdparty/libtess2/Source/
-    3rdparty/libtess2/Source/bucketalloc.c
-    3rdparty/libtess2/Source/bucketalloc.h
-    3rdparty/libtess2/Source/dict.c
-    3rdparty/libtess2/Source/dict.h
-    3rdparty/libtess2/Source/geom.c
-    3rdparty/libtess2/Source/geom.h
-    3rdparty/libtess2/Source/mesh.c
-    3rdparty/libtess2/Source/mesh.h
-    3rdparty/libtess2/Source/priorityq.c
-    3rdparty/libtess2/Source/priorityq.h
-    3rdparty/libtess2/Source/sweep.c
-    3rdparty/libtess2/Source/sweep.h
-    3rdparty/libtess2/Source/tess.c
-    3rdparty/libtess2/Source/tess.h
 
     # fast-poly2tri
     3rdparty/fast-poly2tri/MPE_fastpoly2tri.h

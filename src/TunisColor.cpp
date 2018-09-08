@@ -374,8 +374,8 @@ tunis::Color::Color(const char* colorName)
     RETURN_IF_MATCH(DarkSlateGray);
     RETURN_IF_MATCH(Black);
 
-    r=0.0f;
-    g=0.0f;
-    b=0.0f;
-    a=0.0f;
+    r=0;
+    g=0;
+    b=0;
+    a=0;
 }

@@ -1,9 +1,8 @@
 #ifndef TUNISCOLOR_H
 #define TUNISCOLOR_H
 
-#include <cstdint>
-
-#include <TunisTypes.h>
+#include <glm/fwd.hpp>
+#include <glm/vec4.hpp>
 
 namespace tunis
 {
