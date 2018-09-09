@@ -54,11 +54,9 @@ int main( int argc, char* args[] )
 
         while (!glfwWindowShouldClose(window))
         {
-            EASY_BLOCK("Events Polling")
+            EASY_BLOCK("Frame");
             glfwPollEvents();
-            EASY_END_BLOCK
 
-            EASY_BLOCK("Application Rendering",  profiler::colors::Blue500)
 
             int winWidth, winHeight, fbWidth , fbHeight;
             glfwGetWindowSize(window, &winWidth, &winHeight);
@@ -72,17 +70,16 @@ int main( int argc, char* args[] )
             app.ctx.beginFrame(winWidth, winHeight, pxRatio);
             app.render(frameTime);
             app.ctx.endFrame();
+            EASY_END_BLOCK;
 
-            EASY_END_BLOCK
-
-            EASY_BLOCK("Swap Buffer", profiler::colors::Cyan)
             glfwSwapBuffers(window);
-            EASY_END_BLOCK
         }
     }
 
 
     glfwTerminate();
+
+    profiler::dumpBlocksToFile("easy_profiler.prof");
 
     return 0;
 }

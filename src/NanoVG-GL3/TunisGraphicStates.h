@@ -13,22 +13,14 @@ namespace tunis
 {
 namespace detail
 {
-struct GlobalContextData
+struct GraphicStates
 {
-    NVGcontext *ctx = nullptr;
-    Color backgroundColor = color::Transparent;
+    NVGcontext *nvg = nullptr;
+    Color backgroundColor = Transparent;
     Viewport viewport = Viewport(0, 0, 100, 100);
 };
 
-extern GlobalContextData globalContextData;
-
-struct ContextData
-{
-    NVGcontext *ctx = nullptr;
-    Path2D currentPath;
-
-    void pathToNVG(Path2D &path);
-};
+extern GraphicStates gfxStates;
 
 }
 }

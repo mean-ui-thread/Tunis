@@ -2,6 +2,7 @@
 #define TUNISPAINT_H
 
 #include <TunisColor.h>
+#include <TunisTypes.h>
 #include <TunisSOA.h>
 
 #include <algorithm>
@@ -12,7 +13,7 @@
 namespace tunis
 {
 
-class Paint : public SOA<
+class Paint : public RefCountedSOA<
         SVGMatrix,
         Position,
         float,
@@ -70,18 +71,18 @@ public:
         reset();
     }
 
-    inline Paint(const Paint &other) : SOA(other)
+    inline Paint(const Paint &other) : RefCountedSOA(other)
     {
     }
 
-    inline Paint(const Color &color) : SOA()
+    inline Paint(const Color &color) : RefCountedSOA()
     {
         xform() = SVGMatrix(1.0f);
         extend() = Position(0.0f);
         radius() = 0.0f;
         feather() = 1.0f;
         innerColor() = color;
-        outerColor() = color::Transparent;
+        outerColor() = Transparent;
         image() = 0;
     }
 
@@ -96,8 +97,8 @@ public:
         extend() = Position(0.0f);
         radius() = 0.0f;
         feather() = 1.0f;
-        innerColor() = color::Black;
-        outerColor() = color::Transparent;
+        innerColor() = Black;
+        outerColor() = Transparent;
         image() = 0;
     }
 

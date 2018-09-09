@@ -1,8 +1,8 @@
 #ifndef TUNISVERTEX_H
 #define TUNISVERTEX_H
 
-#include "TunisTypes.h"
-
+#include <TunisTypes.h>
+#include <TunisColor.h>
 
 namespace tunis
 {
@@ -13,6 +13,8 @@ struct Vertex
     TCoord tcoord;
     Color color;
 };
+
+using Index = uint16_t;
 
 }
 

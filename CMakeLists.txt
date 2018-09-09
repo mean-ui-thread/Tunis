@@ -21,22 +21,13 @@ add_library(Tunis
     cmake/BuildOptions.cmake
     cmake/Hunter/config.cmake
 
-    src/${TUNIS_BACKEND}/Backend.cmake
-    src/${TUNIS_BACKEND}/Tunis.cpp
-    src/${TUNIS_BACKEND}/TunisTexture.cpp
-
-    src/TunisColor.cpp
-    include/TunisColor.h
-
-    include/TunisPaint.h
-
-    include/TunisPath2D.h
-    include/${TUNIS_BACKEND}/TunisPath2D.inl
-
+    include/Tunis.inl
     include/Tunis.h
-    include/${TUNIS_BACKEND}/Tunis.inl
-    include/${TUNIS_BACKEND}/TunisContextData.h
+    include/TunisColor.h
     include/TunisMath.h
+    include/TunisPaint.h
+    include/TunisPath2D.h
+    include/TunisPath2D.inl
     include/TunisRect.h
     include/TunisRect.inl
     include/TunisRenderState.h
@@ -47,17 +38,26 @@ add_library(Tunis
     include/TunisTexture.h
     include/TunisTypes.h
     include/TunisVertex.h
+    src/${TUNIS_BACKEND}/Backend.cmake
+    src/${TUNIS_BACKEND}/Tunis.cpp
+    src/${TUNIS_BACKEND}/TunisTexture.cpp
+    src/${TUNIS_BACKEND}/TunisGraphicStates.h
+    src/TunisColor.cpp
 
-    # From https://github.com/Lunarsong/StructureOfArrays
-    include/StructureOfArrays/soa.h
-    include/StructureOfArrays/mapped_soa.h
-    include/StructureOfArrays/LICENSE
+    # fast-poly2tri
+    3rdparty/fast-poly2tri/MPE_fastpoly2tri.h
+
+    # StructureOfArrays from https://github.com/Lunarsong/StructureOfArrays
+    3rdparty/StructureOfArrays/include/mapped_soa.h
+    3rdparty/StructureOfArrays/include/soa.h
 )
 
 target_include_directories(Tunis
     PUBLIC include
     PUBLIC include/${TUNIS_BACKEND}
-    PUBLIC include/StructureOfArrays
+    PUBLIC 3rdparty/libtess2/Include
+    PUBLIC 3rdparty/StructureOfArrays/include
+    PUBLIC 3rdparty/fast-poly2tri
     PRIVATE src
     PRIVATE src/${TUNIS_BACKEND}
 )

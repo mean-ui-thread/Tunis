@@ -14626,7 +14626,7 @@ TUNIS_FORCE_INLINE void  glWriteMaskEXT(GLuint res, GLuint in, GLenum outX, GLen
     #include <time.h>
 #endif
 
-#if !defined(_WIN32) !defined(__EMSCRIPTEN__)
+#if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
     #include <dlfcn.h>
 #endif
 

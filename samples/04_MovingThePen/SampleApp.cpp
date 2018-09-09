@@ -1,12 +1,5 @@
 #include "SampleApp.h"
 
-#include <stdio.h>
-
-#include <easy/profiler.h>
-
-using namespace tunis;
-using namespace tunis::color;
-
 const char *SampleApp::getSampleName() { return "04_MovingThePen"; }
 int SampleApp::getWindowWidth() { return 320; }
 int SampleApp::getWindowHeight() { return 200; }
@@ -16,8 +9,6 @@ int SampleApp::getWindowHeight() { return 200; }
  */
 void SampleApp::render(double)
 {
-    EASY_FUNCTION()
-
     ctx.beginPath();
     ctx.arc(75, 75, 50, 0, Math.PI * 2, true); // Outer circle
     ctx.moveTo(110, 75);

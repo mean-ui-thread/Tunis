@@ -60,7 +60,8 @@ int main( int argc, char* args[] )
         bool quit = false;
         while( !quit )
         {
-            EASY_BLOCK("Events Polling")
+            EASY_BLOCK("Frame");
+
             //Handle events on queue
             while( SDL_PollEvent( &e ) != 0 )
             {
@@ -69,9 +70,6 @@ int main( int argc, char* args[] )
                     quit = true;
                 }
             }
-            EASY_END_BLOCK
-
-            EASY_BLOCK("Application Rendering",  profiler::colors::Blue500)
 
             int winWidth, winHeight, fbWidth , fbHeight;
             SDL_GetWindowSize(window, &winWidth, &winHeight);
@@ -87,15 +85,15 @@ int main( int argc, char* args[] )
             app.render(frameTime);
             app.ctx.endFrame();
 
-            EASY_END_BLOCK
+            EASY_END_BLOCK;
 
-            EASY_BLOCK("Swap Buffer", profiler::colors::Cyan)
             SDL_GL_SwapWindow(window);
-            EASY_END_BLOCK
         }
     }
 
     SDL_Quit();
+
+    profiler::dumpBlocksToFile("easy_profiler.prof");
 
     return 0;
 }

@@ -1,12 +1,5 @@
 #include "SampleApp.h"
 
-#include <stdio.h>
-
-#include <easy/profiler.h>
-
-using namespace tunis;
-using namespace tunis::color;
-
 const char *SampleApp::getSampleName() { return "10_Path2D"; }
 int SampleApp::getWindowWidth() { return 320; }
 int SampleApp::getWindowHeight() { return 200; }
@@ -16,8 +9,6 @@ int SampleApp::getWindowHeight() { return 200; }
  */
 void SampleApp::render(double)
 {
-    EASY_FUNCTION()
-
     Path2D rectangle;
     rectangle.rect(10, 10, 50, 50);
 
