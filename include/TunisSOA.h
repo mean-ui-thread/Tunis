@@ -59,13 +59,13 @@ template <typename... Elements>
 class RefCountedSOA
 {
 public:
-    using RefCount = size_t;
+    using RefCount = uint32_t;
     enum {_refCount = sizeof...(Elements) };
 
     RefCountedSOA();
     RefCountedSOA(const RefCountedSOA &other);
     RefCountedSOA(RefCountedSOA &&other) = default;
-    virtual ~RefCountedSOA();
+    ~RefCountedSOA();
     RefCountedSOA &operator=(const RefCountedSOA &other);
     RefCountedSOA &operator=(RefCountedSOA &&other) = default;
 
@@ -82,7 +82,7 @@ protected:
 private:
     static SoA<Elements..., RefCount> _soa;
     static std::vector<size_t> _available;
-    size_t _id;
+    uint32_t _id;
 };
 
 }

@@ -14,6 +14,8 @@ struct Vertex
     Color color;
 };
 
+using Index = uint16_t;
+
 }
 
 #endif // TUNISVERTEX_H

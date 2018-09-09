@@ -1,7 +1,7 @@
 #include <TunisTexture.h>
 #include <TunisGL.h>
 
-#include "TunisGraphicStates.h"
+#include <TunisGraphicStates.h>
 
 #include <soa.h>
 

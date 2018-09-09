@@ -4,6 +4,15 @@
 #include <TunisTypes.h>
 #include <TunisSOA.h>
 
+#if defined(_MSC_VER)
+#include <basetsd.h>
+#include <stdlib.h>
+#include <search.h>
+typedef SSIZE_T ssize_t;
+#endif
+#include <MPE_fastpoly2tri.h>
+
+
 namespace tunis
 {
 
@@ -14,6 +23,8 @@ namespace detail {
 
 // forward declaration
 struct ContextPriv;
+
+using MemPool = std::vector<uint8_t>;
 
 enum PathCommandType {
     CLOSE = 0,
@@ -26,16 +37,6 @@ enum PathCommandType {
     ELLIPSE,
     RECT,
 };
-
-enum
-{
-    PointCorner = 0x01,
-    PointLeft = 0x02,
-    PointBevel = 0x04,
-    PointInnerBevel = 0x08,
-};
-using PointMask = uint8_t;
-
 
 struct PathCommandArray : public SoA<PathCommandType, float, float,float, float, float, float, float, float>
 {
@@ -50,31 +51,26 @@ struct PathCommandArray : public SoA<PathCommandType, float, float,float, float,
     inline float &param7(size_t idx) { return get<8>(idx); }
 };
 
-
-struct PointArray : public SoA<glm::vec2, glm::vec2, PointMask>
+struct SubPath2D : public RefCountedSOA< MemPool, MPEPolyContext >
 {
-    inline glm::vec2 &pos(size_t idx) { return get<0>(idx); }
-    inline glm::vec2 &dir(size_t idx) { return get<1>(idx); }
-    inline PointMask &flags(size_t idx) { return get<2>(idx); }
-};
-
-struct SubPath2DArray : public SoA<PointArray, uint8_t, size_t>
-{
-    inline PointArray &points(size_t idx) { return get<0>(idx); }
-    inline uint8_t &closed(size_t idx) { return get<1>(idx); }
-    inline size_t &bevelCount(size_t idx) { return get<2>(idx); }
+    inline MemPool &mempool() {return get<0>();}
+    inline MPEPolyContext &polyContext() { return get<1>(); }
 };
 
 }
 
-class Path2D : public RefCountedSOA<detail::PathCommandArray, detail::SubPath2DArray, uint8_t, FillRule, glm::vec2, glm::vec2>
+class Path2D : public RefCountedSOA<
+        detail::PathCommandArray,
+        std::vector<detail::SubPath2D>,
+        uint8_t,
+        glm::vec2,
+        glm::vec2>
 {
     inline detail::PathCommandArray &commands() { return get<0>(); }
-    inline detail::SubPath2DArray &subpaths() { return get<1>(); }
+    inline std::vector<detail::SubPath2D> &subpaths() { return get<1>(); }
     inline uint8_t &dirty() { return get<2>(); }
-    inline FillRule &fillRule() { return get<3>(); }
-    inline glm::vec2 &boundTopLeft() { return get<4>(); }
-    inline glm::vec2 &boundBottomRight() { return get<5>(); }
+    inline glm::vec2 &boundTopLeft() { return get<3>(); }
+    inline glm::vec2 &boundBottomRight() { return get<4>(); }
 
     friend Context;
     friend detail::ContextPriv;

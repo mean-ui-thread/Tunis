@@ -17,7 +17,6 @@ inline void Path2D::reset()
     commands().resize(0);
     subpaths().resize(0);
     dirty() = false;
-    fillRule() = nonzero;
     boundTopLeft() = glm::vec2(FLT_MAX);
     boundBottomRight() = glm::vec2(-FLT_MAX);
 }
