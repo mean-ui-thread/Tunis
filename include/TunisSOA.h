@@ -64,10 +64,12 @@ public:
 
     RefCountedSOA();
     RefCountedSOA(const RefCountedSOA &other);
-    RefCountedSOA(RefCountedSOA &&other) = default;
+    RefCountedSOA(RefCountedSOA &&other);
     ~RefCountedSOA();
     RefCountedSOA &operator=(const RefCountedSOA &other);
-    RefCountedSOA &operator=(RefCountedSOA &&other) = default;
+    RefCountedSOA &operator=(RefCountedSOA &&other);
+
+    template <typename T> T clone();
 
     static void reserve(size_t size);
 
@@ -81,7 +83,7 @@ protected:
 
 private:
     static SoA<Elements..., RefCount> _soa;
-    static std::vector<size_t> _available;
+    static std::vector<uint32_t> _available;
     uint32_t _id;
 };
 

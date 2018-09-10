@@ -35,6 +35,7 @@ add_library(Tunis
     include/TunisSOA.inl
     include/TunisSize.h
     include/TunisSize.inl
+    include/TunisSpinlock.h
     include/TunisTexture.h
     include/TunisTypes.h
     include/TunisVertex.h
@@ -65,7 +66,9 @@ target_include_directories(Tunis
 hunter_add_package(glm)
 find_package(glm REQUIRED)
 
-target_link_libraries(Tunis PUBLIC glm easy_profiler)
+find_package(OpenMP REQUIRED)
+
+target_link_libraries(Tunis PUBLIC glm easy_profiler OpenMP::OpenMP_CXX)
 
 include(src/${TUNIS_BACKEND}/Backend.cmake)
 tunis_backend_dependencies()

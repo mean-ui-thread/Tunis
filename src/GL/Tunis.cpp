@@ -22,6 +22,7 @@
 #include <Tunis.h>
 #include <TunisGL.h>
 #include <TunisVertex.h>
+#include <TunisSpinLock.h>
 #include <TunisGraphicStates.h>
 #include <easy/profiler.h>
 
@@ -35,6 +36,11 @@ namespace detail
 
 GraphicStates gfxStates;
 
+enum DrawOp
+{
+    DRAW_FILL,
+    DRAW_STROKE
+};
 
 class ShaderProgram
 {
@@ -73,6 +79,13 @@ struct BatchArray : public SoA<ShaderProgram*, Texture, size_t, size_t>
     inline size_t &count(size_t i) { return get<3>(i); }
 };
 
+struct DrawOpArray : public SoA<DrawOp, Path2D, ContextState>
+{
+    inline DrawOp &op(size_t i) { return get<0>(i); }
+    inline Path2D &path(size_t i) { return get<1>(i); }
+    inline ContextState &state(size_t i) { return get<2>(i); }
+};
+
 struct ContextPriv
 {
     std::vector<ContextState> states;
@@ -94,6 +107,9 @@ struct ContextPriv
     std::vector<Vertex> vertexBuffer; // write-only interleaved VBO data. DO NOT USE SoA on this member!!!
     std::vector<uint16_t> indexBuffer; // write-only
 
+    DrawOpArray renderQueue;
+    SpinLock mutex;
+
     BatchArray batches;
 
     float tessTol = 0.25f;
@@ -104,7 +120,7 @@ struct ContextPriv
     uint16_t addBatch(ShaderProgram *program, Texture texture, uint32_t vertexCount, uint32_t indexCount, Vertex **vout, Index **iout);
     void pushColorRect(float x, float y, float w, float h, const Color &color);
     void renderViewport(int w, int h, float devicePixelRatio);
-    void addSubPath(std::vector<SubPath2D> &subpaths, float startX, float startY);
+    void addSubPath(SubPathArray &subPaths, float startX, float startY);
     MPEPolyPoint* addPoint(MPEPolyContext &ctx, float x, float y);
     float calcSqrtDistance(float x1, float y1, float x2, float y2);
     void bezier(MPEPolyContext &ctx, float x1, float y1, float x2, float y2,
@@ -112,7 +128,7 @@ struct ContextPriv
     void recursiveBezier(MPEPolyContext &ctx, float x1, float y1, float x2,
                          float y2, float x3, float y3, float x4, float y4,
                          int32_t level);
-    void arc(std::vector<SubPath2D> &subpaths, float centerX, float centerY, float radius,
+    void arc(SubPathArray &subPaths, float centerX, float centerY, float radius,
              float angleStart, float angleEnd, bool anticlockwise);
     void updatePath(Path2D &path);
 };
@@ -338,14 +354,17 @@ void ContextPriv::renderViewport(int w, int h, float devicePixelRatio)
 
 }
 
-void ContextPriv::addSubPath(std::vector<SubPath2D> &subpaths, float startX, float startY)
+
+
+void ContextPriv::addSubPath(SubPathArray &subPaths, float startX, float startY)
 {
     EASY_FUNCTION(profiler::colors::DarkRed);
 
-    SubPath2D subpath;
+    size_t i = subPaths.size();
+    subPaths.resize(i + 1);
 
-    MPEPolyContext &polyContext = subpath.polyContext();
-    MemPool &mempool = subpath.mempool();
+    MPEPolyContext &polyContext = subPaths.polyContext(i);
+    MemPool &mempool = subPaths.mempool(i);
 
     // The maximum number of points you expect to need
     // This value is used by the library to calculate
@@ -369,8 +388,6 @@ void ContextPriv::addSubPath(std::vector<SubPath2D> &subpaths, float startX, flo
     MPEPolyPoint* startingPoint = MPE_PolyPushPoint(&polyContext);
     startingPoint->X = std::move(startX);
     startingPoint->Y = std::move(startY);
-
-    subpaths.push_back(subpath);
 }
 
 MPEPolyPoint* ContextPriv::addPoint(MPEPolyContext &ctx, float x, float y)
@@ -394,21 +411,22 @@ MPEPolyPoint* ContextPriv::addPoint(MPEPolyContext &ctx, float x, float y)
     return point;
 }
 
+
+// based of http://antigrain.com/__code/src/agg_curves.cpp.html by Maxim Shemanarev
+void ContextPriv::bezier(MPEPolyContext &ctx, float x1, float y1, float x2,
+                         float y2, float x3, float y3, float x4, float y4)
+{
+        EASY_FUNCTION(profiler::colors::DarkRed);
+    addPoint(ctx, x1, y1);
+    recursiveBezier(ctx, x1, y1, x2, y2, x3, y3, x4, y4, 0);
+    addPoint(ctx, x4, y4);
+}
 float ContextPriv::calcSqrtDistance(float x1, float y1, float x2, float y2)
 {
     EASY_FUNCTION(profiler::colors::DarkRed);
     float dx = x2-x1;
     float dy = y2-y1;
     return dx * dx + dy * dy;
-}
-
-// based of http://antigrain.com/__code/src/agg_curves.cpp.html by Maxim Shemanarev
-void ContextPriv::bezier(MPEPolyContext &ctx, float x1, float y1, float x2,
-                         float y2, float x3, float y3, float x4, float y4)
-{
-    addPoint(ctx, x1, y1);
-    recursiveBezier(ctx, x1, y1, x2, y2, x3, y3, x4, y4, 0);
-    addPoint(ctx, x4, y4);
 }
 void ContextPriv::recursiveBezier(MPEPolyContext &ctx,
                                   float x1, float y1,
@@ -537,10 +555,11 @@ void ContextPriv::recursiveBezier(MPEPolyContext &ctx,
     recursiveBezier(ctx, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
 }
 
-void ContextPriv::arc(std::vector<SubPath2D> &subpaths, float centerX, float centerY,
+void ContextPriv::arc(SubPathArray &subPaths, float centerX, float centerY,
                       float radius, float startAngle, float endAngle,
                       bool anticlockwise)
 {
+    EASY_FUNCTION(profiler::colors::DarkRed);
     float deltaAngle = endAngle - startAngle;
 
     if (anticlockwise)
@@ -590,16 +609,18 @@ void ContextPriv::arc(std::vector<SubPath2D> &subpaths, float centerX, float cen
     float prevTanX = -deltaY * tangentFactor * radius;
     float prevTanY = deltaX * tangentFactor * radius;
 
-    if(subpaths.size() == 0)
+    size_t id = subPaths.size();
+
+    if(id == 0)
     {
-        addSubPath(subpaths, prevX, prevY);
+        addSubPath(subPaths, prevX, prevY);
     }
     else
     {
-        addPoint(subpaths.back().polyContext(), prevX, prevY);
+        addPoint(subPaths.polyContext(--id), prevX, prevY);
     }
 
-    auto &ctx = subpaths.back().polyContext();
+    auto &ctx = subPaths.polyContext(id);
 
     for (int32_t segment = 1; segment <= segmentCount; ++segment)
     {
@@ -629,13 +650,15 @@ void ContextPriv::updatePath(Path2D &path)
 {
     EASY_FUNCTION(profiler::colors::DarkRed);
 
-    std::vector<SubPath2D> &subpaths = path.subpaths();
+    SubPathArray &subPaths = path.subPaths();
     PathCommandArray &commands = path.commands();
     glm::vec2 &boundTopLeft = path.boundTopLeft();
     glm::vec2 &boundBottomRight = path.boundBottomRight();
 
     // reset to default.
-    subpaths.resize(0);
+    mutex.lock();
+    subPaths.resize(0);
+    mutex.unlock();
     boundTopLeft = glm::vec2(FLT_MAX);
     boundBottomRight = glm::vec2(-FLT_MAX);
 
@@ -646,16 +669,16 @@ void ContextPriv::updatePath(Path2D &path)
         case CLOSE:
             break;
         case MOVE_TO:
-            addSubPath(subpaths, commands.param0(i), commands.param1(i));
+            addSubPath(subPaths, commands.param0(i), commands.param1(i));
             break;
         case LINE_TO:
-            if (subpaths.size() == 0) { addSubPath(subpaths, 0, 0); }
-            addPoint(subpaths.back().polyContext(), commands.param0(i), commands.param1(i));
+            if (subPaths.size() == 0) { addSubPath(subPaths, 0, 0); }
+            addPoint(subPaths.polyContext(subPaths.size()-1), commands.param0(i), commands.param1(i));
             break;
         case BEZIER_TO:
         {
-            if (subpaths.size() == 0) { addSubPath(subpaths, 0, 0); }
-            auto &ctx = subpaths.back().polyContext();
+            if (subPaths.size() == 0) { addSubPath(subPaths, 0, 0); }
+            auto &ctx = subPaths.polyContext(subPaths.size()-1);
             auto &prevPoint = ctx.PointsPool[ctx.PointPoolCount - 1];
             bezier(ctx,
                    prevPoint.X, prevPoint.Y,
@@ -667,8 +690,8 @@ void ContextPriv::updatePath(Path2D &path)
         }
         case QUAD_TO:
         {
-            if (subpaths.size() == 0) { addSubPath(subpaths, 0, 0); }
-            auto &ctx = subpaths.back().polyContext();
+            if (subPaths.size() == 0) { addSubPath(subPaths, 0, 0); }
+            auto &ctx = subPaths.polyContext(subPaths.size()-1);
             auto &prevPoint = ctx.PointsPool[ctx.PointPoolCount - 1];
             float x0 = prevPoint.X;
             float y0 = prevPoint.Y;
@@ -685,7 +708,7 @@ void ContextPriv::updatePath(Path2D &path)
         }
         case ARC:
         {
-            arc(subpaths,
+            arc(subPaths,
                 std::move(commands.param0(i)),
                 std::move(commands.param1(i)),
                 std::move(commands.param2(i)),
@@ -710,10 +733,9 @@ void ContextPriv::updatePath(Path2D &path)
 
     // From this point, all of the commands have all been executed and
     // we should have 1 or more subpaths with contour points in them.
-
-    for (auto &subpath : subpaths)
+    for (size_t i = 0; i < subPaths.size(); ++i)
     {
-        auto &polyContext = subpath.polyContext();
+        auto &polyContext = subPaths.polyContext(i);
         auto &points = polyContext.PointsPool;
 
 
@@ -728,8 +750,8 @@ void ContextPriv::updatePath(Path2D &path)
         // this status. we need a minimum of 3 points to do a proper fill.
         if (polyContext.PointPoolCount >= 3)
         {
-            MPE_PolyAddEdge(&subpath.polyContext());
-            MPE_PolyTriangulate(&subpath.polyContext());
+            MPE_PolyAddEdge(&polyContext);
+            MPE_PolyTriangulate(&polyContext);
         }
     }
 
@@ -878,6 +900,73 @@ void Context::endFrame()
 {
     EASY_FUNCTION(profiler::colors::RichRed);
 
+    int i, renderCount = ctx->renderQueue.size();
+    #pragma omp parallel for num_threads(std::thread::hardware_concurrency())
+    for (i = 0; i < renderCount; ++i)
+    {
+        auto &path = ctx->renderQueue.path(i);
+        if (path.dirty())
+        {
+            ctx->updatePath(path);
+            path.dirty() = false;
+        }
+    }
+
+    for (i = 0; i < renderCount; ++i)
+    {
+        auto &path = ctx->renderQueue.path(i);
+        auto &state = ctx->renderQueue.state(i);
+
+        glm::vec2 range = path.boundBottomRight() - path.boundTopLeft();
+
+        for(size_t j = 0; j < path.subPaths().size(); ++j)
+        {
+            MPEPolyContext &polyContext = path.subPaths().polyContext(j);
+
+            uint32_t vertexCount = polyContext.PointPoolCount;
+            uint32_t indexCount = polyContext.TriangleCount*3;
+
+            if (vertexCount < 3)
+            {
+                continue; // not enough vertices to make a fill. Skip
+            }
+
+            Vertex *verticies;
+            Index *indices;
+            uint16_t offset = ctx->addBatch(&ctx->default2DProgram, ctx->textures.back(), vertexCount, indexCount, &verticies, &indices);
+
+            //populate the vertices
+            for (size_t i = 0; i < polyContext.PointPoolCount; ++i)
+            {
+                MPEPolyPoint &Point = polyContext.PointsPool[i];
+                Position pos(Point.X, Point.Y);
+                glm::vec2 tcoord = TCoord(((pos.x - path.boundTopLeft()) / range) * 16.0f / static_cast<float>(detail::gfxStates.maxTexSize) * static_cast<float>(0xFFFF));
+                verticies[i].pos = pos;
+                verticies[i].tcoord.x = static_cast<uint16_t>(tcoord.s);
+                verticies[i].tcoord.t = static_cast<uint16_t>(tcoord.t);
+                verticies[i].color = state.fillStyle.innerColor();
+            }
+
+            //populate the indicies
+            for (size_t i = 0; i < polyContext.TriangleCount; ++i)
+            {
+                MPEPolyTriangle* triangle = polyContext.Triangles[i];
+
+                // get the array index by pointer address arithmetic.
+                uint16_t p0 = static_cast<uint16_t>(triangle->Points[0] - polyContext.PointsPool);
+                uint16_t p1 = static_cast<uint16_t>(triangle->Points[1] - polyContext.PointsPool);
+                uint16_t p2 = static_cast<uint16_t>(triangle->Points[2] - polyContext.PointsPool);
+
+                size_t j = i * 3;
+                indices[j+0] = offset+p2;
+                indices[j+1] = offset+p1;
+                indices[j+2] = offset+p0;
+            }
+        }
+    }
+
+    ctx->renderQueue.resize(0);
+
     // flush the vertex buffer.
     if (ctx->vertexBuffer.size() > 0) {
         glBufferData(GL_ARRAY_BUFFER,
@@ -978,70 +1067,18 @@ void Context::clearRect(float x, float y, float width, float height)
     ctx->pushColorRect(std::move(x), std::move(y), std::move(width), std::move(height), detail::gfxStates.backgroundColor);
 }
 
-void Context::fill(Path2D &path, FillRule fillRule)
+void Context::fill(Path2D &path, FillRule /*fillRule*/)
 {
     EASY_FUNCTION(profiler::colors::RichRed);
-
-    if (path.dirty())
-    {
-        ctx->updatePath(path);
-        path.dirty() = false;
-    }
-
-    glm::vec2 range = path.boundBottomRight() - path.boundTopLeft();
-
-    for(auto &subpath : path.subpaths())
-    {
-        MPEPolyContext &polyContext = subpath.polyContext();
-
-        uint32_t vertexCount = polyContext.PointPoolCount;
-        uint32_t indexCount = polyContext.TriangleCount*3;
-
-        if (vertexCount < 3)
-        {
-            continue; // not enough vertices to make a fill. Skip
-        }
-
-        Vertex *verticies;
-        Index *indices;
-        uint16_t offset = ctx->addBatch(&ctx->default2DProgram, ctx->textures.back(), vertexCount, indexCount, &verticies, &indices);
-
-        //populate the vertices
-        for (size_t i = 0; i < polyContext.PointPoolCount; ++i)
-        {
-            MPEPolyPoint &Point = polyContext.PointsPool[i];
-            Position pos(Point.X, Point.Y);
-            glm::vec2 tcoord = TCoord(((pos.x - path.boundTopLeft()) / range) * 16.0f / static_cast<float>(detail::gfxStates.maxTexSize) * static_cast<float>(0xFFFF));
-            verticies[i].pos = pos;
-            verticies[i].tcoord.x = static_cast<uint16_t>(tcoord.s);
-            verticies[i].tcoord.t = static_cast<uint16_t>(tcoord.t);
-            verticies[i].color = fillStyle.innerColor();
-        }
-
-        //populate the indicies
-        for (size_t i = 0; i < polyContext.TriangleCount; ++i)
-        {
-            MPEPolyTriangle* triangle = polyContext.Triangles[i];
-
-            // get the array index by pointer address arithmetic.
-            uint16_t p0 = static_cast<uint16_t>(triangle->Points[0] - polyContext.PointsPool);
-            uint16_t p1 = static_cast<uint16_t>(triangle->Points[1] - polyContext.PointsPool);
-            uint16_t p2 = static_cast<uint16_t>(triangle->Points[2] - polyContext.PointsPool);
-
-            size_t j = i * 3;
-            indices[j+0] = offset+p2;
-            indices[j+1] = offset+p1;
-            indices[j+2] = offset+p0;
-        }
-    }
-
-
+    ContextState state = *this;
+    ctx->renderQueue.push(detail::DRAW_FILL, path.clone<Path2D>(), std::move(state));
 }
 
 void Context::stroke(Path2D &path)
 {
     EASY_FUNCTION(profiler::colors::RichRed);
-    //ctx->stroke(path, strokeStyle, lineJoin, miterLimit);
+    ContextState state = *this;
+    ctx->renderQueue.push(detail::DRAW_FILL, path.clone<Path2D>(), std::move(state));
 }
 
 

@@ -51,23 +51,23 @@ struct PathCommandArray : public SoA<PathCommandType, float, float,float, float,
     inline float &param7(size_t idx) { return get<8>(idx); }
 };
 
-struct SubPath2D : public RefCountedSOA< MemPool, MPEPolyContext >
+struct SubPathArray : public SoA< MemPool, MPEPolyContext >
 {
-    inline MemPool &mempool() {return get<0>();}
-    inline MPEPolyContext &polyContext() { return get<1>(); }
+    inline MemPool &mempool(size_t idx) {return get<0>(idx);}
+    inline MPEPolyContext &polyContext(size_t idx) { return get<1>(idx); }
 };
 
 }
 
 class Path2D : public RefCountedSOA<
         detail::PathCommandArray,
-        std::vector<detail::SubPath2D>,
+        detail::SubPathArray,
         uint8_t,
         glm::vec2,
         glm::vec2>
 {
     inline detail::PathCommandArray &commands() { return get<0>(); }
-    inline std::vector<detail::SubPath2D> &subpaths() { return get<1>(); }
+    inline detail::SubPathArray &subPaths() { return get<1>(); }
     inline uint8_t &dirty() { return get<2>(); }
     inline glm::vec2 &boundTopLeft() { return get<3>(); }
     inline glm::vec2 &boundBottomRight() { return get<4>(); }

@@ -15,7 +15,7 @@ inline void Path2D::reset()
 {
     EASY_FUNCTION(profiler::colors::RichRed);
     commands().resize(0);
-    subpaths().resize(0);
+    subPaths().resize(0);
     dirty() = false;
     boundTopLeft() = glm::vec2(FLT_MAX);
     boundBottomRight() = glm::vec2(-FLT_MAX);
