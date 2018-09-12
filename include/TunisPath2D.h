@@ -51,10 +51,11 @@ struct PathCommandArray : public SoA<PathCommandType, float, float,float, float,
     inline float &param7(size_t idx) { return get<8>(idx); }
 };
 
-struct SubPathArray : public SoA< MemPool, MPEPolyContext >
+struct SubPathArray : public SoA< MemPool, MPEPolyContext, uint8_t >
 {
     inline MemPool &mempool(size_t idx) {return get<0>(idx);}
     inline MPEPolyContext &polyContext(size_t idx) { return get<1>(idx); }
+    inline uint8_t &closed(size_t idx) { return get<2>(idx); }
 };
 
 }

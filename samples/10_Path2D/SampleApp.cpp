@@ -5,7 +5,7 @@ int SampleApp::getWindowWidth() { return 320; }
 int SampleApp::getWindowHeight() { return 200; }
 
 /*!
- * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes#Arcs
+ * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes#Path2D_example
  */
 void SampleApp::render(double)
 {
