@@ -8,6 +8,8 @@
 #include <TunisTexture.h>
 #include <TunisMath.h>
 
+#include <memory>
+
 namespace tunis
 {
 

@@ -79,7 +79,7 @@ protected:
      * convienient function that pretty much does _soa.get<IDX>(_id); for you.
      */
     template <size_t ArrayIndex>
-    typename SoA<Elements...>::NthTypeOf<ArrayIndex>& get() const;
+    typename SoA<Elements..., RefCount>::template NthTypeOf<ArrayIndex>& get() const;
 
 private:
     static SoA<Elements..., RefCount> _soa;

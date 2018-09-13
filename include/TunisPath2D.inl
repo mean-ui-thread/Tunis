@@ -1,6 +1,9 @@
 #include <TunisPath2D.h>
 
+#include <cfloat>
+
 #include <easy/profiler.h>
+
 
 namespace tunis
 {

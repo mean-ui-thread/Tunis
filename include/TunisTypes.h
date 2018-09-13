@@ -47,7 +47,7 @@ enum CompositeOp
     destination_atop, //! The existing window is only kept where it overlaps the new shape. The new shape is drawn behind the window content.
     lighter, //! Where both shapes overlap the color is determined by adding color values.
     copy, //! Only the new shape is shown
-    xor, //! Shapes are made transparent where both overlap and drawn normal everywhere else.
+    Xor, //! Shapes are made transparent where both overlap and drawn normal everywhere else.
     multiply, //! The pixels are of the top layer are multiplied with the corresponding pixel of the bottom layer. A darker picture is the result.
     screen, //! The pixels are inverted, multiplied, and inverted again. A lighter picture is the result (opposite of multiply)
     overlay, //! A combination of multiply and screen. Dark parts on the base layer become darker, and light parts become lighter.

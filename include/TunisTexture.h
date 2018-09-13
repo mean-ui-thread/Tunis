@@ -2,6 +2,7 @@
 #define TUNISTEXTURE_H
 
 #include <cinttypes>
+#include <cstddef>
 
 namespace tunis
 {

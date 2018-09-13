@@ -35,7 +35,7 @@ add_library(Tunis
     include/TunisSOA.inl
     include/TunisSize.h
     include/TunisSize.inl
-    include/TunisSpinlock.h
+    include/TunisSpinLock.h
     include/TunisTexture.h
     include/TunisTypes.h
     include/TunisVertex.h
