@@ -42,6 +42,13 @@ namespace tunis
             DRAW_STROKE
         };
 
+        enum Topology
+        {
+            Triangles = GL_TRIANGLES,
+            Lines = GL_LINE_STRIP,
+            LineLoop = GL_LINE_LOOP
+        };
+
         class ShaderProgram
         {
         public:
@@ -71,12 +78,14 @@ namespace tunis
             int32_t texture0 = 0;
         };
 
-        struct BatchArray : public SoA<ShaderProgram*, Texture, size_t, size_t>
+        struct BatchArray : public SoA<ShaderProgram*, Texture, Topology, float, size_t, size_t>
         {
             inline ShaderProgram* &program(size_t i) { return get<0>(i); }
             inline Texture &texture(size_t i) { return get<1>(i); }
-            inline size_t &offset(size_t i) { return get<2>(i); }
-            inline size_t &count(size_t i) { return get<3>(i); }
+            inline Topology &topology(size_t i) { return get<2>(i); }
+            inline float &lineWidth(size_t i) { return get<3>(i); }
+            inline size_t &offset(size_t i) { return get<4>(i); }
+            inline size_t &count(size_t i) { return get<5>(i); }
         };
 
         struct DrawOpArray : public SoA<DrawOp, Path2D, ContextState>
@@ -115,7 +124,7 @@ namespace tunis
 
             constexpr static uint16_t edgeLUT[] = {0, 1, 2, 0, 1, 2, 3};
 
-            uint16_t addBatch(ShaderProgram *program, Texture texture, uint32_t vertexCount, uint32_t indexCount, Vertex **vout, Index **iout);
+            uint16_t addBatch(ShaderProgram *program, Texture texture, Topology topology, float lineWidth, uint32_t vertexCount, uint32_t indexCount, Vertex **vout, Index **iout);
             void pushColorRect(float x, float y, float w, float h, const Color &color);
             void renderViewport(int w, int h, float devicePixelRatio);
             void addSubPath(SubPathArray &subPaths, float startX, float startY);
@@ -130,9 +139,8 @@ namespace tunis
                      float angleStart, float angleEnd, bool anticlockwise);
             float distPtSeg(const glm::vec2 &c, const glm::vec2 &p, const glm::vec2 &q);
             void arcTo(SubPathArray &subPaths, float x1, float y1, float x2, float y2, float radius);
-            void generateFillContour(Path2D &path);
+            void generateContour(Path2D &path);
             void triangulate(Path2D &path);
-            void generateStrokeContour(Path2D &path);
         };
 
         void ShaderProgram::useProgram()
@@ -275,7 +283,7 @@ namespace tunis
             texture0 = 0;
         }
 
-        uint16_t ContextPriv::addBatch(ShaderProgram *program, Texture texture, uint32_t vertexCount, uint32_t indexCount, Vertex **vout, Index **iout)
+        uint16_t ContextPriv::addBatch(ShaderProgram *program, Texture texture, Topology topology, float lineWidth, uint32_t vertexCount, uint32_t indexCount, Vertex **vout, Index **iout)
         {
             EASY_FUNCTION(profiler::colors::DarkRed);
 
@@ -284,29 +292,37 @@ namespace tunis
             size_t istart = indexBuffer.size();
             size_t iend = istart + indexCount;
             indexBuffer.resize(iend);
-            *iout = &indexBuffer[istart];
+            if (iout) *iout = &indexBuffer[istart];
 
             size_t vstart = vertexBuffer.size();
             size_t vend = vstart + vertexCount;
             vertexBuffer.resize(vend);
-            *vout = &vertexBuffer[vstart];
+            if (vout) *vout = &vertexBuffer[vstart];
 
-            if (batches.size() > 0)
+            if (topology == GL_TRIANGLES)
             {
-                size_t id = batches.size() - 1;
-
-                if (batches.program(id) == program && batches.texture(id) == texture)
+                if (batches.size() > 0)
                 {
-                    // the batch may continue
-                    batches.count(id) += indexCount;
-                    return static_cast<uint16_t>(vstart);
+                    size_t id = batches.size() - 1; // last batch.
+
+                    if (batches.program(id) == program &&
+                        batches.texture(id) == texture &&
+                        batches.topology(id) == topology)
+                    {
+                        // the batch may continue
+                        batches.count(id) += indexCount;
+                        return static_cast<uint16_t>(vstart);
+                    }
                 }
+
             }
 
             // start a new batch. RenderDefault2D can use any textures for now, as long
             // as they have that little white square in them.
             batches.push(std::move(program),
                          std::move(texture),
+                         std::move(topology),
+                         std::move(lineWidth),
                          std::move(istart),
                          std::move(indexCount));
 
@@ -330,7 +346,7 @@ namespace tunis
 
             Vertex *vertices;
             Index *indices;
-            uint16_t offset = addBatch(&default2DProgram, textures.back(), 4, 6, &vertices, &indices);
+            uint16_t offset = addBatch(&default2DProgram, textures.back(), Triangles, 1.0f, 4, 6, &vertices, &indices);
 
             vertices[0] = {{x,   y  }, {0, 0}, color}; // top left
             vertices[1] = {{x,   y+h}, {0, 1}, color}; // bottom left
@@ -734,7 +750,7 @@ namespace tunis
         }
 
 
-        void ContextPriv::generateFillContour(Path2D &path)
+        void ContextPriv::generateContour(Path2D &path)
         {
             EASY_FUNCTION(profiler::colors::DarkRed);
 
@@ -835,12 +851,6 @@ namespace tunis
                 }
             }
 
-        }
-
-        void ContextPriv::generateStrokeContour(Path2D &path)
-        {
-            // TODO
-            generateFillContour(path); // temporary
         }
 
         void ContextPriv::triangulate(Path2D &path)
@@ -1028,82 +1038,119 @@ namespace tunis
     {
         EASY_FUNCTION(profiler::colors::RichRed);
 
-        #pragma omp parallel for num_threads(std::thread::hardware_concurrency())
-        for (int i = 0; i < ctx->renderQueue.size(); ++i)
+        // flush the render Queue.
+        if (ctx->renderQueue.size() > 0)
         {
-            auto &path = ctx->renderQueue.path(i);
-            if (path.dirty())
+            // Generate Geometry (Multi-threaded)
+#pragma omp parallel for num_threads(std::thread::hardware_concurrency())
+            for (int i = 0; i < ctx->renderQueue.size(); ++i)
             {
-                switch(ctx->renderQueue.op(i))
+                auto &path = ctx->renderQueue.path(i);
+                if (path.dirty())
                 {
-                    case detail::DRAW_FILL:
-                        ctx->generateFillContour(path);
-                        break;
-                    case detail::DRAW_STROKE:
-                        ctx->generateStrokeContour(path);
-                        break;
-                }
+                    ctx->generateContour(path);
 
-                ctx->triangulate(path);
+                    if (ctx->renderQueue.op(i) == detail::DRAW_FILL)
+                    {
+                        ctx->triangulate(path);
+                    }
 
-                path.dirty() = false;
-            }
-        }
-
-        for (size_t i = 0; i < ctx->renderQueue.size(); ++i)
-        {
-            auto &path = ctx->renderQueue.path(i);
-            auto &state = ctx->renderQueue.state(i);
-
-            glm::vec2 range = path.boundBottomRight() - path.boundTopLeft();
-
-            for(size_t j = 0; j < path.subPaths().size(); ++j)
-            {
-                MPEPolyContext &polyContext = path.subPaths().polyContext(j);
-
-                uint32_t vertexCount = polyContext.PointPoolCount;
-                uint32_t indexCount = polyContext.TriangleCount*3;
-
-                if (vertexCount < 3)
-                {
-                    continue; // not enough vertices to make a fill. Skip
-                }
-
-                Vertex *verticies;
-                Index *indices;
-                uint16_t offset = ctx->addBatch(&ctx->default2DProgram, ctx->textures.back(), vertexCount, indexCount, &verticies, &indices);
-
-                //populate the vertices
-                for (size_t i = 0; i < polyContext.PointPoolCount; ++i)
-                {
-                    MPEPolyPoint &Point = polyContext.PointsPool[i];
-                    Position pos(Point.X, Point.Y);
-                    glm::vec2 tcoord = TCoord(((pos - path.boundTopLeft()) / range) * 16.0f / static_cast<float>(detail::gfxStates.maxTexSize) * static_cast<float>(0xFFFF));
-                    verticies[i].pos = pos;
-                    verticies[i].tcoord.x = static_cast<uint16_t>(tcoord.s);
-                    verticies[i].tcoord.t = static_cast<uint16_t>(tcoord.t);
-                    verticies[i].color = state.fillStyle.innerColor();
-                }
-
-                //populate the indicies
-                for (size_t i = 0; i < polyContext.TriangleCount; ++i)
-                {
-                    MPEPolyTriangle* triangle = polyContext.Triangles[i];
-
-                    // get the array index by pointer address arithmetic.
-                    uint16_t p0 = static_cast<uint16_t>(triangle->Points[0] - polyContext.PointsPool);
-                    uint16_t p1 = static_cast<uint16_t>(triangle->Points[1] - polyContext.PointsPool);
-                    uint16_t p2 = static_cast<uint16_t>(triangle->Points[2] - polyContext.PointsPool);
-
-                    size_t j = i * 3;
-                    indices[j+0] = offset+p2;
-                    indices[j+1] = offset+p1;
-                    indices[j+2] = offset+p0;
+                    path.dirty() = false;
                 }
             }
+
+            // Batch Geometry into vertex and index buffers
+            for (size_t i = 0; i < ctx->renderQueue.size(); ++i)
+            {
+                auto &path = ctx->renderQueue.path(i);
+                auto &state = ctx->renderQueue.state(i);
+
+                glm::vec2 range = path.boundBottomRight() - path.boundTopLeft();
+
+                for(size_t j = 0; j < path.subPaths().size(); ++j)
+                {
+                    MPEPolyContext &polyContext = path.subPaths().polyContext(j);
+
+                    uint32_t vertexCount = polyContext.PointPoolCount;
+
+                    if (vertexCount < 3)
+                    {
+                        continue; // not enough vertices to make a fill. Skip
+                    }
+
+                    Vertex *verticies;
+                    Index *indices;
+                    uint16_t offset;
+                    uint32_t indexCount;
+                    detail::Topology topology;
+
+                    switch(ctx->renderQueue.op(i))
+                    {
+                        case detail::DRAW_FILL:
+                            topology = detail::Triangles;
+                            indexCount = polyContext.TriangleCount*3;
+                            break;
+                        case detail::DRAW_STROKE:
+                            if (path.subPaths().closed(j))
+                                topology = detail::LineLoop;
+                            else
+                                topology = detail::Lines;
+                            indexCount = vertexCount;
+                    }
+
+                    offset = ctx->addBatch(&ctx->default2DProgram,
+                                           ctx->textures.back(),
+                                           topology,
+                                           ctx->renderQueue.state(i).lineWidth,
+                                           vertexCount,
+                                           indexCount,
+                                           &verticies,
+                                           &indices);
+
+                    //populate the vertices
+                    for (size_t vid = 0; vid < polyContext.PointPoolCount; ++vid)
+                    {
+                        MPEPolyPoint &Point = polyContext.PointsPool[vid];
+                        Position pos(Point.X, Point.Y);
+                        glm::vec2 tcoord = TCoord(((pos - path.boundTopLeft()) / range) * 16.0f / static_cast<float>(detail::gfxStates.maxTexSize) * static_cast<float>(0xFFFF));
+                        verticies[vid].pos = pos;
+                        verticies[vid].tcoord.x = static_cast<uint16_t>(tcoord.s);
+                        verticies[vid].tcoord.t = static_cast<uint16_t>(tcoord.t);
+                        verticies[vid].color = state.fillStyle.innerColor();
+                    }
+
+                    //populate the indicies
+                    switch(ctx->renderQueue.op(i))
+                    {
+                        case detail::DRAW_FILL:
+                            for (size_t tid = 0; tid < polyContext.TriangleCount; ++tid)
+                            {
+                                MPEPolyTriangle* triangle = polyContext.Triangles[tid];
+
+                                // get the array index by pointer address arithmetic.
+                                uint16_t p0 = static_cast<uint16_t>(triangle->Points[0] - polyContext.PointsPool);
+                                uint16_t p1 = static_cast<uint16_t>(triangle->Points[1] - polyContext.PointsPool);
+                                uint16_t p2 = static_cast<uint16_t>(triangle->Points[2] - polyContext.PointsPool);
+
+                                size_t iid = tid * 3;
+                                indices[iid+0] = offset+p2;
+                                indices[iid+1] = offset+p1;
+                                indices[iid+2] = offset+p0;
+                            }
+                            break;
+                        case detail::DRAW_STROKE:
+                            for (size_t iid = 0; iid < polyContext.PointPoolCount; ++iid)
+                            {
+                                indices[iid] = static_cast<uint16_t>(offset+iid);
+                            }
+                            break;
+                    }
+                }
+            }
+
+            ctx->renderQueue.resize(0);
         }
 
-        ctx->renderQueue.resize(0);
 
         // flush the vertex buffer.
         if (ctx->vertexBuffer.size() > 0) {
@@ -1126,31 +1173,35 @@ namespace tunis
 
 
         // flush the batches
-        for (size_t i = 0; i < ctx->batches.size(); ++i)
+        if ( ctx->batches.size() > 0)
         {
-            ctx->batches.program(i)->useProgram();
-            ctx->batches.program(i)->setViewSizeUniform(ctx->viewWidth, ctx->viewHeight);
-            ctx->batches.texture(i).bind();
+            for (size_t i = 0; i < ctx->batches.size(); ++i)
+            {
+                ctx->batches.program(i)->useProgram();
+                ctx->batches.program(i)->setViewSizeUniform(ctx->viewWidth, ctx->viewHeight);
+                ctx->batches.texture(i).bind();
 
 
 #if 1
-            glDrawElements(GL_TRIANGLES,
-                           static_cast<GLsizei>(ctx->batches.count(i)),
-                           GL_UNSIGNED_SHORT,
-                           reinterpret_cast<void*>(ctx->batches.offset(i) * sizeof(GLushort)));
-#else
-            // Helpful code for debugging triangles.
-            for (size_t j = 0; j < ctx->batches.count(i)/3; ++j)
-            {
-                glDrawElements(GL_LINE_LOOP,
-                               3,
+                glLineWidth(ctx->batches.lineWidth(i));
+                glDrawElements(static_cast<GLenum>(ctx->batches.topology(i)),
+                               static_cast<GLsizei>(ctx->batches.count(i)),
                                GL_UNSIGNED_SHORT,
-                               reinterpret_cast<void*>((ctx->batches.offset(i)+(j*3)) * sizeof(GLushort)));
-            }
+                               reinterpret_cast<void*>(ctx->batches.offset(i) * sizeof(GLushort)));
+#else
+                // Helpful code for debugging triangles.
+                for (size_t j = 0; j < ctx->batches.count(i)/3; ++j)
+                {
+                    glDrawElements(GL_LINE_LOOP,
+                                   3,
+                                   GL_UNSIGNED_SHORT,
+                                   reinterpret_cast<void*>((ctx->batches.offset(i)+(j*3)) * sizeof(GLushort)));
+                }
 #endif
-        }
+            }
 
-        ctx->batches.resize(0);
+            ctx->batches.resize(0);
+        }
     }
 
     void Context::save()
