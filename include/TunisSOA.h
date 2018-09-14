@@ -59,7 +59,8 @@ template <typename... Elements>
 class RefCountedSOA
 {
 public:
-    using RefCount = uint32_t;
+    using id_t = uint32_t;
+    using refcount_t = uint32_t;
     enum {_refCount = sizeof...(Elements) };
 
     RefCountedSOA();
@@ -79,12 +80,12 @@ protected:
      * convienient function that pretty much does _soa.get<IDX>(_id); for you.
      */
     template <size_t ArrayIndex>
-    typename SoA<Elements..., RefCount>::template NthTypeOf<ArrayIndex>& get() const;
+    typename SoA<Elements..., refcount_t>::template NthTypeOf<ArrayIndex>& get() const;
 
 private:
-    static SoA<Elements..., RefCount> _soa;
-    static std::vector<uint32_t> _available;
-    uint32_t _id;
+    static SoA<Elements..., refcount_t> _soa;
+    static std::vector<id_t> _available;
+    id_t _id;
 };
 
 }

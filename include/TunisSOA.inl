@@ -13,7 +13,7 @@ inline RefCountedSOA<Elements...>::RefCountedSOA()
     }
     else
     {
-        _id = static_cast<uint32_t>(_soa.size());
+        _id = static_cast<id_t>(_soa.size());
         _soa.resize(_soa.size()+1);
     }
 
@@ -97,7 +97,7 @@ inline T RefCountedSOA<Elements...>::clone()
 
 template <typename... Elements>
 template <size_t ArrayIndex>
-inline typename SoA<Elements..., typename RefCountedSOA<Elements...>::RefCount>::template NthTypeOf<ArrayIndex>& RefCountedSOA<Elements...>::get() const
+inline typename SoA<Elements..., typename RefCountedSOA<Elements...>::refcount_t>::template NthTypeOf<ArrayIndex>& RefCountedSOA<Elements...>::get() const
 {
     return _soa.template get<ArrayIndex>(_id);
 }
@@ -110,10 +110,10 @@ inline void RefCountedSOA<Elements...>::reserve(size_t size)
 }
 
 template <typename... Elements>
-SoA<Elements..., typename RefCountedSOA<Elements...>::RefCount> RefCountedSOA<Elements...>::_soa;
+SoA<Elements..., typename RefCountedSOA<Elements...>::refcount_t> RefCountedSOA<Elements...>::_soa;
 
 template <typename... Elements>
-std::vector<uint32_t> RefCountedSOA<Elements...>::_available;
+std::vector<typename RefCountedSOA<Elements...>::id_t> RefCountedSOA<Elements...>::_available;
 
 
 }
