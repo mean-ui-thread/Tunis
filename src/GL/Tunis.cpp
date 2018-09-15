@@ -366,15 +366,19 @@ namespace tunis
             size_t i = subPaths.size();
             subPaths.resize(i + 1);
 
+            subPaths.mempool(i).resize(0);
+            subPaths.outerPoints(i).resize(0);
+            subPaths.innerPoints(i).resize(0);
             subPaths.closed(i) = false;
-            subPaths.points(i).push(std::move(startPos), {}, {});
+
+            subPaths.outerPoints(i).push(std::move(startPos), {}, {});
         }
 
         void ContextPriv::addPoint(SubPathArray &subPaths, glm::vec2 pos)
         {
             EASY_FUNCTION(profiler::colors::DarkRed);
 
-            auto &points = subPaths.points(subPaths.size()-1);
+            auto &points = subPaths.outerPoints(subPaths.size()-1);
 
             if (points.size() > 0)
             {
@@ -643,7 +647,7 @@ namespace tunis
 
         void ContextPriv::arcTo(SubPathArray &subPaths, float x1, float y1, float x2, float y2, float radius)
         {
-            auto &points = subPaths.points(subPaths.size()-1);
+            auto &points = subPaths.outerPoints(subPaths.size()-1);
 
             glm::vec2 p0 = points.pos(0);
             glm::vec2 p1(x1, y1);
@@ -739,7 +743,7 @@ namespace tunis
                     case BEZIER_TO:
                     {
                         if (subPaths.size() == 0) { addSubPath(subPaths, glm::vec2(0.0f)); }
-                        auto &points = subPaths.points(subPaths.size()-1);
+                        auto &points = subPaths.outerPoints(subPaths.size()-1);
                         auto &prevPoint = points.pos(points.size()-1);
                         bezier(subPaths,
                                prevPoint.x, prevPoint.y,
@@ -752,7 +756,7 @@ namespace tunis
                     case QUAD_TO:
                     {
                         if (subPaths.size() == 0) { addSubPath(subPaths, glm::vec2(0.0f)); }
-                        auto &points = subPaths.points(subPaths.size()-1);
+                        auto &points = subPaths.outerPoints(subPaths.size()-1);
                         auto &prevPoint = points.pos(points.size()-1);
                         float x0 = prevPoint.x;
                         float y0 = prevPoint.y;
@@ -812,7 +816,7 @@ namespace tunis
             // validate.
             for (size_t i = 0; i < subPaths.size(); ++i)
             {
-                auto &points = subPaths.points(i);
+                auto &points = subPaths.outerPoints(i);
 
                 // Check if the first and last point are the same. Get rid of
                 // the last point if that is the case, and close the subpath.
@@ -836,103 +840,87 @@ namespace tunis
             SubPathArray &subPaths = path.subPaths();
             for (size_t i = 0; i < subPaths.size(); ++i)
             {
-                auto &points = subPaths.points(i);
-                size_t pointCount = points.size();
+                auto &outerPoints = subPaths.outerPoints(i);
+                auto &innerPoints = subPaths.innerPoints(i);
 
                 if(subPaths.closed(i))
                 {
                     // Calculate direction vectors
-                    for (size_t p0 = pointCount - 1, p1 = 0; p1 < pointCount; p0 = p1++)
+                    for (size_t p0 = outerPoints.size() - 1, p1 = 0; p1 < outerPoints.size(); p0 = p1++)
                     {
-                        points.dir(p0) = glm::normalize(points.pos(p1) - points.pos(p0));
+                        outerPoints.dir(p0) = glm::normalize(outerPoints.pos(p1) - outerPoints.pos(p0));
                     }
 
                     // Calculate excrusion vectors
-                    for (size_t p0 = pointCount - 1, p1 = 0; p1 < pointCount; p0 = p1++)
+                    for (size_t p0 = outerPoints.size() - 1, p1 = 0; p1 < outerPoints.size(); p0 = p1++)
                     {
                         // rotate direction vector by 90degree CW
-                        glm::vec2 dir0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x);
-                        glm::vec2 dir1 = glm::vec2(points.dir(p1).y, -points.dir(p1).x);
+                        glm::vec2 dir0 = glm::vec2(outerPoints.dir(p0).y, -outerPoints.dir(p0).x);
+                        glm::vec2 dir1 = glm::vec2(outerPoints.dir(p1).y, -outerPoints.dir(p1).x);
                         glm::vec2 exc = (dir0 + dir1) * 0.5f;
                         float dot = glm::dot(exc, exc);
                         if (dot > glm::epsilon<float>())
                         {
                             exc *= glm::clamp(1.0f / dot, 0.0f, 1000.0f);
                         }
-                        points.exc(p1) = exc;
+                        outerPoints.exc(p1) = exc;
+                    }
+
+                    // create inner contour and re-adjust outer contour accordingly.
+                    innerPoints.resize(outerPoints.size());
+                    for (size_t p0 = 0; p0 < outerPoints.size(); ++p0)
+                    {
+                        innerPoints.pos(p0) = outerPoints.pos(p0) + (outerPoints.exc(p0) * halfLineWidth);
+                        outerPoints.pos(p0) = outerPoints.pos(p0) - (outerPoints.exc(p0) * halfLineWidth);
                     }
 
                 }
                 else
                 {
                     // Calculate direction vectors
-                    points.dir(0) = glm::normalize(points.pos(1) - points.pos(0)); // first point
-                    points.dir(pointCount-2) = glm::normalize(points.pos(pointCount-1) - points.pos(pointCount-2)); // second last point
-                    points.dir(pointCount-1) = points.dir(pointCount-2); // last point, which should be the same direction than the second last point.
-                    for (size_t p0 = 1, p1 = 2; p0 < pointCount-2; ++p0, ++p1)
+                    outerPoints.dir(0) = glm::normalize(outerPoints.pos(1) - outerPoints.pos(0)); // first point
+                    outerPoints.dir(outerPoints.size()-2) = glm::normalize(outerPoints.pos(outerPoints.size()-1) - outerPoints.pos(outerPoints.size()-2)); // second last point
+                    outerPoints.dir(outerPoints.size()-1) = outerPoints.dir(outerPoints.size()-2); // last point, which should be the same direction than the second last point.
+                    for (size_t p0 = 1, p1 = 2; p0 < outerPoints.size()-2; ++p0, ++p1)
                     {
-                        points.dir(p0) = glm::normalize(points.pos(p1) - points.pos(p0));
+                        outerPoints.dir(p0) = glm::normalize(outerPoints.pos(p1) - outerPoints.pos(p0));
                     }
 
                     // Calculate excrusion vectors
-                    points.exc(0) = glm::vec2(points.dir(0).y, -points.dir(0).x); // first point
-                    points.exc(pointCount-1) = glm::vec2(points.dir(pointCount-1).y, -points.dir(pointCount-1).x); // last point
-                    for (size_t p0 = 0, p1 = 1; p0 < pointCount-2; p0++, p1++)
+                    outerPoints.exc(0) = glm::vec2(outerPoints.dir(0).y, -outerPoints.dir(0).x); // first point
+                    outerPoints.exc(outerPoints.size()-1) = glm::vec2(outerPoints.dir(outerPoints.size()-1).y, -outerPoints.dir(outerPoints.size()-1).x); // last point
+                    for (size_t p0 = 0, p1 = 1; p0 < outerPoints.size()-2; p0++, p1++)
                     {
                         // rotate direction vector by 90degree CW
-                        glm::vec2 dir0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x);
-                        glm::vec2 dir1 = glm::vec2(points.dir(p1).y, -points.dir(p1).x);
+                        glm::vec2 dir0 = glm::vec2(outerPoints.dir(p0).y, -outerPoints.dir(p0).x);
+                        glm::vec2 dir1 = glm::vec2(outerPoints.dir(p1).y, -outerPoints.dir(p1).x);
                         glm::vec2 exc = (dir0 + dir1) * 0.5f;
                         float dot = glm::dot(exc, exc);
                         if (dot > glm::epsilon<float>())
                         {
                             exc *= glm::clamp(1.0f / dot, 0.0f, 1000.0f);
                         }
-                        points.exc(p1) = exc;
+                        outerPoints.exc(p1) = exc;
                     }
 
-                }
+                    const size_t outer0 = 0;
+                    const size_t outerN = outerPoints.size();
+                    outerPoints.resize(outerN*2);
+                    const size_t inner0 = outerN;
+                    const size_t innerN = outerPoints.size();
 
-                points.resize(pointCount*2);
-                for (size_t p0 = pointCount - 1, p1 = pointCount; p1 < points.size(); --p0, ++p1)
-                {
-                    points.pos(p1) = points.pos(p0) + (points.exc(p0) * halfLineWidth);
-                }
-
-                for (size_t p0 = 0; p0 < pointCount; ++p0)
-                {
-                    points.pos(p0) = points.pos(p0) - (points.exc(p0) * halfLineWidth);
-                }
-
-#if 0
-                    fprintf(stdout, "Directions: ");
-                    for (size_t p0 = 0; p0 < pointCount; ++p0)
+                    // Point[inner0] .. Point[innerN] populated by Point[outerN] .. Point[outer0] (reversed order)
+                    for (size_t outerPt = outerN - 1, innerPt = inner0; innerPt < innerN; --outerPt, ++innerPt)
                     {
-                        fprintf(stdout, "[%3.2f, %3.2f]", points.dir(p0).x, points.dir(p0).y);
+                        outerPoints.pos(innerPt) = outerPoints.pos(outerPt) + (outerPoints.exc(outerPt) * halfLineWidth);
                     }
-                    fprintf(stdout, "\n");
-                    fflush(stdout);
-#endif
 
-#if 0
-                    fprintf(stdout, "Excrusion: ");
-                    for (size_t p0 = 0; p0 < pointCount; ++p0)
+                    // Point[outer0] .. Point[outerN]
+                    for (size_t outerPt = outer0; outerPt < outerN; ++outerPt)
                     {
-                        fprintf(stdout, "[%3.2f, %3.2f]", points.exc(p0).x, points.exc(p0).y);
+                        outerPoints.pos(outerPt) = outerPoints.pos(outerPt) - (outerPoints.exc(outerPt) * halfLineWidth);
                     }
-                    fprintf(stdout, "\n");
-                    fflush(stdout);
-#endif
-
-#if 0
-                    fprintf(stdout, "Points: ");
-                    for (size_t p0 = 0; p0 < points.size(); ++p0)
-                    {
-                        fprintf(stdout, "[%3.2f, %3.2f]", points.pos(p0).x, points.pos(p0).y);
-                    }
-                    fprintf(stdout, "\n");
-                    fflush(stdout);
-#endif
+                }
 
             }
 
@@ -950,48 +938,66 @@ namespace tunis
             {
                 MPEPolyContext &polyContext = subPaths.polyContext(i);
                 MemPool &mempool = subPaths.mempool(i);
-                auto &points = subPaths.points(i);
+                auto &outerPoints = subPaths.outerPoints(i);
+                auto &innerPoints = subPaths.innerPoints(i);
 
                 // The maximum number of points you expect to need
                 // This value is used by the library to calculate
                 // working memory required
-                uint32_t maxPointCount = static_cast<uint32_t>(points.size());
+                uint32_t maxPointCount = static_cast<uint32_t>(outerPoints.size() + innerPoints.size());
 
                 // Request how much memory (in bytes) you should
                 // allocate for the library
                 size_t memoryRequired = MPE_PolyMemoryRequired(maxPointCount);
 
                 // Allocate a memory block of size MemoryRequired
-                mempool.resize(memoryRequired);
-
                 // IMPORTANT: The memory must be zero initialized
+                mempool.resize(memoryRequired, 0);
+
+                // TODO remove this line if it doesn't crash without it.
                 std::fill(mempool.begin(), mempool.end(), 0);
 
                 // Initialize the poly context by passing the memory pointer,
                 // and max number of points from before
                 MPE_PolyInitContext(&polyContext, mempool.data(), maxPointCount);
 
-                MPEPolyPoint* polyPoints = MPE_PolyPushPointArray(&polyContext, maxPointCount);
-
-                for(size_t j = 0; j < points.size(); ++j)
+                // fill outer polypoints buffer.
+                if (outerPoints.size() > 2)
                 {
-                    glm::vec2 &point = points.pos(j);
+                    MPEPolyPoint* polyPoints = MPE_PolyPushPointArray(&polyContext, outerPoints.size());
+                    for(size_t j = 0; j < outerPoints.size(); ++j)
+                    {
+                        glm::vec2 &point = outerPoints.pos(j);
 
-                    polyPoints[j].X = point.x;
-                    polyPoints[j].Y = point.y;
+                        polyPoints[j].X = point.x;
+                        polyPoints[j].Y = point.y;
 
-                    // update path bounds
-                    boundTopLeft     = glm::min(boundTopLeft,     point);
-                    boundBottomRight = glm::max(boundBottomRight, point);
-                }
-
-                // check if we're still a polygon, reset the subpath if we lost
-                // this status. we need a minimum of 3 points to do a proper fill.
-                if (polyContext.PointPoolCount >= 3)
-                {
+                        // update path bounds
+                        boundTopLeft     = glm::min(boundTopLeft,     point);
+                        boundBottomRight = glm::max(boundBottomRight, point);
+                    }
                     MPE_PolyAddEdge(&polyContext);
-                    MPE_PolyTriangulate(&polyContext);
                 }
+
+                // fill inner polypoints buffer.
+                if (innerPoints.size() > 2)
+                {
+                    MPEPolyPoint* polyHoles = MPE_PolyPushPointArray(&polyContext, innerPoints.size());
+                    for(size_t j = 0; j < innerPoints.size(); ++j)
+                    {
+                        glm::vec2 &point = innerPoints.pos(j);
+
+                        polyHoles[j].X = point.x;
+                        polyHoles[j].Y = point.y;
+
+                        // update path bounds
+                        boundTopLeft     = glm::min(boundTopLeft,     point);
+                        boundBottomRight = glm::max(boundBottomRight, point);
+                    }
+                    MPE_PolyAddHole(&polyContext);
+                }
+
+                MPE_PolyTriangulate(&polyContext);
 
 #if 0
                     fprintf(stdout, "Points:   ");
@@ -1168,7 +1174,7 @@ namespace tunis
         if (ctx->renderQueue.size() > 0)
         {
             // Generate Geometry (Multi-threaded)
-#pragma omp parallel for num_threads(std::thread::hardware_concurrency())
+//#pragma omp parallel for num_threads(std::thread::hardware_concurrency())
             for (int i = 0; i < ctx->renderQueue.size(); ++i)
             {
                 auto &path = ctx->renderQueue.path(i);

@@ -58,12 +58,13 @@ struct PointArray : public SoA<glm::vec2, glm::vec2, glm::vec2>
     inline glm::vec2 &exc(size_t idx) { return get<2>(idx); }
 };
 
-struct SubPathArray : public SoA<MPEPolyContext, MemPool, PointArray, uint8_t >
+struct SubPathArray : public SoA<MPEPolyContext, MemPool, PointArray, PointArray, uint8_t >
 {
     inline MPEPolyContext &polyContext(size_t idx) { return get<0>(idx); }
     inline MemPool &mempool(size_t idx) { return get<1>(idx); }
-    inline PointArray &points(size_t idx) { return get<2>(idx); }
-    inline uint8_t &closed(size_t idx) { return get<3>(idx); }
+    inline PointArray &outerPoints(size_t idx) { return get<2>(idx); }
+    inline PointArray &innerPoints(size_t idx) { return get<3>(idx); }
+    inline uint8_t &closed(size_t idx) { return get<4>(idx); }
 };
 
 }
