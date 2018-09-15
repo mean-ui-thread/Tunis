@@ -954,9 +954,6 @@ namespace tunis
                 // IMPORTANT: The memory must be zero initialized
                 mempool.resize(memoryRequired, 0);
 
-                // TODO remove this line if it doesn't crash without it.
-                std::fill(mempool.begin(), mempool.end(), 0);
-
                 // Initialize the poly context by passing the memory pointer,
                 // and max number of points from before
                 MPE_PolyInitContext(&polyContext, mempool.data(), maxPointCount);
@@ -998,27 +995,6 @@ namespace tunis
                 }
 
                 MPE_PolyTriangulate(&polyContext);
-
-#if 0
-                    fprintf(stdout, "Points:   ");
-                    for (size_t p0 = 0; p0 < points.size(); ++p0)
-                    {
-                        fprintf(stdout, "[%3.2f, %3.2f]", points.pos(p0).x, points.pos(p0).y);
-                    }
-                    fprintf(stdout, "\n");
-                    fflush(stdout);
-#endif
-
-#if 0
-                    fprintf(stdout, "Vertices: ");
-                    for (size_t p0 = 0; p0 < polyContext.PointPoolCount; ++p0)
-                    {
-                        fprintf(stdout, "[%3.2f, %3.2f]", polyContext.PointsPool[p0].X, polyContext.PointsPool[p0].Y);
-                    }
-                    fprintf(stdout, "\n");
-                    fflush(stdout);
-#endif
-
             }
         }
 
@@ -1174,7 +1150,7 @@ namespace tunis
         if (ctx->renderQueue.size() > 0)
         {
             // Generate Geometry (Multi-threaded)
-//#pragma omp parallel for num_threads(std::thread::hardware_concurrency())
+#pragma omp parallel for num_threads(std::thread::hardware_concurrency())
             for (int i = 0; i < ctx->renderQueue.size(); ++i)
             {
                 auto &path = ctx->renderQueue.path(i);
