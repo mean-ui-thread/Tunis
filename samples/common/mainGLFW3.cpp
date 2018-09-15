@@ -3,14 +3,13 @@
 
 #include <GLFW/glfw3.h>
 
-#include <cstdarg>
 #include <sstream>
 
 #include <easy/profiler.h>
 
 void error_callback(int error, const char* description)
 {
-    fprintf(stderr, "Error: %s\n", description);
+    fprintf(stderr, "Error %d: %s\n", error, description);
 }
 
 int main( int argc, char* args[] )
@@ -53,7 +52,7 @@ int main( int argc, char* args[] )
         SampleApp app;
 
         std::stringstream title;
-        title << "GLFW3 - " << SampleApp::getSampleName() << " - " << app.ctx.backendName();
+        title << SampleApp::getSampleName() << " - " << app.ctx.backendName();
 
         glfwSetWindowTitle(window, title.str().c_str());
 

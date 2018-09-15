@@ -73,6 +73,8 @@ namespace detail
                     break;
                 }
             }
+
+            path.reset();
         }
     };
 
@@ -162,24 +164,6 @@ void Context::endFrame()
     EASY_FUNCTION(profiler::colors::DarkCyan)
 
     nvgEndFrame(ctx->nvg);
-}
-
-void Context::fillRect(float x, float y, float width, float height)
-{
-    EASY_FUNCTION(profiler::colors::DarkCyan)
-
-    beginPath();
-    rect(x, y, width, height);
-    fill(ctx->currentPath);
-}
-
-void Context::strokeRect(float x, float y, float width, float height)
-{
-    EASY_FUNCTION(profiler::colors::DarkCyan)
-
-    beginPath();
-    rect(x, y, width, height);
-    stroke(ctx->currentPath);
 }
 
 void Context::clearRect(float x, float y, float width, float height)

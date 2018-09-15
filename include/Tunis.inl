@@ -16,6 +16,18 @@ inline void Context::closePath()
     currentPath.closePath();
 }
 
+inline void Context::fillRect(float x, float y, float width, float height)
+{
+    rect(x, y, width, height);
+    fill();
+}
+
+inline void Context::strokeRect(float x, float y, float width, float height)
+{
+    rect(x, y, width, height);
+    stroke();
+}
+
 inline void Context::moveTo(float x, float y)
 {
     EASY_FUNCTION(profiler::colors::DarkCyan)

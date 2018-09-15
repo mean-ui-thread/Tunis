@@ -2,7 +2,6 @@
 #include <SDL2/SDL.h>
 #include "SampleApp.h"
 
-#include <cstdarg>
 #include <sstream>
 
 #include <easy/profiler.h>
@@ -56,7 +55,7 @@ int main( int argc, char* args[] )
         SampleApp app;
 
         std::stringstream title;
-        title << "SDL2 - " << SampleApp::getSampleName() << " - " << app.ctx.backendName();
+        title << SampleApp::getSampleName() << " - " << app.ctx.backendName();
 
         SDL_SetWindowTitle(window, title.str().c_str());
 

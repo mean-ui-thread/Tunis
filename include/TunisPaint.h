@@ -68,36 +68,22 @@ public:
 
     inline Paint()
     {
-        reset();
+        xform() = SVGMatrix(1.0f);
+        extend() = Position(0.0f);
+        radius() = 0.0f;
+        feather() = 1.0f;
+        innerColor() = Black;
+        outerColor() = Transparent;
+        image() = 0;
     }
 
-    inline Paint(const Paint &other) : RefCountedSOA(other)
-    {
-    }
-
-    inline Paint(const Color &color) : RefCountedSOA()
+    inline Paint(const Color &color)
     {
         xform() = SVGMatrix(1.0f);
         extend() = Position(0.0f);
         radius() = 0.0f;
         feather() = 1.0f;
         innerColor() = color;
-        outerColor() = Transparent;
-        image() = 0;
-    }
-
-    inline Paint &operator=(const Color &color)
-    {
-        return operator=(Paint(color));
-    }
-
-    inline void reset()
-    {
-        xform() = SVGMatrix(1.0f);
-        extend() = Position(0.0f);
-        radius() = 0.0f;
-        feather() = 1.0f;
-        innerColor() = Black;
         outerColor() = Transparent;
         image() = 0;
     }

@@ -5,7 +5,6 @@
 #include <TunisColor.h>
 #include <TunisPaint.h>
 #include <TunisPath2D.h>
-#include <TunisTexture.h>
 #include <TunisMath.h>
 
 #include <memory>
