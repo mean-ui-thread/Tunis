@@ -9,6 +9,7 @@
 
 int main( int argc, char* args[] )
 {
+    EASY_MAIN_THREAD;
     EASY_PROFILER_ENABLE;
     profiler::startListen();
 
@@ -62,10 +63,12 @@ int main( int argc, char* args[] )
         SDL_Event e = {};
         Uint64 start = SDL_GetPerformanceCounter();
 
+        std::string frameName = std::string("Frame with ") + app.ctx.backendName() + " backend";
+
         bool quit = false;
         while( !quit )
         {
-            EASY_BLOCK("Frame");
+            EASY_BLOCK(frameName);
 
             //Handle events on queue
             while( SDL_PollEvent( &e ) != 0 )

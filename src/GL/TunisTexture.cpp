@@ -5,8 +5,6 @@
 
 #include <soa.h>
 
-#include <easy/profiler.h>
-
 namespace tunis
 {
 
@@ -39,8 +37,6 @@ Texture::Texture() : id(0)
 
 Texture::Texture(int width, int height, Filtering filtering)
 {
-    EASY_FUNCTION(profiler::colors::Brick)
-
     GLuint handle;
 
     glGenTextures(1, &handle);

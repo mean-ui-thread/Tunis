@@ -15,6 +15,7 @@ void error_callback(int error, const char* description)
 
 int main( int argc, char* args[] )
 {
+    EASY_MAIN_THREAD;
     EASY_PROFILER_ENABLE;
     profiler::startListen();
 
@@ -56,9 +57,10 @@ int main( int argc, char* args[] )
 
         glfwSetWindowTitle(window, title.str().c_str());
 
+        std::string frameName = std::string("Frame with ") + app.ctx.backendName() + " backend";
         while (!glfwWindowShouldClose(window))
         {
-            EASY_BLOCK("Frame");
+            EASY_BLOCK(frameName);
             glfwPollEvents();
 
             int winWidth, winHeight, fbWidth , fbHeight;

@@ -136,9 +136,8 @@ namespace tunis
             void triangulate(Path2D &path);
         };
 
-        void ShaderProgram::useProgram()
+        inline void ShaderProgram::useProgram()
         {
-            EASY_FUNCTION(profiler::colors::Red);
             if (gfxStates.programId != programId)
             {
                 glUseProgram(programId);
@@ -146,9 +145,8 @@ namespace tunis
             }
         }
 
-        void ShaderProgram::setTexture0Uniform(int32_t value)
+        inline void ShaderProgram::setTexture0Uniform(int32_t value)
         {
-            EASY_FUNCTION(profiler::colors::Red);
             assert(value >= 0 && value < 32);
             assert(gfxStates.programId == programId);
 
@@ -160,9 +158,8 @@ namespace tunis
             }
         }
 
-        void ShaderProgram::setViewSizeUniform(int32_t width, int32_t height)
+        inline void ShaderProgram::setViewSizeUniform(int32_t width, int32_t height)
         {
-            EASY_FUNCTION(profiler::colors::Red);
             assert(gfxStates.programId == programId);
 
             if (viewWidth != width || viewHeight != height)
@@ -176,10 +173,8 @@ namespace tunis
             }
         }
 
-        void ShaderProgram::init()
+        inline void ShaderProgram::init()
         {
-            EASY_FUNCTION(profiler::colors::Red);
-
             GLuint vert = glCreateShader(GL_VERTEX_SHADER);
             GLuint frag = glCreateShader(GL_FRAGMENT_SHADER);
             programId = glCreateProgram();
@@ -253,10 +248,8 @@ namespace tunis
             setTexture0Uniform(0);
         }
 
-        void ShaderProgram::shutdown()
+        inline void ShaderProgram::shutdown()
         {
-            EASY_FUNCTION(profiler::colors::Red);
-
             if (gfxStates.programId == programId)
             {
                 glUseProgram(0);
@@ -276,10 +269,8 @@ namespace tunis
             texture0 = 0;
         }
 
-        uint16_t ContextPriv::addBatch(ShaderProgram *program, Texture texture, float lineWidth, uint32_t vertexCount, uint32_t indexCount, Vertex **vout, Index **iout)
+        inline uint16_t ContextPriv::addBatch(ShaderProgram *program, Texture texture, float lineWidth, uint32_t vertexCount, uint32_t indexCount, Vertex **vout, Index **iout)
         {
-            EASY_FUNCTION(profiler::colors::DarkRed);
-
             assert(vertexCount >= 3);
 
             size_t istart = indexBuffer.size();
@@ -316,10 +307,8 @@ namespace tunis
             return static_cast<uint16_t>(vstart);
         }
 
-        void ContextPriv::pushColorRect(float x, float y, float w, float h, const Color &color)
+        inline void ContextPriv::pushColorRect(float x, float y, float w, float h, const Color &color)
         {
-            EASY_FUNCTION(profiler::colors::DarkRed);
-
             /*
              * [0]<----------[3]
              *  | \           ^
@@ -348,10 +337,8 @@ namespace tunis
             indices[5] = offset+3;
         }
 
-        void ContextPriv::renderViewport(int w, int h, float devicePixelRatio)
+        inline void ContextPriv::renderViewport(int w, int h, float devicePixelRatio)
         {
-            EASY_FUNCTION(profiler::colors::DarkRed);
-
             viewWidth = std::move(w);
             viewHeight = std::move(h);
             tessTol = 0.25f / devicePixelRatio;
@@ -359,10 +346,8 @@ namespace tunis
 
         }
 
-        void ContextPriv::addSubPath(SubPathArray &subPaths, glm::vec2 startPos)
+        inline void ContextPriv::addSubPath(SubPathArray &subPaths, glm::vec2 startPos)
         {
-            EASY_FUNCTION(profiler::colors::DarkRed);
-
             size_t i = subPaths.size();
             subPaths.resize(i + 1);
 
@@ -374,10 +359,8 @@ namespace tunis
             subPaths.outerPoints(i).push(std::move(startPos), {}, {});
         }
 
-        void ContextPriv::addPoint(SubPathArray &subPaths, glm::vec2 pos)
+        inline void ContextPriv::addPoint(SubPathArray &subPaths, glm::vec2 pos)
         {
-            EASY_FUNCTION(profiler::colors::DarkRed);
-
             auto &points = subPaths.outerPoints(subPaths.size()-1);
 
             if (points.size() > 0)
@@ -395,30 +378,26 @@ namespace tunis
 
 
         // based of http://antigrain.com/__code/src/agg_curves.cpp.html by Maxim Shemanarev
-        void ContextPriv::bezier(SubPathArray &subPaths, float x1, float y1, float x2,
+        inline void ContextPriv::bezier(SubPathArray &subPaths, float x1, float y1, float x2,
                                  float y2, float x3, float y3, float x4, float y4)
         {
-            EASY_FUNCTION(profiler::colors::DarkRed);
             addPoint(subPaths, glm::vec2(x1, y1));
             recursiveBezier(subPaths, x1, y1, x2, y2, x3, y3, x4, y4, 0);
             addPoint(subPaths, glm::vec2(x4, y4));
         }
-        float ContextPriv::calcSqrtDistance(float x1, float y1, float x2, float y2)
+        inline float ContextPriv::calcSqrtDistance(float x1, float y1, float x2, float y2)
         {
-            EASY_FUNCTION(profiler::colors::DarkRed);
             float dx = x2-x1;
             float dy = y2-y1;
             return dx * dx + dy * dy;
         }
-        void ContextPriv::recursiveBezier(SubPathArray &subPaths,
-                                          float x1, float y1,
-                                          float x2, float y2,
-                                          float x3, float y3,
-                                          float x4, float y4,
-                                          int32_t level)
+        inline void ContextPriv::recursiveBezier(SubPathArray &subPaths,
+                                                 float x1, float y1,
+                                                 float x2, float y2,
+                                                 float x3, float y3,
+                                                 float x4, float y4,
+                                                 int32_t level)
         {
-            EASY_FUNCTION(profiler::colors::DarkRed);
-
             if(level > TUNIS_CURVE_RECURSION_LIMIT)
             {
                 return;
@@ -537,11 +516,10 @@ namespace tunis
             recursiveBezier(subPaths, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
         }
 
-        void ContextPriv::arc(SubPathArray &subPaths, float centerX, float centerY,
-                              float radius, float startAngle, float endAngle,
-                              bool anticlockwise)
+        inline void ContextPriv::arc(SubPathArray &subPaths, float centerX, float centerY,
+                                     float radius, float startAngle, float endAngle,
+                                     bool anticlockwise)
         {
-            EASY_FUNCTION(profiler::colors::DarkRed);
             float deltaAngle = endAngle - startAngle;
 
             if (anticlockwise)
@@ -625,7 +603,7 @@ namespace tunis
             }
         }
 
-        float ContextPriv::distPtSeg(const glm::vec2 &c, const glm::vec2 &p, const glm::vec2 &q)
+        inline float ContextPriv::distPtSeg(const glm::vec2 &c, const glm::vec2 &p, const glm::vec2 &q)
         {
             glm::vec2 pq = q - p;
             glm::vec2 pc = c - p;
@@ -645,7 +623,7 @@ namespace tunis
             return glm::dot(pc, pc);
         }
 
-        void ContextPriv::arcTo(SubPathArray &subPaths, float x1, float y1, float x2, float y2, float radius)
+        inline void ContextPriv::arcTo(SubPathArray &subPaths, float x1, float y1, float x2, float y2, float radius)
         {
             auto &points = subPaths.outerPoints(subPaths.size()-1);
 
@@ -713,9 +691,8 @@ namespace tunis
         }
 
 
-        void ContextPriv::generateFillContour(Path2D &path)
+        inline void ContextPriv::generateFillContour(Path2D &path)
         {
-            EASY_FUNCTION(profiler::colors::DarkRed);
 
             SubPathArray &subPaths = path.subPaths();
             PathCommandArray &commands = path.commands();
@@ -831,7 +808,7 @@ namespace tunis
             }
         }
 
-        void ContextPriv::generateStrokeContour(Path2D &path, float lineWidth)
+        inline void ContextPriv::generateStrokeContour(Path2D &path, float lineWidth)
         {
             generateFillContour(path);
 
@@ -1004,7 +981,7 @@ namespace tunis
     Context::Context() :
         ctx(new detail::ContextPriv())
     {
-        EASY_FUNCTION(profiler::colors::RichRed);
+        EASY_FUNCTION(profiler::colors::DarkCyan)
 
         auto tunisGL_initialized = tunisGLInit();
         if (!tunisGL_initialized)
@@ -1068,7 +1045,7 @@ namespace tunis
 
     Context::~Context()
     {
-        EASY_FUNCTION(profiler::colors::RichRed);
+        EASY_FUNCTION(profiler::colors::DarkCyan)
 
         // unload texture data by deleting every potential texture holders.
         ctx->textures.resize(0);
@@ -1107,7 +1084,7 @@ namespace tunis
 
     void Context::clearFrame(int32_t fbLeft, int32_t fbTop, int32_t fbWidth, int32_t fbHeight, Color backgroundColor)
     {
-        EASY_FUNCTION(profiler::colors::RichRed);
+        EASY_FUNCTION(profiler::colors::DarkCyan)
 
         // update the clear color if necessary
         if (detail::gfxStates.backgroundColor != backgroundColor)
@@ -1133,7 +1110,7 @@ namespace tunis
 
     void Context::beginFrame(int32_t winWidth, int32_t winHeight, float devicePixelRatio)
     {
-        EASY_FUNCTION(profiler::colors::RichRed);
+        EASY_FUNCTION(profiler::colors::DarkCyan)
 
         // reset the states.
         ctx->states.resize(0);
@@ -1144,7 +1121,7 @@ namespace tunis
 
     void Context::endFrame()
     {
-        EASY_FUNCTION(profiler::colors::RichRed);
+        EASY_FUNCTION(profiler::colors::DarkCyan)
 
         // flush the render Queue.
         if (ctx->renderQueue.size() > 0)
@@ -1300,13 +1277,13 @@ namespace tunis
 
     void Context::save()
     {
-        EASY_FUNCTION(profiler::colors::RichRed);
+        EASY_FUNCTION(profiler::colors::DarkCyan)
         ctx->states.push_back(*this);
     }
 
     void Context::restore()
     {
-        EASY_FUNCTION(profiler::colors::RichRed);
+        EASY_FUNCTION(profiler::colors::DarkCyan)
         if (ctx->states.size() > 0)
         {
             *static_cast<ContextState*>(this) = ctx->states.back();
@@ -1316,13 +1293,13 @@ namespace tunis
 
     void Context::fillRect(float x, float y, float width, float height)
     {
-        EASY_FUNCTION(profiler::colors::RichRed);
+        EASY_FUNCTION(profiler::colors::DarkCyan)
         ctx->pushColorRect(std::move(x), std::move(y), std::move(width), std::move(height), fillStyle.innerColor());
     }
 
     void Context::strokeRect(float x, float y, float width, float height)
     {
-        EASY_FUNCTION(profiler::colors::RichRed);
+        EASY_FUNCTION(profiler::colors::DarkCyan)
 
         // helps to get the lines a bit sharper when the line width is not divisible by two.
         float offset = fmodf(lineWidth, 2.0f) / 2.0f;
@@ -1346,13 +1323,13 @@ namespace tunis
 
     void Context::clearRect(float x, float y, float width, float height)
     {
-        EASY_FUNCTION(profiler::colors::RichRed);
+        EASY_FUNCTION(profiler::colors::DarkCyan)
         ctx->pushColorRect(std::move(x), std::move(y), std::move(width), std::move(height), detail::gfxStates.backgroundColor);
     }
 
     void Context::fill(Path2D &path, FillRule /*fillRule*/)
     {
-        EASY_FUNCTION(profiler::colors::RichRed);
+        EASY_FUNCTION(profiler::colors::DarkCyan)
         ctx->renderQueue.push(detail::DRAW_FILL,
                               path.clone<Path2D>(),
                               std::move(*this));
@@ -1360,7 +1337,7 @@ namespace tunis
 
     void Context::stroke(Path2D &path)
     {
-        EASY_FUNCTION(profiler::colors::RichRed);
+        EASY_FUNCTION(profiler::colors::DarkCyan)
         ctx->renderQueue.push(detail::DRAW_STROKE,
                               path.clone<Path2D>(),
                               std::move(*this));
