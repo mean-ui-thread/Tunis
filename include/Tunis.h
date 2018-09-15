@@ -28,6 +28,8 @@ public:
     Context(const Context &) = delete;
     Context &operator=(const Context &) = delete;
 
+    const char * backendName() const;
+
     void clearFrame(int32_t fbLeft, int32_t fbTop,
                     int32_t fbWidth, int32_t fbHeight,
                     Color backgroundColor = White);

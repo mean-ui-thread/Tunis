@@ -111,6 +111,11 @@ Context::~Context()
     tunisGLShutdown();
 }
 
+const char * Context::backendName() const
+{
+    return "NanoVG (GL3)";
+}
+
 void Context::clearFrame(int fbLeft, int fbTop, int fbWidth, int fbHeight, Color backgroundColor)
 {
     EASY_FUNCTION(profiler::colors::Teal);

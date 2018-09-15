@@ -2,8 +2,8 @@
 #include <SDL2/SDL.h>
 #include "SampleApp.h"
 
-#include <chrono>
 #include <cstdarg>
+#include <sstream>
 
 #include <easy/profiler.h>
 
@@ -21,12 +21,12 @@ int main( int argc, char* args[] )
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 2 );
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
-    SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
-    SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 4);
+//    SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1);
+//    SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 4);
     SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE, 8);
 
-    SDL_Window* window = SDL_CreateWindow(SampleApp::getSampleName(),
+    SDL_Window* window = SDL_CreateWindow(nullptr,
                                           SDL_WINDOWPOS_UNDEFINED,
                                           SDL_WINDOWPOS_UNDEFINED,
                                           SampleApp::getWindowWidth(),
@@ -53,6 +53,11 @@ int main( int argc, char* args[] )
         // tunis::Context can only be instantiated after a context is created
         // and made current
         SampleApp app;
+
+        std::stringstream title;
+        title << "SDL2 - " << SampleApp::getSampleName() << " - " << app.ctx.backendName();
+
+        SDL_SetWindowTitle(window, title.str().c_str());
 
         SDL_Event e = {};
         Uint64 start = SDL_GetPerformanceCounter();

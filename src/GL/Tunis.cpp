@@ -837,41 +837,102 @@ namespace tunis
             for (size_t i = 0; i < subPaths.size(); ++i)
             {
                 auto &points = subPaths.points(i);
+                size_t pointCount = points.size();
 
-                // Calculate direction vectors
-                for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
+                if(subPaths.closed(i))
                 {
-                    points.dir(p0) = glm::normalize(points.pos(p1) - points.pos(p0));
-                }
-
-                // Calculate excrusion vectors
-                for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
-                {
-                    // rotate direction vector by 90degree CW
-                    glm::vec2 dir0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x);
-                    glm::vec2 dir1 = glm::vec2(points.dir(p1).y, -points.dir(p1).x);
-
-                    glm::vec2 exc = (dir0 + dir1) * 0.5f;
-                    float dot = glm::dot(exc, exc);
-                    if (dot > glm::epsilon<float>())
+                    // Calculate direction vectors
+                    for (size_t p0 = pointCount - 1, p1 = 0; p1 < pointCount; p0 = p1++)
                     {
-                        exc *= glm::clamp(1.0f / dot, 0.0f, 1000.0f);
+                        points.dir(p0) = glm::normalize(points.pos(p1) - points.pos(p0));
                     }
 
-                    points.exc(p1) = exc;
+                    // Calculate excrusion vectors
+                    for (size_t p0 = pointCount - 1, p1 = 0; p1 < pointCount; p0 = p1++)
+                    {
+                        // rotate direction vector by 90degree CW
+                        glm::vec2 dir0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x);
+                        glm::vec2 dir1 = glm::vec2(points.dir(p1).y, -points.dir(p1).x);
+                        glm::vec2 exc = (dir0 + dir1) * 0.5f;
+                        float dot = glm::dot(exc, exc);
+                        if (dot > glm::epsilon<float>())
+                        {
+                            exc *= glm::clamp(1.0f / dot, 0.0f, 1000.0f);
+                        }
+                        points.exc(p1) = exc;
+                    }
+
+                }
+                else
+                {
+                    // Calculate direction vectors
+                    points.dir(0) = glm::normalize(points.pos(1) - points.pos(0)); // first point
+                    points.dir(pointCount-2) = glm::normalize(points.pos(pointCount-1) - points.pos(pointCount-2)); // second last point
+                    points.dir(pointCount-1) = points.dir(pointCount-2); // last point, which should be the same direction than the second last point.
+                    for (size_t p0 = 1, p1 = 2; p0 < pointCount-2; ++p0, ++p1)
+                    {
+                        points.dir(p0) = glm::normalize(points.pos(p1) - points.pos(p0));
+                    }
+
+                    // Calculate excrusion vectors
+                    points.exc(0) = glm::vec2(points.dir(0).y, -points.dir(0).x); // first point
+                    points.exc(pointCount-1) = glm::vec2(points.dir(pointCount-1).y, -points.dir(pointCount-1).x); // last point
+                    for (size_t p0 = 0, p1 = 1; p0 < pointCount-2; p0++, p1++)
+                    {
+                        // rotate direction vector by 90degree CW
+                        glm::vec2 dir0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x);
+                        glm::vec2 dir1 = glm::vec2(points.dir(p1).y, -points.dir(p1).x);
+                        glm::vec2 exc = (dir0 + dir1) * 0.5f;
+                        float dot = glm::dot(exc, exc);
+                        if (dot > glm::epsilon<float>())
+                        {
+                            exc *= glm::clamp(1.0f / dot, 0.0f, 1000.0f);
+                        }
+                        points.exc(p1) = exc;
+                    }
+
                 }
 
-                size_t pointCount = points.size();
                 points.resize(pointCount*2);
                 for (size_t p0 = pointCount - 1, p1 = pointCount; p1 < points.size(); --p0, ++p1)
                 {
-                    points.pos(p1) = points.pos(p0) - (points.exc(p0) * halfLineWidth);
+                    points.pos(p1) = points.pos(p0) + (points.exc(p0) * halfLineWidth);
                 }
 
                 for (size_t p0 = 0; p0 < pointCount; ++p0)
                 {
-                    points.pos(p0) = points.pos(p0) + (points.exc(p0) * halfLineWidth);
+                    points.pos(p0) = points.pos(p0) - (points.exc(p0) * halfLineWidth);
                 }
+
+#if 0
+                    fprintf(stdout, "Directions: ");
+                    for (size_t p0 = 0; p0 < pointCount; ++p0)
+                    {
+                        fprintf(stdout, "[%3.2f, %3.2f]", points.dir(p0).x, points.dir(p0).y);
+                    }
+                    fprintf(stdout, "\n");
+                    fflush(stdout);
+#endif
+
+#if 0
+                    fprintf(stdout, "Excrusion: ");
+                    for (size_t p0 = 0; p0 < pointCount; ++p0)
+                    {
+                        fprintf(stdout, "[%3.2f, %3.2f]", points.exc(p0).x, points.exc(p0).y);
+                    }
+                    fprintf(stdout, "\n");
+                    fflush(stdout);
+#endif
+
+#if 0
+                    fprintf(stdout, "Points: ");
+                    for (size_t p0 = 0; p0 < points.size(); ++p0)
+                    {
+                        fprintf(stdout, "[%3.2f, %3.2f]", points.pos(p0).x, points.pos(p0).y);
+                    }
+                    fprintf(stdout, "\n");
+                    fflush(stdout);
+#endif
 
             }
 
@@ -931,6 +992,27 @@ namespace tunis
                     MPE_PolyAddEdge(&polyContext);
                     MPE_PolyTriangulate(&polyContext);
                 }
+
+#if 0
+                    fprintf(stdout, "Points:   ");
+                    for (size_t p0 = 0; p0 < points.size(); ++p0)
+                    {
+                        fprintf(stdout, "[%3.2f, %3.2f]", points.pos(p0).x, points.pos(p0).y);
+                    }
+                    fprintf(stdout, "\n");
+                    fflush(stdout);
+#endif
+
+#if 0
+                    fprintf(stdout, "Vertices: ");
+                    for (size_t p0 = 0; p0 < polyContext.PointPoolCount; ++p0)
+                    {
+                        fprintf(stdout, "[%3.2f, %3.2f]", polyContext.PointsPool[p0].X, polyContext.PointsPool[p0].Y);
+                    }
+                    fprintf(stdout, "\n");
+                    fflush(stdout);
+#endif
+
             }
         }
 
@@ -1036,7 +1118,10 @@ namespace tunis
         tunisGLShutdown();
     }
 
-
+    const char * Context::backendName() const
+    {
+        return "GL";
+    }
 
     void Context::clearFrame(int32_t fbLeft, int32_t fbTop, int32_t fbWidth, int32_t fbHeight, Color backgroundColor)
     {
@@ -1148,30 +1233,19 @@ namespace tunis
                     }
 
                     //populate the indicies
-                    switch(ctx->renderQueue.op(i))
+                    for (size_t tid = 0; tid < polyContext.TriangleCount; ++tid)
                     {
-                        case detail::DRAW_FILL:
-                            for (size_t tid = 0; tid < polyContext.TriangleCount; ++tid)
-                            {
-                                MPEPolyTriangle* triangle = polyContext.Triangles[tid];
+                        MPEPolyTriangle* triangle = polyContext.Triangles[tid];
 
-                                // get the array index by pointer address arithmetic.
-                                uint16_t p0 = static_cast<uint16_t>(triangle->Points[0] - polyContext.PointsPool);
-                                uint16_t p1 = static_cast<uint16_t>(triangle->Points[1] - polyContext.PointsPool);
-                                uint16_t p2 = static_cast<uint16_t>(triangle->Points[2] - polyContext.PointsPool);
+                        // get the array index by pointer address arithmetic.
+                        uint16_t p0 = static_cast<uint16_t>(triangle->Points[0] - polyContext.PointsPool);
+                        uint16_t p1 = static_cast<uint16_t>(triangle->Points[1] - polyContext.PointsPool);
+                        uint16_t p2 = static_cast<uint16_t>(triangle->Points[2] - polyContext.PointsPool);
 
-                                size_t iid = tid * 3;
-                                indices[iid+0] = offset+p2;
-                                indices[iid+1] = offset+p1;
-                                indices[iid+2] = offset+p0;
-                            }
-                            break;
-                        case detail::DRAW_STROKE:
-                            for (size_t iid = 0; iid < polyContext.PointPoolCount; ++iid)
-                            {
-                                indices[iid] = static_cast<uint16_t>(offset+iid);
-                            }
-                            break;
+                        size_t iid = tid * 3;
+                        indices[iid+0] = offset+p2;
+                        indices[iid+1] = offset+p1;
+                        indices[iid+2] = offset+p0;
                     }
                 }
             }
@@ -1210,12 +1284,14 @@ namespace tunis
                 ctx->batches.texture(i).bind();
 
 
-#if 0
+#if 1
                 glDrawElements(GL_TRIANGLES,
                                static_cast<GLsizei>(ctx->batches.count(i)),
                                GL_UNSIGNED_SHORT,
                                reinterpret_cast<void*>(ctx->batches.offset(i) * sizeof(GLushort)));
-#else
+#endif
+
+#if 0
                 // Helpful code for debugging triangles.
                 for (size_t j = 0; j < ctx->batches.count(i)/3; ++j)
                 {
@@ -1225,6 +1301,15 @@ namespace tunis
                                    reinterpret_cast<void*>((ctx->batches.offset(i)+(j*3)) * sizeof(GLushort)));
                 }
 #endif
+
+#if 0
+                // Helpful code for debugging contours.
+                glDrawElements(GL_LINE_STRIP,
+                               static_cast<GLsizei>(ctx->batches.count(i)),
+                               GL_UNSIGNED_SHORT,
+                               reinterpret_cast<void*>(ctx->batches.offset(i) * sizeof(GLushort)));
+#endif
+
             }
 
             ctx->batches.resize(0);

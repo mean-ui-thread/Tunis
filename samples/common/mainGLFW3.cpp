@@ -3,8 +3,8 @@
 
 #include <GLFW/glfw3.h>
 
-#include <chrono>
 #include <cstdarg>
+#include <sstream>
 
 #include <easy/profiler.h>
 
@@ -34,8 +34,7 @@ int main( int argc, char* args[] )
 
     GLFWwindow* window = glfwCreateWindow(SampleApp::getWindowWidth(),
                                           SampleApp::getWindowHeight(),
-                                          SampleApp::getSampleName(),
-                                          nullptr, nullptr);
+                                          "", nullptr, nullptr);
 
     if(!window)
     {
@@ -52,11 +51,15 @@ int main( int argc, char* args[] )
         // and made current
         SampleApp app;
 
+        std::stringstream title;
+        title << "GLFW3 - " << SampleApp::getSampleName() << " - " << app.ctx.backendName();
+
+        glfwSetWindowTitle(window, title.str().c_str());
+
         while (!glfwWindowShouldClose(window))
         {
             EASY_BLOCK("Frame");
             glfwPollEvents();
-
 
             int winWidth, winHeight, fbWidth , fbHeight;
             glfwGetWindowSize(window, &winWidth, &winHeight);
