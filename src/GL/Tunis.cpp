@@ -42,13 +42,6 @@ namespace tunis
             DRAW_STROKE
         };
 
-        enum Topology
-        {
-            Triangles = GL_TRIANGLES,
-            Lines = GL_LINE_STRIP,
-            LineLoop = GL_LINE_LOOP
-        };
-
         class ShaderProgram
         {
         public:
@@ -78,14 +71,13 @@ namespace tunis
             int32_t texture0 = 0;
         };
 
-        struct BatchArray : public SoA<ShaderProgram*, Texture, Topology, float, size_t, size_t>
+        struct BatchArray : public SoA<ShaderProgram*, Texture, float, size_t, size_t>
         {
             inline ShaderProgram* &program(size_t i) { return get<0>(i); }
             inline Texture &texture(size_t i) { return get<1>(i); }
-            inline Topology &topology(size_t i) { return get<2>(i); }
-            inline float &lineWidth(size_t i) { return get<3>(i); }
-            inline size_t &offset(size_t i) { return get<4>(i); }
-            inline size_t &count(size_t i) { return get<5>(i); }
+            inline float &lineWidth(size_t i) { return get<2>(i); }
+            inline size_t &offset(size_t i) { return get<3>(i); }
+            inline size_t &count(size_t i) { return get<4>(i); }
         };
 
         struct DrawOpArray : public SoA<DrawOp, Path2D, ContextState>
@@ -124,22 +116,23 @@ namespace tunis
 
             constexpr static uint16_t edgeLUT[] = {0, 1, 2, 0, 1, 2, 3};
 
-            uint16_t addBatch(ShaderProgram *program, Texture texture, Topology topology, float lineWidth, uint32_t vertexCount, uint32_t indexCount, Vertex **vout, Index **iout);
+            uint16_t addBatch(ShaderProgram *program, Texture texture, float lineWidth, uint32_t vertexCount, uint32_t indexCount, Vertex **vout, Index **iout);
             void pushColorRect(float x, float y, float w, float h, const Color &color);
             void renderViewport(int w, int h, float devicePixelRatio);
-            void addSubPath(SubPathArray &subPaths, float startX, float startY);
-            MPEPolyPoint* addPoint(MPEPolyContext &ctx, float x, float y);
+            void addSubPath(SubPathArray &subPaths, glm::vec2 startPos);
+            void addPoint(SubPathArray &subPaths, glm::vec2 pos);
             float calcSqrtDistance(float x1, float y1, float x2, float y2);
-            void bezier(MPEPolyContext &ctx, float x1, float y1, float x2, float y2,
+            void bezier(SubPathArray &subPaths, float x1, float y1, float x2, float y2,
                         float x3, float y3, float x4, float y4);
-            void recursiveBezier(MPEPolyContext &ctx, float x1, float y1, float x2,
+            void recursiveBezier(SubPathArray &subPaths, float x1, float y1, float x2,
                                  float y2, float x3, float y3, float x4, float y4,
                                  int32_t level);
             void arc(SubPathArray &subPaths, float centerX, float centerY, float radius,
                      float angleStart, float angleEnd, bool anticlockwise);
             float distPtSeg(const glm::vec2 &c, const glm::vec2 &p, const glm::vec2 &q);
             void arcTo(SubPathArray &subPaths, float x1, float y1, float x2, float y2, float radius);
-            void generateContour(Path2D &path);
+            void generateFillContour(Path2D &path);
+            void generateStrokeContour(Path2D &path, float lineWidth);
             void triangulate(Path2D &path);
         };
 
@@ -283,7 +276,7 @@ namespace tunis
             texture0 = 0;
         }
 
-        uint16_t ContextPriv::addBatch(ShaderProgram *program, Texture texture, Topology topology, float lineWidth, uint32_t vertexCount, uint32_t indexCount, Vertex **vout, Index **iout)
+        uint16_t ContextPriv::addBatch(ShaderProgram *program, Texture texture, float lineWidth, uint32_t vertexCount, uint32_t indexCount, Vertex **vout, Index **iout)
         {
             EASY_FUNCTION(profiler::colors::DarkRed);
 
@@ -299,29 +292,23 @@ namespace tunis
             vertexBuffer.resize(vend);
             if (vout) *vout = &vertexBuffer[vstart];
 
-            if (topology == GL_TRIANGLES)
+            if (batches.size() > 0)
             {
-                if (batches.size() > 0)
+                size_t id = batches.size() - 1; // last batch.
+
+                if (batches.program(id) == program &&
+                    batches.texture(id) == texture)
                 {
-                    size_t id = batches.size() - 1; // last batch.
-
-                    if (batches.program(id) == program &&
-                        batches.texture(id) == texture &&
-                        batches.topology(id) == topology)
-                    {
-                        // the batch may continue
-                        batches.count(id) += indexCount;
-                        return static_cast<uint16_t>(vstart);
-                    }
+                    // the batch may continue
+                    batches.count(id) += indexCount;
+                    return static_cast<uint16_t>(vstart);
                 }
-
             }
 
             // start a new batch. RenderDefault2D can use any textures for now, as long
             // as they have that little white square in them.
             batches.push(std::move(program),
                          std::move(texture),
-                         std::move(topology),
                          std::move(lineWidth),
                          std::move(istart),
                          std::move(indexCount));
@@ -346,7 +333,7 @@ namespace tunis
 
             Vertex *vertices;
             Index *indices;
-            uint16_t offset = addBatch(&default2DProgram, textures.back(), Triangles, 1.0f, 4, 6, &vertices, &indices);
+            uint16_t offset = addBatch(&default2DProgram, textures.back(), 1.0f, 4, 6, &vertices, &indices);
 
             vertices[0] = {{x,   y  }, {0, 0}, color}; // top left
             vertices[1] = {{x,   y+h}, {0, 1}, color}; // bottom left
@@ -372,71 +359,45 @@ namespace tunis
 
         }
 
-        void ContextPriv::addSubPath(SubPathArray &subPaths, float startX, float startY)
+        void ContextPriv::addSubPath(SubPathArray &subPaths, glm::vec2 startPos)
         {
             EASY_FUNCTION(profiler::colors::DarkRed);
 
             size_t i = subPaths.size();
             subPaths.resize(i + 1);
 
-            MPEPolyContext &polyContext = subPaths.polyContext(i);
-            MemPool &mempool = subPaths.mempool(i);
             subPaths.closed(i) = false;
-
-            // The maximum number of points you expect to need
-            // This value is used by the library to calculate
-            // working memory required
-            uint32_t maxPointCount = 128;
-
-            // Request how much memory (in bytes) you should
-            // allocate for the library
-            size_t memoryRequired = MPE_PolyMemoryRequired(maxPointCount);
-
-            // Allocate a memory block of size MemoryRequired
-            mempool.resize(memoryRequired);
-
-            // IMPORTANT: The memory must be zero initialized
-            std::fill(mempool.begin(), mempool.end(), 0);
-
-            // Initialize the poly context by passing the memory pointer,
-            // and max number of points from before
-            MPE_PolyInitContext(&polyContext, mempool.data(), maxPointCount);
-
-            MPEPolyPoint* startingPoint = MPE_PolyPushPoint(&polyContext);
-            startingPoint->X = std::move(startX);
-            startingPoint->Y = std::move(startY);
+            subPaths.points(i).push(std::move(startPos), {}, {});
         }
 
-        MPEPolyPoint* ContextPriv::addPoint(MPEPolyContext &ctx, float x, float y)
+        void ContextPriv::addPoint(SubPathArray &subPaths, glm::vec2 pos)
         {
             EASY_FUNCTION(profiler::colors::DarkRed);
-            size_t i = ctx.PointPoolCount;
-            if (i > 0)
-            {
-                --i;
 
-                if (glm::epsilonEqual(ctx.PointsPool[i].X, x, distTol) && glm::epsilonEqual(ctx.PointsPool[i].Y, y, distTol))
+            auto &points = subPaths.points(subPaths.size()-1);
+
+            if (points.size() > 0)
+            {
+                if (glm::all(glm::epsilonEqual(points.pos(points.size() - 1),
+                                               pos,
+                                               distTol)))
                 {
-                    return &ctx.PointsPool[i];
+                    return;
                 }
             }
 
-            MPEPolyPoint* point = MPE_PolyPushPoint(&ctx);
-            point->X = std::move(x);
-            point->Y = std::move(y);
-            point->FirstEdge = nullptr;
-            return point;
+            points.push(std::move(pos), glm::vec2(0.0f), glm::vec2(0.0f));
         }
 
 
         // based of http://antigrain.com/__code/src/agg_curves.cpp.html by Maxim Shemanarev
-        void ContextPriv::bezier(MPEPolyContext &ctx, float x1, float y1, float x2,
+        void ContextPriv::bezier(SubPathArray &subPaths, float x1, float y1, float x2,
                                  float y2, float x3, float y3, float x4, float y4)
         {
             EASY_FUNCTION(profiler::colors::DarkRed);
-            addPoint(ctx, x1, y1);
-            recursiveBezier(ctx, x1, y1, x2, y2, x3, y3, x4, y4, 0);
-            addPoint(ctx, x4, y4);
+            addPoint(subPaths, glm::vec2(x1, y1));
+            recursiveBezier(subPaths, x1, y1, x2, y2, x3, y3, x4, y4, 0);
+            addPoint(subPaths, glm::vec2(x4, y4));
         }
         float ContextPriv::calcSqrtDistance(float x1, float y1, float x2, float y2)
         {
@@ -445,7 +406,7 @@ namespace tunis
             float dy = y2-y1;
             return dx * dx + dy * dy;
         }
-        void ContextPriv::recursiveBezier(MPEPolyContext &ctx,
+        void ContextPriv::recursiveBezier(SubPathArray &subPaths,
                                           float x1, float y1,
                                           float x2, float y2,
                                           float x3, float y3,
@@ -521,7 +482,7 @@ namespace tunis
                     {
                         if(d2 < tessTol)
                         {
-                            addPoint(ctx, x2, y2);
+                            addPoint(subPaths, glm::vec2(x2, y2));
                             return;
                         }
                     }
@@ -529,7 +490,7 @@ namespace tunis
                     {
                         if(d3 < tessTol)
                         {
-                            addPoint(ctx, x3, y3);
+                            addPoint(subPaths, glm::vec2(x3, y3));
                             return;
                         }
                     }
@@ -540,7 +501,7 @@ namespace tunis
                     //----------------------
                     if(d3 * d3 <= tessTol * (dx*dx + dy*dy))
                     {
-                        addPoint(ctx, x23, y23);
+                        addPoint(subPaths, glm::vec2(x23, y23));
                         return;
                     }
                     break;
@@ -550,7 +511,7 @@ namespace tunis
                     //----------------------
                     if(d2 * d2 <= tessTol * (dx*dx + dy*dy))
                     {
-                        addPoint(ctx, x23, y23);
+                        addPoint(subPaths, glm::vec2(x23, y23));
                         return;
                     }
                     break;
@@ -560,7 +521,7 @@ namespace tunis
                     //-----------------
                     if((d2 + d3)*(d2 + d3) <= tessTol * (dx*dx + dy*dy))
                     {
-                        addPoint(ctx, x23, y23);
+                        addPoint(subPaths, glm::vec2(x23, y23));
                         return;
                     }
                     break;
@@ -568,8 +529,8 @@ namespace tunis
 
             // Continue subdivision
             //----------------------
-            recursiveBezier(ctx, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1);
-            recursiveBezier(ctx, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
+            recursiveBezier(subPaths, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1);
+            recursiveBezier(subPaths, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
         }
 
         void ContextPriv::arc(SubPathArray &subPaths, float centerX, float centerY,
@@ -630,14 +591,12 @@ namespace tunis
 
             if(id == 0)
             {
-                addSubPath(subPaths, prevX, prevY);
+                addSubPath(subPaths, glm::vec2(prevX, prevY));
             }
             else
             {
-                addPoint(subPaths.polyContext(--id), prevX, prevY);
+                addPoint(subPaths, glm::vec2(prevX, prevY));
             }
-
-            auto &ctx = subPaths.polyContext(id);
 
             for (int32_t segment = 1; segment <= segmentCount; ++segment)
             {
@@ -649,7 +608,7 @@ namespace tunis
                 float tanX = -deltaY * tangentFactor * radius;
                 float tanY = deltaX * tangentFactor * radius;
 
-                bezier(ctx,
+                bezier(subPaths,
                        prevX, prevY, // start point
                        prevX + prevTanX, prevY + prevTanY, // control point 1
                        x - tanX, y - tanY, // control point 2
@@ -684,34 +643,33 @@ namespace tunis
 
         void ContextPriv::arcTo(SubPathArray &subPaths, float x1, float y1, float x2, float y2, float radius)
         {
-            auto &ctx = subPaths.polyContext(subPaths.size()-1);
-            auto &prevPoint = ctx.PointsPool[ctx.PointPoolCount - 1];
+            auto &points = subPaths.points(subPaths.size()-1);
 
-            glm::vec2 p0(prevPoint.X, prevPoint.Y);
+            glm::vec2 p0 = points.pos(0);
             glm::vec2 p1(x1, y1);
             glm::vec2 p2(x2, y2);
 
             if (glm::all(glm::epsilonEqual(p0, p1, distTol)))
             {
-                addPoint(subPaths.polyContext(subPaths.size()-1), p1.x, p1.y);
+                addPoint(subPaths, p1);
                 return;
             }
 
             if (glm::all(glm::epsilonEqual(p1, p2, distTol)))
             {
-                addPoint(subPaths.polyContext(subPaths.size()-1), p1.x, p1.y);
+                addPoint(subPaths, p1);
                 return;
             }
 
             if (distPtSeg(p1, p0, p2) < (distTol * distTol))
             {
-                addPoint(subPaths.polyContext(subPaths.size()-1), p1.x, p1.y);
+                addPoint(subPaths, p1);
                 return;
             }
 
             if (radius < distTol)
             {
-                addPoint(subPaths.polyContext(subPaths.size()-1), p1.x, p1.y);
+                addPoint(subPaths, p1);
                 return;
             }
 
@@ -720,12 +678,13 @@ namespace tunis
             float a = glm::acos(glm::dot(d0, d1));
             float d = radius / glm::tan(a * 0.5f);
 
-            if (d > 10000.0f) {
-                addPoint(subPaths.polyContext(subPaths.size()-1), p1.x, p1.y);
+            if (d > 10000.0f)
+            {
+                addPoint(subPaths, p1);
                 return;
             }
 
-            float cp = d1.x * d0.y - d0.x*d1.y;
+            float cp = d1.x * d0.y - d0.x * d1.y;
 
             float cx, cy, a0, a1;
             bool anticlockwise;
@@ -750,7 +709,7 @@ namespace tunis
         }
 
 
-        void ContextPriv::generateContour(Path2D &path)
+        void ContextPriv::generateFillContour(Path2D &path)
         {
             EASY_FUNCTION(profiler::colors::DarkRed);
 
@@ -771,19 +730,19 @@ namespace tunis
                         }
                         break;
                     case MOVE_TO:
-                        addSubPath(subPaths, commands.param0(i), commands.param1(i));
+                        addSubPath(subPaths, glm::vec2(commands.param0(i), commands.param1(i)));
                         break;
                     case LINE_TO:
-                        if (subPaths.size() == 0) { addSubPath(subPaths, 0, 0); }
-                        addPoint(subPaths.polyContext(subPaths.size()-1), commands.param0(i), commands.param1(i));
+                        if (subPaths.size() == 0) { addSubPath(subPaths, glm::vec2(0.0f)); }
+                        addPoint(subPaths, glm::vec2(commands.param0(i), commands.param1(i)));
                         break;
                     case BEZIER_TO:
                     {
-                        if (subPaths.size() == 0) { addSubPath(subPaths, 0, 0); }
-                        auto &ctx = subPaths.polyContext(subPaths.size()-1);
-                        auto &prevPoint = ctx.PointsPool[ctx.PointPoolCount - 1];
-                        bezier(ctx,
-                               prevPoint.X, prevPoint.Y,
+                        if (subPaths.size() == 0) { addSubPath(subPaths, glm::vec2(0.0f)); }
+                        auto &points = subPaths.points(subPaths.size()-1);
+                        auto &prevPoint = points.pos(points.size()-1);
+                        bezier(subPaths,
+                               prevPoint.x, prevPoint.y,
                                commands.param0(i), commands.param1(i),
                                commands.param2(i), commands.param3(i),
                                commands.param4(i), commands.param5(i));
@@ -792,11 +751,11 @@ namespace tunis
                     }
                     case QUAD_TO:
                     {
-                        if (subPaths.size() == 0) { addSubPath(subPaths, 0, 0); }
-                        auto &ctx = subPaths.polyContext(subPaths.size()-1);
-                        auto &prevPoint = ctx.PointsPool[ctx.PointPoolCount - 1];
-                        float x0 = prevPoint.X;
-                        float y0 = prevPoint.Y;
+                        if (subPaths.size() == 0) { addSubPath(subPaths, glm::vec2(0.0f)); }
+                        auto &points = subPaths.points(subPaths.size()-1);
+                        auto &prevPoint = points.pos(points.size()-1);
+                        float x0 = prevPoint.x;
+                        float y0 = prevPoint.y;
                         float cx = commands.param0(i);
                         float cy = commands.param1(i);
                         float x = commands.param2(i);
@@ -805,7 +764,7 @@ namespace tunis
                         float c1y = y0 + 2.0f/3.0f*(cy - y0);
                         float c2x = x + 2.0f/3.0f*(cx - x);
                         float c2y = y + 2.0f/3.0f*(cy - y);
-                        bezier(ctx, x0, y0, c1x, c1y, c2x, c2y, x, y);
+                        bezier(subPaths, x0, y0, c1x, c1y, c2x, c2y, x, y);
                         break;
                     }
                     case ARC:
@@ -821,7 +780,7 @@ namespace tunis
                     }
                     case ARC_TO:
                     {
-                        if (subPaths.size() == 0) { addSubPath(subPaths, 0, 0); }
+                        if (subPaths.size() == 0) { addSubPath(subPaths, glm::vec2(0.0f)); }
                         arcTo(subPaths,
                               commands.param0(i),
                               commands.param1(i),
@@ -840,15 +799,80 @@ namespace tunis
                         float w = commands.param2(i);
                         float h = commands.param3(i);
                         size_t id = subPaths.size();
-                        addSubPath(subPaths, x, y);
-                        auto &ctx = subPaths.polyContext(id);
-                        addPoint(ctx, x, y+h);
-                        addPoint(ctx, x+w, y+h);
-                        addPoint(ctx, x+h, y);
+                        addSubPath(subPaths, glm::vec2(x, y));
+                        addPoint(subPaths, glm::vec2(x, y+h));
+                        addPoint(subPaths, glm::vec2(x+w, y+h));
+                        addPoint(subPaths, glm::vec2(x+h, y));
                         subPaths.closed(id) = true;
                         break;
                     }
                 }
+            }
+
+            // validate.
+            for (size_t i = 0; i < subPaths.size(); ++i)
+            {
+                auto &points = subPaths.points(i);
+
+                // Check if the first and last point are the same. Get rid of
+                // the last point if that is the case, and close the subpath.
+                if (points.size() >= 2 &&
+                    glm::all(glm::epsilonEqual(points.pos(0),
+                                               points.pos(points.size()-1),
+                                               distTol)))
+                {
+                    points.resize(points.size()-1);
+                    subPaths.closed(i) = true;
+                }
+            }
+        }
+
+        void ContextPriv::generateStrokeContour(Path2D &path, float lineWidth)
+        {
+            generateFillContour(path);
+
+            float halfLineWidth = lineWidth * 0.5f;
+
+            SubPathArray &subPaths = path.subPaths();
+            for (size_t i = 0; i < subPaths.size(); ++i)
+            {
+                auto &points = subPaths.points(i);
+
+                // Calculate direction vectors
+                for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
+                {
+                    points.dir(p0) = glm::normalize(points.pos(p1) - points.pos(p0));
+                }
+
+                // Calculate excrusion vectors
+                for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
+                {
+                    // rotate direction vector by 90degree CW
+                    glm::vec2 dir0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x);
+                    glm::vec2 dir1 = glm::vec2(points.dir(p1).y, -points.dir(p1).x);
+
+                    glm::vec2 exc = (dir0 + dir1) * 0.5f;
+                    float dot = glm::dot(exc, exc);
+                    if (dot > glm::epsilon<float>())
+                    {
+                        exc *= glm::clamp(1.0f / dot, 0.0f, 1000.0f);
+                    }
+
+                    points.exc(p1) = exc;
+                }
+
+                size_t pointCount = points.size();
+                points.resize(pointCount*2);
+                for (size_t p0 = pointCount - 1, p1 = pointCount; p1 < points.size(); --p0, ++p1)
+                {
+                    points.pos(p1) = points.pos(p0) - (points.exc(p0) * halfLineWidth);
+                }
+
+                for (size_t p0 = 0; p0 < pointCount; ++p0)
+                {
+                    points.pos(p0) = points.pos(p0) + (points.exc(p0) * halfLineWidth);
+                }
+
             }
 
         }
@@ -863,16 +887,41 @@ namespace tunis
 
             for (size_t i = 0; i < subPaths.size(); ++i)
             {
-                auto &polyContext = subPaths.polyContext(i);
-                auto &points = polyContext.PointsPool;
+                MPEPolyContext &polyContext = subPaths.polyContext(i);
+                MemPool &mempool = subPaths.mempool(i);
+                auto &points = subPaths.points(i);
 
-                // Check if the first and last point are the same. Get rid of
-                // the last point if that is the case, and close the subpath.
-                if (glm::epsilonEqual(points[0].X, points[polyContext.PointPoolCount-1].X, distTol) &&
-                    glm::epsilonEqual(points[0].Y, points[polyContext.PointPoolCount-1].Y, distTol))
+                // The maximum number of points you expect to need
+                // This value is used by the library to calculate
+                // working memory required
+                uint32_t maxPointCount = static_cast<uint32_t>(points.size());
+
+                // Request how much memory (in bytes) you should
+                // allocate for the library
+                size_t memoryRequired = MPE_PolyMemoryRequired(maxPointCount);
+
+                // Allocate a memory block of size MemoryRequired
+                mempool.resize(memoryRequired);
+
+                // IMPORTANT: The memory must be zero initialized
+                std::fill(mempool.begin(), mempool.end(), 0);
+
+                // Initialize the poly context by passing the memory pointer,
+                // and max number of points from before
+                MPE_PolyInitContext(&polyContext, mempool.data(), maxPointCount);
+
+                MPEPolyPoint* polyPoints = MPE_PolyPushPointArray(&polyContext, maxPointCount);
+
+                for(size_t j = 0; j < points.size(); ++j)
                 {
-                    --polyContext.PointPoolCount;
-                    subPaths.closed(i) = true;
+                    glm::vec2 &point = points.pos(j);
+
+                    polyPoints[j].X = point.x;
+                    polyPoints[j].Y = point.y;
+
+                    // update path bounds
+                    boundTopLeft     = glm::min(boundTopLeft,     point);
+                    boundBottomRight = glm::max(boundBottomRight, point);
                 }
 
                 // check if we're still a polygon, reset the subpath if we lost
@@ -882,14 +931,6 @@ namespace tunis
                     MPE_PolyAddEdge(&polyContext);
                     MPE_PolyTriangulate(&polyContext);
                 }
-
-                // update path bounds
-                for(uint32_t j = 0; j < polyContext.PointCount; ++j)
-                {
-                    boundTopLeft     = glm::min(boundTopLeft,     glm::vec2(polyContext.Points[j]->X, polyContext.Points[j]->Y));
-                    boundBottomRight = glm::max(boundBottomRight, glm::vec2(polyContext.Points[j]->X, polyContext.Points[j]->Y));
-                }
-
             }
         }
 
@@ -1048,12 +1089,17 @@ namespace tunis
                 auto &path = ctx->renderQueue.path(i);
                 if (path.dirty())
                 {
-                    ctx->generateContour(path);
-
-                    if (ctx->renderQueue.op(i) == detail::DRAW_FILL)
+                    switch(ctx->renderQueue.op(i))
                     {
-                        ctx->triangulate(path);
+                        case detail::DRAW_FILL:
+                            ctx->generateFillContour(path);
+                            break;
+                        case detail::DRAW_STROKE:
+                            ctx->generateStrokeContour(path, ctx->renderQueue.state(i).lineWidth);
+                            break;
                     }
+
+                    ctx->triangulate(path);
 
                     path.dirty() = false;
                 }
@@ -1072,6 +1118,7 @@ namespace tunis
                     MPEPolyContext &polyContext = path.subPaths().polyContext(j);
 
                     uint32_t vertexCount = polyContext.PointPoolCount;
+                    uint16_t indexCount = polyContext.TriangleCount*3;
 
                     if (vertexCount < 3)
                     {
@@ -1080,32 +1127,13 @@ namespace tunis
 
                     Vertex *verticies;
                     Index *indices;
-                    uint16_t offset;
-                    uint32_t indexCount;
-                    detail::Topology topology;
-
-                    switch(ctx->renderQueue.op(i))
-                    {
-                        case detail::DRAW_FILL:
-                            topology = detail::Triangles;
-                            indexCount = polyContext.TriangleCount*3;
-                            break;
-                        case detail::DRAW_STROKE:
-                            if (path.subPaths().closed(j))
-                                topology = detail::LineLoop;
-                            else
-                                topology = detail::Lines;
-                            indexCount = vertexCount;
-                    }
-
-                    offset = ctx->addBatch(&ctx->default2DProgram,
-                                           ctx->textures.back(),
-                                           topology,
-                                           ctx->renderQueue.state(i).lineWidth,
-                                           vertexCount,
-                                           indexCount,
-                                           &verticies,
-                                           &indices);
+                    uint16_t offset = ctx->addBatch(&ctx->default2DProgram,
+                                                    ctx->textures.back(),
+                                                    ctx->renderQueue.state(i).lineWidth,
+                                                    vertexCount,
+                                                    indexCount,
+                                                    &verticies,
+                                                    &indices);
 
                     //populate the vertices
                     for (size_t vid = 0; vid < polyContext.PointPoolCount; ++vid)
@@ -1182,9 +1210,8 @@ namespace tunis
                 ctx->batches.texture(i).bind();
 
 
-#if 1
-                glLineWidth(ctx->batches.lineWidth(i));
-                glDrawElements(static_cast<GLenum>(ctx->batches.topology(i)),
+#if 0
+                glDrawElements(GL_TRIANGLES,
                                static_cast<GLsizei>(ctx->batches.count(i)),
                                GL_UNSIGNED_SHORT,
                                reinterpret_cast<void*>(ctx->batches.offset(i) * sizeof(GLushort)));
