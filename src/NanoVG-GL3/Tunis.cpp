@@ -91,8 +91,8 @@ Context::Context() :
 
         int flags = 0;
 
-//        flags |= NVG_ANTIALIAS;
-//        flags |= NVG_STENCIL_STROKES;
+        flags |= NVG_ANTIALIAS;
+        flags |= NVG_STENCIL_STROKES;
 #ifndef NDEBUG
         flags |= NVG_DEBUG;
 #endif

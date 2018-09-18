@@ -1,5 +1,9 @@
 include(TunisSampleMain${TUNIS_SAMPLES_MAIN}.cmake)
 
+if(TUNIS_SAMPLES_MSAA)
+    target_compile_definitions(TunisSampleMain PUBLIC TUNIS_SAMPLES_MSAA=1)
+endif()
+
 add_library(TunisSampleCommon
     TunisSampleMain${TUNIS_SAMPLES_MAIN}.cmake
     SampleApp.cpp
