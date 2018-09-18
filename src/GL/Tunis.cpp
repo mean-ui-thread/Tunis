@@ -848,7 +848,7 @@ namespace tunis
             {
                 auto &points = subPaths.outerPoints(subPaths.size()-1);
 
-                glm::vec2 p0 = points.pos(0);
+                glm::vec2 p0 = points.pos(points.size()-1);
                 glm::vec2 p1(x1, y1);
                 glm::vec2 p2(x2, y2);
 
