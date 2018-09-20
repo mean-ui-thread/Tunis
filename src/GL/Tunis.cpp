@@ -600,7 +600,7 @@ namespace tunis
                     }
                 }
 
-                points.push(std::move(pos), glm::vec2(0.0f), glm::vec2(0.0f));
+                points.push(std::move(pos), {}, {});
             }
 
 
@@ -1010,7 +1010,7 @@ namespace tunis
                             addSubPath(subPaths, glm::vec2(x, y));
                             addPoint(subPaths, glm::vec2(x, y+h));
                             addPoint(subPaths, glm::vec2(x+w, y+h));
-                            addPoint(subPaths, glm::vec2(x+h, y));
+                            addPoint(subPaths, glm::vec2(x+w, y));
                             subPaths.closed(id) = true;
                             break;
                         }
