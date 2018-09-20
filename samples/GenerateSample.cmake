@@ -20,7 +20,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/template/SampleApp.cpp.in ${CMAKE_CUR
 ##
 # Add the sample to the list of samples
 ##
-file(APPEND ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt "add_subdirectory(${SAMPLE_NAME})")
+file(APPEND ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt "add_subdirectory(${SAMPLE_NAME})\n")
 
 ##
 # Save the sample count

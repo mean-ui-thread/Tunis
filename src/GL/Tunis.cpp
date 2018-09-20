@@ -464,6 +464,7 @@ namespace tunis
                                 continue; // not enough vertices to make a fill. Skip
                             }
 
+
                             Vertex *verticies;
                             Index *indices;
                             uint16_t offset = addBatch(&default2DProgram,
@@ -472,6 +473,9 @@ namespace tunis
                                                        indexCount,
                                                        &verticies,
                                                        &indices);
+
+                            Color color = paint->innerColor();
+                            color.a *= state.globalAlpha;
 
                             //populate the vertices
                             for (size_t vid = 0; vid < polyContext.PointPoolCount; ++vid)
@@ -482,7 +486,7 @@ namespace tunis
                                 verticies[vid].pos = pos;
                                 verticies[vid].tcoord.x = static_cast<uint16_t>(tcoord.s);
                                 verticies[vid].tcoord.t = static_cast<uint16_t>(tcoord.t);
-                                verticies[vid].color = paint->innerColor();
+                                verticies[vid].color = color;
                             }
 
                             //populate the indicies

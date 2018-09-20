@@ -88,6 +88,17 @@ public:
         image() = 0;
     }
 
+    inline Paint(const char* colorName)
+    {
+        xform() = SVGMatrix(1.0f);
+        extend() = Position(0.0f);
+        radius() = 0.0f;
+        feather() = 1.0f;
+        innerColor() = Color(colorName);
+        outerColor() = Transparent;
+        image() = 0;
+    }
+
 };
 
 }

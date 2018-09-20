@@ -178,29 +178,40 @@ tunis::Color::Color(const char* colorName)
         uint32_t word = static_cast<uint32_t>(strtol(&colorName[1], nullptr, 16));
         size_t colorNameLength = strlen(&colorName[1]);
 
-        if (colorNameLength == 6) /* "#RRGGBB" */
+        switch(colorNameLength)
         {
-                              /* R G B */
-            b = ((word & 0x0000FF) >> 0);
-            g = ((word & 0x00FF00) >> 8);
-            r = ((word & 0xFF0000) >> 16);
-            a = 255;
-            return;
+            case 3: // "#RGB"
+                b = ((word & 0x00F) >> 0) * 17;
+                g = ((word & 0x0F0) >> 4) * 17;
+                r = ((word & 0xF00) >> 8) * 17;
+                a = 255;
+                return;
+            case 4: // "#ARGB"
+                b = ((word & 0x000F) >> 0) * 17;
+                g = ((word & 0x00F0) >> 4) * 17;
+                r = ((word & 0x0F00) >> 8) * 17;
+                a = ((word & 0xF000) >> 12) * 17;
+                return;
+            case 6: // "#RRGGBB"
+                b = ((word & 0x0000FF) >> 0);
+                g = ((word & 0x00FF00) >> 8);
+                r = ((word & 0xFF0000) >> 16);
+                a = 255;
+                return;
+            case 8: // "#AARRGGBB"
+                /* A R G B */
+                b = ((word & 0x000000FF) >> 0);
+                g = ((word & 0x0000FF00) >> 8);
+                r = ((word & 0x00FF0000) >> 16);
+                a = ((word & 0xFF000000) >> 24);
+                return;
+            default: // parse error
+                r=0;
+                g=0;
+                b=0;
+                a=0;
+                return;
         }
-        else if (colorNameLength == 8) /* "#AARRGGBB" */
-        {
-            b = ((word & 0x000000FF) >> 0);
-            g = ((word & 0x0000FF00) >> 8);
-            r = ((word & 0x00FF0000) >> 16);
-            a = ((word & 0xFF000000) >> 24);
-            return;
-        }
-
-        // parse error
-        r=0;
-        g=0;
-        b=0;
-        a=0;
     }
 
 #if defined(_MSC_VER)
