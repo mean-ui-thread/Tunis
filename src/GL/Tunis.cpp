@@ -412,6 +412,8 @@ namespace tunis
                     #pragma omp parallel for num_threads(std::thread::hardware_concurrency())
                     for (int i = 0; i < renderQueue.size(); ++i)
                     {
+                        EASY_THREAD_SCOPE("OpenMP");
+                        EASY_BLOCK("Poly2Tri", profiler::colors::DarkBlue)
                         auto &path = renderQueue.path(i);
                         if (path.dirty())
                         {
@@ -1217,7 +1219,6 @@ namespace tunis
 
     void Context::clearFrame(int32_t fbLeft, int32_t fbTop, int32_t fbWidth, int32_t fbHeight, Color backgroundColor)
     {
-        EASY_FUNCTION(profiler::colors::DarkCyan);
         ctx->clearFrame(std::move(fbLeft), std::move(fbTop),
                         std::move(fbWidth), std::move(fbHeight),
                         std::move(backgroundColor));
@@ -1225,25 +1226,21 @@ namespace tunis
 
     void Context::beginFrame(int32_t winWidth, int32_t winHeight, float devicePixelRatio)
     {
-        EASY_FUNCTION(profiler::colors::DarkCyan);
         ctx->beginFrame(std::move(winWidth), std::move(winHeight), std::move(devicePixelRatio));
     }
 
     void Context::endFrame()
     {
-        EASY_FUNCTION(profiler::colors::DarkCyan);
         ctx->endFrame();
     }
 
     void Context::save()
     {
-        EASY_FUNCTION(profiler::colors::DarkCyan)
         ctx->states.push_back(*this);
     }
 
     void Context::restore()
     {
-        EASY_FUNCTION(profiler::colors::DarkCyan)
         if (ctx->states.size() > 0)
         {
             *static_cast<ContextState*>(this) = ctx->states.back();
@@ -1253,7 +1250,6 @@ namespace tunis
 
     void Context::clearRect(float x, float y, float width, float height)
     {
-        EASY_FUNCTION(profiler::colors::DarkCyan)
         Paint origFillStyle = fillStyle;
         fillStyle = detail::gfxStates.backgroundColor;
         rect(x, y, width, height);
@@ -1263,8 +1259,6 @@ namespace tunis
 
     void Context::fill(Path2D &path, FillRule /*fillRule*/)
     {
-        EASY_FUNCTION(profiler::colors::DarkCyan);
-
         ctx->renderQueue.push(detail::DRAW_FILL,
                               path.clone<Path2D>(),
                               std::move(*this));
@@ -1273,7 +1267,6 @@ namespace tunis
 
     void Context::stroke(Path2D &path)
     {
-        EASY_FUNCTION(profiler::colors::DarkCyan);
         ctx->renderQueue.push(detail::DRAW_STROKE,
                               path.clone<Path2D>(),
                               std::move(*this));

@@ -83,8 +83,6 @@ namespace detail
 Context::Context() :
     ctx(new detail::ContextPriv())
 {
-    EASY_FUNCTION(profiler::colors::DarkCyan)
-
     if (!detail::gfxStates.nvg)
     {
         tunisGLInit();
@@ -106,8 +104,6 @@ Context::Context() :
 
 Context::~Context()
 {
-    EASY_FUNCTION(profiler::colors::DarkCyan)
-
     nvgDeleteGL3(ctx->nvg);
 
     ctx->nvg = nullptr;
@@ -123,8 +119,6 @@ const char * Context::backendName() const
 
 void Context::clearFrame(int fbLeft, int fbTop, int fbWidth, int fbHeight, Color backgroundColor)
 {
-    EASY_FUNCTION(profiler::colors::DarkCyan)
-
     // update the clear color if necessary
     if (detail::gfxStates.backgroundColor != backgroundColor)
     {
@@ -151,8 +145,6 @@ void Context::clearFrame(int fbLeft, int fbTop, int fbWidth, int fbHeight, Color
 
 void Context::beginFrame(int winWidth, int winHeight, float devicePixelRatio)
 {
-    EASY_FUNCTION(profiler::colors::DarkCyan)
-
     nvgBeginFrame(ctx->nvg,
                   static_cast<float>(winWidth),
                   static_cast<float>(winHeight),
@@ -161,15 +153,11 @@ void Context::beginFrame(int winWidth, int winHeight, float devicePixelRatio)
 
 void Context::endFrame()
 {
-    EASY_FUNCTION(profiler::colors::DarkCyan)
-
     nvgEndFrame(ctx->nvg);
 }
 
 void Context::clearRect(float x, float y, float width, float height)
 {
-    EASY_FUNCTION(profiler::colors::DarkCyan)
-
     nvgBeginPath(ctx->nvg);
     nvgRect(ctx->nvg, x, y, width, height);
     nvgFillColor(ctx->nvg, nvgRGBA(detail::gfxStates.backgroundColor.r,
@@ -182,8 +170,6 @@ void Context::clearRect(float x, float y, float width, float height)
 
 void Context::fill(Path2D &path, FillRule)
 {
-    EASY_FUNCTION(profiler::colors::DarkCyan)
-
     ctx->pathToNVG(path);
 
     Color color = fillStyle.innerColor();
@@ -194,8 +180,6 @@ void Context::fill(Path2D &path, FillRule)
 
 void Context::stroke(Path2D &path)
 {
-    EASY_FUNCTION(profiler::colors::DarkCyan)
-
     ctx->pathToNVG(path);
 
     Color color = strokeStyle.innerColor();
