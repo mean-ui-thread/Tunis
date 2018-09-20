@@ -409,7 +409,7 @@ namespace tunis
                 if (renderQueue.size() > 0)
                 {
                     // Generate Geometry (Multi-threaded)
-//                    #pragma omp parallel for num_threads(std::thread::hardware_concurrency())
+                    #pragma omp parallel for num_threads(std::thread::hardware_concurrency())
                     for (int i = 0; i < renderQueue.size(); ++i)
                     {
                         EASY_THREAD_SCOPE("OpenMP");
@@ -1115,7 +1115,7 @@ namespace tunis
                         size_t endCapN = endCap0;
 
                         // add the endcap
-                        if (state.lineCap == round)
+                        if (state.lineCap != butt)
                         {
                             endCap0 = --outerN;
                             glm::vec2 dir = outerPoints.dir(endCap0) * halfLineWidth;
@@ -1148,11 +1148,21 @@ namespace tunis
                             // first, extrude our first end cap point.
                             outerPoints.pos(endCap0) = p1;
 
-                            // then arc 90 degrees from p1 to p3
-                            arcTo(subPaths, id, p2.x, p2.y, p3.x, p3.y, halfLineWidth);
+                            if (state.lineCap == round)
+                            {
+                                // then arc 90 degrees from p1 to p3
+                                arcTo(subPaths, id, p2.x, p2.y, p3.x, p3.y, halfLineWidth);
 
-                            // then arc 90 degrees from p3 to p5
-                            arcTo(subPaths, id, p4.x, p4.y, p5.x, p5.y, halfLineWidth);
+                                // then arc 90 degrees from p3 to p5
+                                arcTo(subPaths, id, p4.x, p4.y, p5.x, p5.y, halfLineWidth);
+                            }
+                            else // square
+                            {
+                                addPoint(subPaths, id, p2);
+                                addPoint(subPaths, id, p3);
+                                addPoint(subPaths, id, p4);
+                                addPoint(subPaths, id, p5);
+                            }
 
                             endCapN = outerPoints.size();
                         }
@@ -1175,7 +1185,7 @@ namespace tunis
                         }
 
                         // add the front cap
-                        if (state.lineCap == round)
+                        if (state.lineCap != butt)
                         {
                             glm::vec2 dir = outerPoints.dir(outer0) * halfLineWidth;
                             glm::vec2 exc = outerPoints.exc(outer0) * halfLineWidth;
@@ -1204,11 +1214,22 @@ namespace tunis
                             glm::vec2 p3 = p2 + exc;
 
 
-                            // arc 90 degrees from p4 to p2
-                            arcTo(subPaths, id, p3.x, p3.y, p2.x, p2.y, halfLineWidth);
+                            if (state.lineCap == round)
+                            {
+                                // arc 90 degrees from p4 to p2
+                                arcTo(subPaths, id, p3.x, p3.y, p2.x, p2.y, halfLineWidth);
 
-                            // then arc 90 degrees from p2 to p0
-                            arcTo(subPaths, id, p1.x, p1.y, p0.x, p0.y, halfLineWidth);
+                                // then arc 90 degrees from p2 to p0
+                                arcTo(subPaths, id, p1.x, p1.y, p0.x, p0.y, halfLineWidth);
+                            }
+                            else // square
+                            {
+                                addPoint(subPaths, id, p3);
+                                addPoint(subPaths, id, p2);
+                                addPoint(subPaths, id, p1);
+                                // no need to add p0 since it's already part of the contour (as the first point)
+                            }
+
                         }
                     }
 
