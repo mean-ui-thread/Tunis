@@ -91,7 +91,7 @@ namespace tunis
                         "{\n"
                         "    v_texcoord   = a_texcoord;\n"
                         "    v_color      = a_color;\n"
-                        "    gl_Position  = vec4(2.0*(a_position.x+0.5)/u_viewSize.x - 1.0, 1.0 - 2.0*(a_position.y+0.5)/u_viewSize.y, 0, 1);\n"
+                        "    gl_Position  = vec4(2.0*a_position.x/u_viewSize.x - 1.0, 1.0 - 2.0*a_position.y/u_viewSize.y, 0, 1);\n"
                         "}\n";
 
                 const char * fragSrc =
