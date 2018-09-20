@@ -1,0 +1,13 @@
+#include "SampleApp.h"
+
+const char *SampleApp::getSampleName() { return "@SAMPLE_NAME@"; }
+int SampleApp::getWindowWidth() { return 320; }
+int SampleApp::getWindowHeight() { return 200; }
+
+/*!
+ * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/???
+ */
+void SampleApp::render(double)
+{
+
+}
