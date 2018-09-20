@@ -215,9 +215,9 @@ tunis::Color::Color(const char* colorName)
     }
 
 #if defined(_MSC_VER)
-    #define RETURN_IF_MATCH(COLOR_NAME) do { if(_stricmp(colorName, #COLOR_NAME) == 0) r=COLOR_NAME.r; g=COLOR_NAME.g; b=COLOR_NAME.b; a=COLOR_NAME.a;  return; } while((void)0, 0)
+    #define RETURN_IF_MATCH(COLOR_NAME) do { if(_stricmp(colorName, #COLOR_NAME) == 0) { r=COLOR_NAME.r; g=COLOR_NAME.g; b=COLOR_NAME.b; a=COLOR_NAME.a;  return; } } while((void)0, 0)
 #else
-    #define RETURN_IF_MATCH(COLOR_NAME) do { if(strcasecmp(colorName, #COLOR_NAME) == 0) r=COLOR_NAME.r; g=COLOR_NAME.g; b=COLOR_NAME.b; a=COLOR_NAME.a;  return; } while((void)0, 0)
+    #define RETURN_IF_MATCH(COLOR_NAME) do { if(strcasecmp(colorName, #COLOR_NAME) == 0) { r=COLOR_NAME.r; g=COLOR_NAME.g; b=COLOR_NAME.b; a=COLOR_NAME.a;  return; } } while((void)0, 0)
 #endif
 
     RETURN_IF_MATCH(Transparent);
