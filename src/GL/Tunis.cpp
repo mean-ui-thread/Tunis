@@ -452,9 +452,9 @@ namespace tunis
 
                         glm::vec2 range = path.boundBottomRight() - path.boundTopLeft();
 
-                        for(size_t j = 0; j < path.subPaths().size(); ++j)
+                        for(size_t id = 0; id < path.subPathCount(); ++id)
                         {
-                            MPEPolyContext &polyContext = path.subPaths().polyContext(j);
+                            MPEPolyContext &polyContext = path.subPaths()[id].polyContext;
 
                             uint32_t vertexCount = polyContext.PointPoolCount;
                             uint16_t indexCount = polyContext.TriangleCount*3;
@@ -573,24 +573,25 @@ namespace tunis
                 }
             }
 
-            size_t addSubPath(SubPathArray &subPaths, glm::vec2 startPos)
+            size_t addSubPath(Path2D &path, glm::vec2 startPos)
             {
-                size_t id = subPaths.size();
-                subPaths.resize(id + 1);
+                size_t id = path.subPathCount()++;
 
-                subPaths.mempool(id).resize(0);
-                subPaths.outerPoints(id).resize(0);
-                subPaths.innerPoints(id).resize(0);
-                subPaths.closed(id) = false;
+                SubPath2D &subPath = path.subPaths()[id];
 
-                subPaths.outerPoints(id).push(std::move(startPos), {}, {});
+                subPath.mempool.resize(0);
+                subPath.outerPoints.resize(0);
+                subPath.innerPoints.resize(0);
+                subPath.closed = false;
+
+                subPath.outerPoints.push(std::move(startPos), {}, {});
 
                 return id;
             }
 
-            void addPoint(SubPathArray &subPaths, size_t id, glm::vec2 pos)
+            void addPoint(Path2D &path, size_t id, glm::vec2 pos)
             {
-                auto &points = subPaths.outerPoints(id);
+                auto &points = path.subPaths()[id].outerPoints;
 
                 if (points.size() > 0)
                 {
@@ -607,12 +608,12 @@ namespace tunis
 
 
             // based of http://antigrain.com/__code/src/agg_curves.cpp.html by Maxim Shemanarev
-            void bezier(SubPathArray &subPaths, size_t id, float x1, float y1,
+            void bezier(Path2D &path, size_t id, float x1, float y1,
                         float x2, float y2, float x3, float y3, float x4, float y4)
             {
-                addPoint(subPaths, id, glm::vec2(x1, y1));
-                recursiveBezier(subPaths, id, x1, y1, x2, y2, x3, y3, x4, y4, 0);
-                addPoint(subPaths, id, glm::vec2(x4, y4));
+                addPoint(path, id, glm::vec2(x1, y1));
+                recursiveBezier(path, id, x1, y1, x2, y2, x3, y3, x4, y4, 0);
+                addPoint(path, id, glm::vec2(x4, y4));
             }
             float calcSqrtDistance(float x1, float y1, float x2, float y2)
             {
@@ -620,7 +621,7 @@ namespace tunis
                 float dy = y2-y1;
                 return dx * dx + dy * dy;
             }
-            void recursiveBezier(SubPathArray &subPaths,
+            void recursiveBezier(Path2D &path,
                                  size_t id,
                                  float x1, float y1,
                                  float x2, float y2,
@@ -695,7 +696,7 @@ namespace tunis
                         {
                             if(d2 < tessTol)
                             {
-                                addPoint(subPaths, id, glm::vec2(x2, y2));
+                                addPoint(path, id, glm::vec2(x2, y2));
                                 return;
                             }
                         }
@@ -703,7 +704,7 @@ namespace tunis
                         {
                             if(d3 < tessTol)
                             {
-                                addPoint(subPaths, id, glm::vec2(x3, y3));
+                                addPoint(path, id, glm::vec2(x3, y3));
                                 return;
                             }
                         }
@@ -714,7 +715,7 @@ namespace tunis
                         //----------------------
                         if(d3 * d3 <= tessTol * (dx*dx + dy*dy))
                         {
-                            addPoint(subPaths, id, glm::vec2(x23, y23));
+                            addPoint(path, id, glm::vec2(x23, y23));
                             return;
                         }
                         break;
@@ -724,7 +725,7 @@ namespace tunis
                         //----------------------
                         if(d2 * d2 <= tessTol * (dx*dx + dy*dy))
                         {
-                            addPoint(subPaths, id, glm::vec2(x23, y23));
+                            addPoint(path, id, glm::vec2(x23, y23));
                             return;
                         }
                         break;
@@ -734,7 +735,7 @@ namespace tunis
                         //-----------------
                         if((d2 + d3)*(d2 + d3) <= tessTol * (dx*dx + dy*dy))
                         {
-                            addPoint(subPaths, id, glm::vec2(x23, y23));
+                            addPoint(path, id, glm::vec2(x23, y23));
                             return;
                         }
                         break;
@@ -742,11 +743,11 @@ namespace tunis
 
                 // Continue subdivision
                 //----------------------
-                recursiveBezier(subPaths, id, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1);
-                recursiveBezier(subPaths, id, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
+                recursiveBezier(path, id, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1);
+                recursiveBezier(path, id, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
             }
 
-            void arc(SubPathArray &subPaths, size_t id, float centerX, float centerY,
+            void arc(Path2D &path, size_t id, float centerX, float centerY,
                      float radius, float startAngle, float endAngle,
                      bool anticlockwise)
             {
@@ -799,13 +800,13 @@ namespace tunis
                 float prevTanX = -deltaY * tangentFactor * radius;
                 float prevTanY = deltaX * tangentFactor * radius;
 
-                if(subPaths.size() == 0)
+                if(path.subPathCount() == 0)
                 {
-                    id = addSubPath(subPaths, glm::vec2(prevX, prevY));
+                    id = addSubPath(path, glm::vec2(prevX, prevY));
                 }
                 else
                 {
-                    addPoint(subPaths, id, glm::vec2(prevX, prevY));
+                    addPoint(path, id, glm::vec2(prevX, prevY));
                 }
 
                 for (int32_t segment = 1; segment <= segmentCount; ++segment)
@@ -818,7 +819,7 @@ namespace tunis
                     float tanX = -deltaY * tangentFactor * radius;
                     float tanY = deltaX * tangentFactor * radius;
 
-                    bezier(subPaths, id,
+                    bezier(path, id,
                            prevX, prevY, // start point
                            prevX + prevTanX, prevY + prevTanY, // control point 1
                            x - tanX, y - tanY, // control point 2
@@ -851,9 +852,9 @@ namespace tunis
                 return glm::dot(pc, pc);
             }
 
-            void arcTo(SubPathArray &subPaths, size_t id, float x1, float y1, float x2, float y2, float radius)
+            void arcTo(Path2D &path, size_t id, float x1, float y1, float x2, float y2, float radius)
             {
-                auto &points = subPaths.outerPoints(id);
+                auto &points = path.subPaths()[id].outerPoints;
 
                 glm::vec2 p0 = points.pos(points.size()-1);
                 glm::vec2 p1(x1, y1);
@@ -861,25 +862,25 @@ namespace tunis
 
                 if (glm::all(glm::epsilonEqual(p0, p1, distTol)))
                 {
-                    addPoint(subPaths, id, p1);
+                    addPoint(path, id, p1);
                     return;
                 }
 
                 if (glm::all(glm::epsilonEqual(p1, p2, distTol)))
                 {
-                    addPoint(subPaths, id, p1);
+                    addPoint(path, id, p1);
                     return;
                 }
 
                 if (distPtSeg(p1, p0, p2) < (distTol * distTol))
                 {
-                    addPoint(subPaths, id, p1);
+                    addPoint(path, id, p1);
                     return;
                 }
 
                 if (radius < distTol)
                 {
-                    addPoint(subPaths, id, p1);
+                    addPoint(path, id, p1);
                     return;
                 }
 
@@ -890,7 +891,7 @@ namespace tunis
 
                 if (d > 10000.0f)
                 {
-                    addPoint(subPaths, id, p1);
+                    addPoint(path, id, p1);
                     return;
                 }
 
@@ -915,18 +916,17 @@ namespace tunis
                     anticlockwise = true;
                 }
 
-                arc(subPaths, id, cx, cy, radius, a0, a1, anticlockwise);
+                arc(path, id, cx, cy, radius, a0, a1, anticlockwise);
             }
 
 
             void generateFillContour(Path2D &path)
             {
-
-                SubPathArray &subPaths = path.subPaths();
+                SubPath2DArray &subPaths = path.subPaths();
                 PathCommandArray &commands = path.commands();
 
                 // reset to default.
-                subPaths.resize(0);
+                path.subPathCount() = 0;
 
                 size_t id = 0;
 
@@ -935,24 +935,24 @@ namespace tunis
                     switch(commands.type(i))
                     {
                         case CLOSE:
-                            if (subPaths.size() > 0)
+                            if (path.subPathCount() > 0)
                             {
-                                subPaths.closed(id) = true;
+                                subPaths[id].closed = true;
                             }
                             break;
                         case MOVE_TO:
-                            id = addSubPath(subPaths, glm::vec2(commands.param0(i), commands.param1(i)));
+                            id = addSubPath(path, glm::vec2(commands.param0(i), commands.param1(i)));
                             break;
                         case LINE_TO:
-                            if (subPaths.size() == 0) { id = addSubPath(subPaths, glm::vec2(0.0f)); }
-                            addPoint(subPaths, id, glm::vec2(commands.param0(i), commands.param1(i)));
+                            if (path.subPathCount() == 0) { id = addSubPath(path, glm::vec2(0.0f)); }
+                            addPoint(path, id, glm::vec2(commands.param0(i), commands.param1(i)));
                             break;
                         case BEZIER_TO:
                         {
-                            if (subPaths.size() == 0) { id = addSubPath(subPaths, glm::vec2(0.0f)); }
-                            auto &points = subPaths.outerPoints(id);
+                            if (path.subPathCount() == 0) { id = addSubPath(path, glm::vec2(0.0f)); }
+                            auto &points = subPaths[id].outerPoints;
                             auto &prevPoint = points.pos(points.size()-1);
-                            bezier(subPaths, id,
+                            bezier(path, id,
                                    prevPoint.x, prevPoint.y,
                                    commands.param0(i), commands.param1(i),
                                    commands.param2(i), commands.param3(i),
@@ -962,8 +962,8 @@ namespace tunis
                         }
                         case QUAD_TO:
                         {
-                            if (subPaths.size() == 0) { id = addSubPath(subPaths, glm::vec2(0.0f)); }
-                            auto &points = subPaths.outerPoints(id);
+                            if (path.subPathCount() == 0) { id = addSubPath(path, glm::vec2(0.0f)); }
+                            auto &points = subPaths[id].outerPoints;
                             auto &prevPoint = points.pos(points.size()-1);
                             float x0 = prevPoint.x;
                             float y0 = prevPoint.y;
@@ -975,12 +975,12 @@ namespace tunis
                             float c1y = y0 + 2.0f/3.0f*(cy - y0);
                             float c2x = x + 2.0f/3.0f*(cx - x);
                             float c2y = y + 2.0f/3.0f*(cy - y);
-                            bezier(subPaths, id, x0, y0, c1x, c1y, c2x, c2y, x, y);
+                            bezier(path, id, x0, y0, c1x, c1y, c2x, c2y, x, y);
                             break;
                         }
                         case ARC:
                         {
-                            arc(subPaths, id,
+                            arc(path, id,
                                 commands.param0(i),
                                 commands.param1(i),
                                 commands.param2(i),
@@ -991,8 +991,8 @@ namespace tunis
                         }
                         case ARC_TO:
                         {
-                            if (subPaths.size() == 0) { id = addSubPath(subPaths, glm::vec2(0.0f)); }
-                            arcTo(subPaths, id,
+                            if (path.subPathCount() == 0) { id = addSubPath(path, glm::vec2(0.0f)); }
+                            arcTo(path, id,
                                   commands.param0(i),
                                   commands.param1(i),
                                   commands.param2(i),
@@ -1009,20 +1009,20 @@ namespace tunis
                             float y = commands.param1(i);
                             float w = commands.param2(i);
                             float h = commands.param3(i);
-                            id = addSubPath(subPaths, glm::vec2(x, y));
-                            addPoint(subPaths, id, glm::vec2(x, y+h));
-                            addPoint(subPaths, id, glm::vec2(x+w, y+h));
-                            addPoint(subPaths, id, glm::vec2(x+w, y));
-                            subPaths.closed(id) = true;
+                            id = addSubPath(path, glm::vec2(x, y));
+                            addPoint(path, id, glm::vec2(x, y+h));
+                            addPoint(path, id, glm::vec2(x+w, y+h));
+                            addPoint(path, id, glm::vec2(x+w, y));
+                            subPaths[id].closed = true;
                             break;
                         }
                     }
                 }
 
                 // validate.
-                for (size_t i = 0; i < subPaths.size(); ++i)
+                for (size_t id = 0; id < path.subPathCount(); ++id)
                 {
-                    auto &points = subPaths.outerPoints(i);
+                    auto &points = subPaths[id].outerPoints;
 
                     // Check if the first and last point are the same. Get rid of
                     // the last point if that is the case, and close the subpath.
@@ -1032,7 +1032,7 @@ namespace tunis
                                                    distTol)))
                     {
                         points.resize(points.size()-1);
-                        subPaths.closed(i) = true;
+                        subPaths[id].closed = true;
                     }
                 }
             }
@@ -1043,13 +1043,13 @@ namespace tunis
 
                 float halfLineWidth = state.lineWidth * 0.5f;
 
-                SubPathArray &subPaths = path.subPaths();
-                for (size_t id = 0; id < subPaths.size(); ++id)
+                SubPath2DArray &subPaths = path.subPaths();
+                for (size_t id = 0; id < path.subPathCount(); ++id)
                 {
-                    auto &outerPoints = subPaths.outerPoints(id);
-                    auto &innerPoints = subPaths.innerPoints(id);
+                    auto &outerPoints = subPaths[id].outerPoints;
+                    auto &innerPoints = subPaths[id].innerPoints;
 
-                    if(subPaths.closed(id))
+                    if(subPaths[id].closed)
                     {
                         // Calculate direction vectors
                         for (size_t p0 = outerPoints.size() - 1, p1 = 0; p1 < outerPoints.size(); p0 = p1++)
@@ -1151,17 +1151,17 @@ namespace tunis
                             if (state.lineCap == round)
                             {
                                 // then arc 90 degrees from p1 to p3
-                                arcTo(subPaths, id, p2.x, p2.y, p3.x, p3.y, halfLineWidth);
+                                arcTo(path, id, p2.x, p2.y, p3.x, p3.y, halfLineWidth);
 
                                 // then arc 90 degrees from p3 to p5
-                                arcTo(subPaths, id, p4.x, p4.y, p5.x, p5.y, halfLineWidth);
+                                arcTo(path, id, p4.x, p4.y, p5.x, p5.y, halfLineWidth);
                             }
                             else // square
                             {
-                                addPoint(subPaths, id, p2);
-                                addPoint(subPaths, id, p3);
-                                addPoint(subPaths, id, p4);
-                                addPoint(subPaths, id, p5);
+                                addPoint(path, id, p2);
+                                addPoint(path, id, p3);
+                                addPoint(path, id, p4);
+                                addPoint(path, id, p5);
                             }
 
                             endCapN = outerPoints.size();
@@ -1174,7 +1174,7 @@ namespace tunis
                         for (size_t outerPt = outerN - 1, innerPt = inner0; innerPt < innerN; --outerPt, ++innerPt)
                         {
                             // add new extruded point
-                            addPoint(subPaths, id, outerPoints.pos(outerPt) + (outerPoints.exc(outerPt) * halfLineWidth));
+                            addPoint(path, id, outerPoints.pos(outerPt) + (outerPoints.exc(outerPt) * halfLineWidth));
                         }
 
                         // Point[outer0] .. Point[outerN]
@@ -1217,16 +1217,16 @@ namespace tunis
                             if (state.lineCap == round)
                             {
                                 // arc 90 degrees from p4 to p2
-                                arcTo(subPaths, id, p3.x, p3.y, p2.x, p2.y, halfLineWidth);
+                                arcTo(path, id, p3.x, p3.y, p2.x, p2.y, halfLineWidth);
 
                                 // then arc 90 degrees from p2 to p0
-                                arcTo(subPaths, id, p1.x, p1.y, p0.x, p0.y, halfLineWidth);
+                                arcTo(path, id, p1.x, p1.y, p0.x, p0.y, halfLineWidth);
                             }
                             else // square
                             {
-                                addPoint(subPaths, id, p3);
-                                addPoint(subPaths, id, p2);
-                                addPoint(subPaths, id, p1);
+                                addPoint(path, id, p3);
+                                addPoint(path, id, p2);
+                                addPoint(path, id, p1);
                                 // no need to add p0 since it's already part of the contour (as the first point)
                             }
 
@@ -1239,18 +1239,18 @@ namespace tunis
 
             void triangulate(Path2D &path)
             {
-                SubPathArray &subPaths = path.subPaths();
+                SubPath2DArray &subPaths = path.subPaths();
                 glm::vec2 &boundTopLeft = path.boundTopLeft();
                 glm::vec2 &boundBottomRight = path.boundBottomRight();
                 boundTopLeft = glm::vec2(FLT_MAX);
                 boundBottomRight = glm::vec2(-FLT_MAX);
 
-                for (size_t i = 0; i < subPaths.size(); ++i)
+                for (size_t id = 0; id < path.subPathCount(); ++id)
                 {
-                    MPEPolyContext &polyContext = subPaths.polyContext(i);
-                    MemPool &mempool = subPaths.mempool(i);
-                    auto &outerPoints = subPaths.outerPoints(i);
-                    auto &innerPoints = subPaths.innerPoints(i);
+                    MPEPolyContext &polyContext = subPaths[id].polyContext;
+                    MemPool &mempool = subPaths[id].mempool;
+                    auto &outerPoints = subPaths[id].outerPoints;
+                    auto &innerPoints = subPaths[id].innerPoints;
 
                     // The maximum number of points you expect to need
                     // This value is used by the library to calculate

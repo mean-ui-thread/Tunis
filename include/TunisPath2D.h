@@ -58,29 +58,32 @@ struct PointArray : public SoA<glm::vec2, glm::vec2, glm::vec2>
     inline glm::vec2 &exc(size_t idx) { return get<2>(idx); }
 };
 
-struct SubPathArray : public SoA<MPEPolyContext, MemPool, PointArray, PointArray, uint8_t >
+struct SubPath2D
 {
-    inline MPEPolyContext &polyContext(size_t idx) { return get<0>(idx); }
-    inline MemPool &mempool(size_t idx) { return get<1>(idx); }
-    inline PointArray &outerPoints(size_t idx) { return get<2>(idx); }
-    inline PointArray &innerPoints(size_t idx) { return get<3>(idx); }
-    inline uint8_t &closed(size_t idx) { return get<4>(idx); }
+    MPEPolyContext polyContext;
+    MemPool mempool;
+    PointArray outerPoints;
+    PointArray innerPoints;
+    bool closed;
 };
+using SubPath2DArray = std::array<SubPath2D, 128>;
 
 }
 
 class Path2D : public RefCountedSOA<
         detail::PathCommandArray,
-        detail::SubPathArray,
+        detail::SubPath2DArray,
+        size_t,
         uint8_t,
         glm::vec2,
         glm::vec2>
 {
     inline detail::PathCommandArray &commands() { return get<0>(); }
-    inline detail::SubPathArray &subPaths() { return get<1>(); }
-    inline uint8_t &dirty() { return get<2>(); }
-    inline glm::vec2 &boundTopLeft() { return get<3>(); }
-    inline glm::vec2 &boundBottomRight() { return get<4>(); }
+    inline detail::SubPath2DArray &subPaths() { return get<1>(); }
+    inline size_t &subPathCount() { return get<2>(); }
+    inline uint8_t &dirty() { return get<3>(); }
+    inline glm::vec2 &boundTopLeft() { return get<4>(); }
+    inline glm::vec2 &boundBottomRight() { return get<5>(); }
 
     friend Context;
     friend detail::ContextPriv;

@@ -13,7 +13,7 @@ inline Path2D::Path2D()
 inline void Path2D::reset()
 {
     commands().resize(0);
-    subPaths().resize(0);
+    subPathCount() = 0;
     dirty() = false;
     boundTopLeft() = glm::vec2(FLT_MAX);
     boundBottomRight() = glm::vec2(-FLT_MAX);
