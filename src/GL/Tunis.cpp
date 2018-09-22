@@ -409,7 +409,7 @@ namespace tunis
                 if (renderQueue.size() > 0)
                 {
                     // Generate Geometry (Multi-threaded)
-                    #pragma omp parallel for num_threads(std::thread::hardware_concurrency())
+                    //#pragma omp parallel for num_threads(std::thread::hardware_concurrency())
                     for (long i = 0; i < renderQueue.size(); ++i)
                     {
                         EASY_THREAD_SCOPE("OpenMP");
@@ -767,8 +767,7 @@ namespace tunis
             }
 
             template <typename PointArray>
-            void arc(PointArray &points,
-                     float centerX, float centerY, float radius,
+            void arc(PointArray &points, glm::vec2 center, float radius,
                      float startAngle, float endAngle, bool anticlockwise)
             {
                 float deltaAngle = endAngle - startAngle;
@@ -812,36 +811,28 @@ namespace tunis
                     tangentFactor = -tangentFactor;
                 }
 
-                float deltaX = glm::cos(startAngle);
-                float deltaY = glm::sin(startAngle);
-
-                float prevX = centerX + deltaX * radius;
-                float prevY = centerY + deltaY * radius;
-                float prevTanX = -deltaY * tangentFactor * radius;
-                float prevTanY = deltaX * tangentFactor * radius;
-
-                addPoint(points, glm::vec2(prevX, prevY));
+                glm::vec2 dir(glm::cos(startAngle), glm::sin(startAngle));
+                glm::vec2 prev = center + dir * radius;
+                glm::vec2 prevTan(-dir.y * tangentFactor * radius, dir.x * tangentFactor * radius);
+                addPoint(points, prev);
 
                 for (int32_t segment = 1; segment <= segmentCount; ++segment)
                 {
                     float angle = startAngle + deltaAngle * (static_cast<float>(segment)/static_cast<float>(segmentCount));
-                    deltaX = glm::cos(angle);
-                    deltaY = glm::sin(angle);
-                    float x = centerX + deltaX * radius;
-                    float y = centerY + deltaY * radius;
-                    float tanX = -deltaY * tangentFactor * radius;
-                    float tanY = deltaX * tangentFactor * radius;
+                    dir = glm::vec2(glm::cos(angle), glm::sin(angle));
+                    glm::vec2 pos = center + dir * radius;
+                    glm::vec2 tan(-dir.y * tangentFactor * radius, dir.x * tangentFactor * radius);
 
-                    bezier(points,
-                           prevX, prevY, // start point
-                           prevX + prevTanX, prevY + prevTanY, // control point 1
-                           x - tanX, y - tanY, // control point 2
-                           x, y); // end point
+                    recursiveBezier(points,
+                                    prev.x, prev.y, // start point
+                                    prev.x + prevTan.x, prev.y + prevTan.y, // control point 1
+                                    pos.x - tan.x, pos.y - tan.y, // control point 2
+                                    pos.x, pos.y, // end point
+                                    0);
+                    addPoint(points, pos);
 
-                    prevX = x;
-                    prevY = y;
-                    prevTanX = tanX;
-                    prevTanY = tanY;
+                    prev = pos;
+                    prevTan = tan;
                 }
             }
 
@@ -905,26 +896,27 @@ namespace tunis
 
                 float cp = d1.x * d0.y - d0.x * d1.y;
 
-                float cx, cy, a0, a1;
+                glm::vec2 c;
+                float a0, a1;
                 bool anticlockwise;
                 if (cp > 0.0f)
                 {
-                    cx = p1.x + d0.x * d + d0.y * radius;
-                    cy = p1.y + d0.y * d + -d0.x * radius;
+                    c.x = p1.x + d0.x * d + d0.y * radius;
+                    c.y = p1.y + d0.y * d + -d0.x * radius;
                     a0 = glm::atan(d0.x, -d0.y);
                     a1 = glm::atan(-d1.x, d1.y);
                     anticlockwise = false;
                 }
                 else
                 {
-                    cx = p1.x + d0.x * d + -d0.y * radius;
-                    cy = p1.y + d0.y * d + d0.x * radius;
+                    c.x = p1.x + d0.x * d + -d0.y * radius;
+                    c.y = p1.y + d0.y * d + d0.x * radius;
                     a0 = glm::atan(-d0.x, d0.y);
                     a1 = glm::atan(d1.x, -d1.y);
                     anticlockwise = true;
                 }
 
-                arc(points, cx, cy, radius, a0, a1, anticlockwise);
+                arc(points, c, radius, a0, a1, anticlockwise);
             }
 
 
@@ -989,8 +981,8 @@ namespace tunis
                         case ARC:
                             if (path.subPathCount() == 0) { id = addSubPath(path); }
                             arc(subPaths[id].points,
-                                commands.param0(i),
-                                commands.param1(i),
+                                glm::vec2(commands.param0(i),
+                                          commands.param1(i)),
                                 commands.param2(i),
                                 commands.param3(i),
                                 commands.param4(i),
@@ -1003,8 +995,10 @@ namespace tunis
                             auto &prevPoint = points.pos(points.size()-1);
                             arcTo(subPaths[id].points,
                                   prevPoint,
-                                  glm::vec2(commands.param0(i), commands.param1(i)),
-                                  glm::vec2(commands.param2(i), commands.param3(i)),
+                                  glm::vec2(commands.param0(i),
+                                            commands.param1(i)),
+                                  glm::vec2(commands.param2(i),
+                                            commands.param3(i)),
                                   commands.param4(i));
                             break;
                         }
