@@ -51,19 +51,23 @@ struct PathCommandArray : public SoA<PathCommandType, float, float,float, float,
     inline float &param7(size_t idx) { return get<8>(idx); }
 };
 
-struct PointArray : public SoA<glm::vec2, glm::vec2, glm::vec2>
+struct ContourPointArray : public SoA<glm::vec2, glm::vec2, glm::vec2>
 {
     inline glm::vec2 &pos(size_t idx) { return get<0>(idx); }
     inline glm::vec2 &dir(size_t idx) { return get<1>(idx); }
-    inline glm::vec2 &exc(size_t idx) { return get<2>(idx); }
+    inline glm::vec2 &norm(size_t idx) { return get<2>(idx); }
 };
+
+using BorderPointArray = std::vector<glm::vec2>;
+
 
 struct SubPath2D
 {
     MPEPolyContext polyContext;
     MemPool mempool;
-    PointArray outerPoints;
-    PointArray innerPoints;
+    ContourPointArray points;
+    BorderPointArray innerPoints;
+    BorderPointArray outerPoints;
     bool closed;
 };
 using SubPath2DArray = std::array<SubPath2D, 128>;

@@ -410,7 +410,7 @@ namespace tunis
                 {
                     // Generate Geometry (Multi-threaded)
                     #pragma omp parallel for num_threads(std::thread::hardware_concurrency())
-                    for (int i = 0; i < renderQueue.size(); ++i)
+                    for (long i = 0; i < renderQueue.size(); ++i)
                     {
                         EASY_THREAD_SCOPE("OpenMP");
                         EASY_BLOCK("Poly2Tri", profiler::colors::DarkBlue)
@@ -573,31 +573,46 @@ namespace tunis
                 }
             }
 
-            size_t addSubPath(Path2D &path, glm::vec2 startPos)
+            size_t addSubPath(Path2D &path)
             {
                 size_t id = path.subPathCount()++;
 
                 SubPath2D &subPath = path.subPaths()[id];
 
                 subPath.mempool.resize(0);
-                subPath.outerPoints.resize(0);
+                subPath.points.resize(0);
                 subPath.innerPoints.resize(0);
+                subPath.outerPoints.resize(0);
                 subPath.closed = false;
-
-                subPath.outerPoints.push(std::move(startPos), {}, {});
 
                 return id;
             }
 
-            void addPoint(Path2D &path, size_t id, glm::vec2 pos)
+            size_t addSubPath(Path2D &path, glm::vec2 startPos)
             {
-                auto &points = path.subPaths()[id].outerPoints;
+                size_t id = addSubPath(path);
+                path.subPaths()[id].points.push(std::move(startPos), {}, {});
+                return id;
+            }
 
+            void addPoint(BorderPointArray &points, glm::vec2 pos)
+            {
                 if (points.size() > 0)
                 {
-                    if (glm::all(glm::epsilonEqual(points.pos(points.size() - 1),
-                                                   pos,
-                                                   distTol)))
+                    if (glm::all(glm::epsilonEqual(points[points.size() - 1], pos, distTol)))
+                    {
+                        return;
+                    }
+                }
+
+                points.emplace_back(std::move(pos));
+            }
+
+            void addPoint(ContourPointArray &points, glm::vec2 pos)
+            {
+                if (points.size() > 0)
+                {
+                    if (glm::all(glm::epsilonEqual(points.pos(points.size() - 1), pos, distTol)))
                     {
                         return;
                     }
@@ -608,12 +623,16 @@ namespace tunis
 
 
             // based of http://antigrain.com/__code/src/agg_curves.cpp.html by Maxim Shemanarev
-            void bezier(Path2D &path, size_t id, float x1, float y1,
-                        float x2, float y2, float x3, float y3, float x4, float y4)
+            template<typename PointArray>
+            void bezier(PointArray &points,
+                        float x1, float y1,
+                        float x2, float y2,
+                        float x3, float y3,
+                        float x4, float y4)
             {
-                addPoint(path, id, glm::vec2(x1, y1));
-                recursiveBezier(path, id, x1, y1, x2, y2, x3, y3, x4, y4, 0);
-                addPoint(path, id, glm::vec2(x4, y4));
+                addPoint(points, glm::vec2(x1, y1));
+                recursiveBezier(points, x1, y1, x2, y2, x3, y3, x4, y4, 0);
+                addPoint(points, glm::vec2(x4, y4));
             }
             float calcSqrtDistance(float x1, float y1, float x2, float y2)
             {
@@ -621,8 +640,8 @@ namespace tunis
                 float dy = y2-y1;
                 return dx * dx + dy * dy;
             }
-            void recursiveBezier(Path2D &path,
-                                 size_t id,
+            template<typename PointArray>
+            void recursiveBezier(PointArray &points,
                                  float x1, float y1,
                                  float x2, float y2,
                                  float x3, float y3,
@@ -696,7 +715,7 @@ namespace tunis
                         {
                             if(d2 < tessTol)
                             {
-                                addPoint(path, id, glm::vec2(x2, y2));
+                                addPoint(points, glm::vec2(x2, y2));
                                 return;
                             }
                         }
@@ -704,7 +723,7 @@ namespace tunis
                         {
                             if(d3 < tessTol)
                             {
-                                addPoint(path, id, glm::vec2(x3, y3));
+                                addPoint(points, glm::vec2(x3, y3));
                                 return;
                             }
                         }
@@ -715,7 +734,7 @@ namespace tunis
                         //----------------------
                         if(d3 * d3 <= tessTol * (dx*dx + dy*dy))
                         {
-                            addPoint(path, id, glm::vec2(x23, y23));
+                            addPoint(points, glm::vec2(x23, y23));
                             return;
                         }
                         break;
@@ -725,7 +744,7 @@ namespace tunis
                         //----------------------
                         if(d2 * d2 <= tessTol * (dx*dx + dy*dy))
                         {
-                            addPoint(path, id, glm::vec2(x23, y23));
+                            addPoint(points, glm::vec2(x23, y23));
                             return;
                         }
                         break;
@@ -735,7 +754,7 @@ namespace tunis
                         //-----------------
                         if((d2 + d3)*(d2 + d3) <= tessTol * (dx*dx + dy*dy))
                         {
-                            addPoint(path, id, glm::vec2(x23, y23));
+                            addPoint(points, glm::vec2(x23, y23));
                             return;
                         }
                         break;
@@ -743,13 +762,14 @@ namespace tunis
 
                 // Continue subdivision
                 //----------------------
-                recursiveBezier(path, id, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1);
-                recursiveBezier(path, id, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
+                recursiveBezier(points, x1, y1, x12, y12, x123, y123, x1234, y1234, level + 1);
+                recursiveBezier(points, x1234, y1234, x234, y234, x34, y34, x4, y4, level + 1);
             }
 
-            void arc(Path2D &path, size_t id, float centerX, float centerY,
-                     float radius, float startAngle, float endAngle,
-                     bool anticlockwise)
+            template <typename PointArray>
+            void arc(PointArray &points,
+                     float centerX, float centerY, float radius,
+                     float startAngle, float endAngle, bool anticlockwise)
             {
                 float deltaAngle = endAngle - startAngle;
 
@@ -800,14 +820,7 @@ namespace tunis
                 float prevTanX = -deltaY * tangentFactor * radius;
                 float prevTanY = deltaX * tangentFactor * radius;
 
-                if(path.subPathCount() == 0)
-                {
-                    id = addSubPath(path, glm::vec2(prevX, prevY));
-                }
-                else
-                {
-                    addPoint(path, id, glm::vec2(prevX, prevY));
-                }
+                addPoint(points, glm::vec2(prevX, prevY));
 
                 for (int32_t segment = 1; segment <= segmentCount; ++segment)
                 {
@@ -819,7 +832,7 @@ namespace tunis
                     float tanX = -deltaY * tangentFactor * radius;
                     float tanY = deltaX * tangentFactor * radius;
 
-                    bezier(path, id,
+                    bezier(points,
                            prevX, prevY, // start point
                            prevX + prevTanX, prevY + prevTanY, // control point 1
                            x - tanX, y - tanY, // control point 2
@@ -852,35 +865,30 @@ namespace tunis
                 return glm::dot(pc, pc);
             }
 
-            void arcTo(Path2D &path, size_t id, float x1, float y1, float x2, float y2, float radius)
+            template <typename PointArray>
+            void arcTo(PointArray &points, glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, float radius)
             {
-                auto &points = path.subPaths()[id].outerPoints;
-
-                glm::vec2 p0 = points.pos(points.size()-1);
-                glm::vec2 p1(x1, y1);
-                glm::vec2 p2(x2, y2);
-
                 if (glm::all(glm::epsilonEqual(p0, p1, distTol)))
                 {
-                    addPoint(path, id, p1);
+                    addPoint(points, p1);
                     return;
                 }
 
                 if (glm::all(glm::epsilonEqual(p1, p2, distTol)))
                 {
-                    addPoint(path, id, p1);
+                    addPoint(points, p1);
                     return;
                 }
 
                 if (distPtSeg(p1, p0, p2) < (distTol * distTol))
                 {
-                    addPoint(path, id, p1);
+                    addPoint(points, p1);
                     return;
                 }
 
                 if (radius < distTol)
                 {
-                    addPoint(path, id, p1);
+                    addPoint(points, p1);
                     return;
                 }
 
@@ -891,7 +899,7 @@ namespace tunis
 
                 if (d > 10000.0f)
                 {
-                    addPoint(path, id, p1);
+                    addPoint(points, p1);
                     return;
                 }
 
@@ -916,7 +924,7 @@ namespace tunis
                     anticlockwise = true;
                 }
 
-                arc(path, id, cx, cy, radius, a0, a1, anticlockwise);
+                arc(points, cx, cy, radius, a0, a1, anticlockwise);
             }
 
 
@@ -930,7 +938,7 @@ namespace tunis
 
                 size_t id = 0;
 
-                for(size_t i = 0; i < commands.size(); ++i)
+                for (size_t i = 0; i < commands.size(); ++i)
                 {
                     switch(commands.type(i))
                     {
@@ -945,14 +953,14 @@ namespace tunis
                             break;
                         case LINE_TO:
                             if (path.subPathCount() == 0) { id = addSubPath(path, glm::vec2(0.0f)); }
-                            addPoint(path, id, glm::vec2(commands.param0(i), commands.param1(i)));
+                            addPoint(subPaths[id].points, glm::vec2(commands.param0(i), commands.param1(i)));
                             break;
                         case BEZIER_TO:
                         {
                             if (path.subPathCount() == 0) { id = addSubPath(path, glm::vec2(0.0f)); }
-                            auto &points = subPaths[id].outerPoints;
+                            auto &points = subPaths[id].points;
                             auto &prevPoint = points.pos(points.size()-1);
-                            bezier(path, id,
+                            bezier(points,
                                    prevPoint.x, prevPoint.y,
                                    commands.param0(i), commands.param1(i),
                                    commands.param2(i), commands.param3(i),
@@ -963,7 +971,7 @@ namespace tunis
                         case QUAD_TO:
                         {
                             if (path.subPathCount() == 0) { id = addSubPath(path, glm::vec2(0.0f)); }
-                            auto &points = subPaths[id].outerPoints;
+                            auto &points = subPaths[id].points;
                             auto &prevPoint = points.pos(points.size()-1);
                             float x0 = prevPoint.x;
                             float y0 = prevPoint.y;
@@ -975,12 +983,12 @@ namespace tunis
                             float c1y = y0 + 2.0f/3.0f*(cy - y0);
                             float c2x = x + 2.0f/3.0f*(cx - x);
                             float c2y = y + 2.0f/3.0f*(cy - y);
-                            bezier(path, id, x0, y0, c1x, c1y, c2x, c2y, x, y);
+                            bezier(points, x0, y0, c1x, c1y, c2x, c2y, x, y);
                             break;
                         }
                         case ARC:
-                        {
-                            arc(path, id,
+                            if (path.subPathCount() == 0) { id = addSubPath(path); }
+                            arc(subPaths[id].points,
                                 commands.param0(i),
                                 commands.param1(i),
                                 commands.param2(i),
@@ -988,15 +996,15 @@ namespace tunis
                                 commands.param4(i),
                                 commands.param5(i) > 0.5f);
                             break;
-                        }
                         case ARC_TO:
                         {
                             if (path.subPathCount() == 0) { id = addSubPath(path, glm::vec2(0.0f)); }
-                            arcTo(path, id,
-                                  commands.param0(i),
-                                  commands.param1(i),
-                                  commands.param2(i),
-                                  commands.param3(i),
+                            auto &points = subPaths[id].points;
+                            auto &prevPoint = points.pos(points.size()-1);
+                            arcTo(subPaths[id].points,
+                                  prevPoint,
+                                  glm::vec2(commands.param0(i), commands.param1(i)),
+                                  glm::vec2(commands.param2(i), commands.param3(i)),
                                   commands.param4(i));
                             break;
                         }
@@ -1009,10 +1017,12 @@ namespace tunis
                             float y = commands.param1(i);
                             float w = commands.param2(i);
                             float h = commands.param3(i);
-                            id = addSubPath(path, glm::vec2(x, y));
-                            addPoint(path, id, glm::vec2(x, y+h));
-                            addPoint(path, id, glm::vec2(x+w, y+h));
-                            addPoint(path, id, glm::vec2(x+w, y));
+                            id = addSubPath(path);
+                            auto &points = subPaths[id].points;
+                            addPoint(points, glm::vec2(x, y));
+                            addPoint(points, glm::vec2(x, y+h));
+                            addPoint(points, glm::vec2(x+w, y+h));
+                            addPoint(points, glm::vec2(x+w, y));
                             subPaths[id].closed = true;
                             break;
                         }
@@ -1022,7 +1032,7 @@ namespace tunis
                 // validate.
                 for (size_t id = 0; id < path.subPathCount(); ++id)
                 {
-                    auto &points = subPaths[id].outerPoints;
+                    auto &points = subPaths[id].points;
 
                     // Check if the first and last point are the same. Get rid of
                     // the last point if that is the case, and close the subpath.
@@ -1046,195 +1056,182 @@ namespace tunis
                 SubPath2DArray &subPaths = path.subPaths();
                 for (size_t id = 0; id < path.subPathCount(); ++id)
                 {
+                    auto &points = subPaths[id].points;
                     auto &outerPoints = subPaths[id].outerPoints;
                     auto &innerPoints = subPaths[id].innerPoints;
 
                     if(subPaths[id].closed)
                     {
                         // Calculate direction vectors
-                        for (size_t p0 = outerPoints.size() - 1, p1 = 0; p1 < outerPoints.size(); p0 = p1++)
+                        for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
                         {
-                            outerPoints.dir(p0) = glm::normalize(outerPoints.pos(p1) - outerPoints.pos(p0));
+                            points.dir(p0) = glm::normalize(points.pos(p1) - points.pos(p0));
                         }
 
-                        // Calculate excrusion vectors
-                        for (size_t p0 = outerPoints.size() - 1, p1 = 0; p1 < outerPoints.size(); p0 = p1++)
+                        // Calculate normal vectors
+                        for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
                         {
                             // rotate direction vector by 90degree CW
-                            glm::vec2 dir0 = glm::vec2(outerPoints.dir(p0).y, -outerPoints.dir(p0).x);
-                            glm::vec2 dir1 = glm::vec2(outerPoints.dir(p1).y, -outerPoints.dir(p1).x);
-                            glm::vec2 exc = (dir0 + dir1) * 0.5f;
-                            float dot = glm::dot(exc, exc);
+                            glm::vec2 dir0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x);
+                            glm::vec2 dir1 = glm::vec2(points.dir(p1).y, -points.dir(p1).x);
+                            glm::vec2 norm = (dir0 + dir1) * 0.5f;
+                            float dot = glm::dot(norm, norm);
                             if (dot > glm::epsilon<float>())
                             {
-                                exc *= glm::clamp(1.0f / dot, 0.0f, 1000.0f);
+                                norm *= glm::clamp(1.0f / dot, 0.0f, 1000.0f);
                             }
-                            outerPoints.exc(p1) = exc;
+                            points.norm(p1) = norm;
                         }
 
-                        // create inner contour and re-adjust outer contour accordingly.
-                        innerPoints.resize(outerPoints.size());
-                        for (size_t p0 = 0; p0 < outerPoints.size(); ++p0)
+                        // create inner and outer contour.
+                        innerPoints.resize(points.size());
+                        outerPoints.resize(points.size());
+                        for (size_t p = 0; p < points.size(); ++p)
                         {
-                            innerPoints.pos(p0) = outerPoints.pos(p0) + (outerPoints.exc(p0) * halfLineWidth);
-                            outerPoints.pos(p0) = outerPoints.pos(p0) - (outerPoints.exc(p0) * halfLineWidth);
+                            glm::vec2 extrusion = points.norm(p) * halfLineWidth;
+                            innerPoints[p] = points.pos(p) + extrusion;
+                            outerPoints[p] = points.pos(p) - extrusion;
                         }
 
                     }
                     else
                     {
                         // Calculate direction vectors
-                        outerPoints.dir(0) = glm::normalize(outerPoints.pos(1) - outerPoints.pos(0)); // first point
-                        outerPoints.dir(outerPoints.size()-2) = glm::normalize(outerPoints.pos(outerPoints.size()-1) - outerPoints.pos(outerPoints.size()-2)); // second last point
-                        outerPoints.dir(outerPoints.size()-1) = outerPoints.dir(outerPoints.size()-2); // last point, which should be the same direction than the second last point.
-                        for (size_t p0 = 1, p1 = 2; p0 < outerPoints.size()-2; ++p0, ++p1)
+                        points.dir(0) = glm::normalize(points.pos(1) - points.pos(0)); // first point
+                        points.dir(points.size()-2) = glm::normalize(points.pos(points.size()-1) - points.pos(points.size()-2)); // second last point
+                        points.dir(points.size()-1) = points.dir(points.size()-2); // last point, which should be the same direction than the second last point.
+                        for (size_t p0 = 1, p1 = 2; p0 < points.size()-2; ++p0, ++p1)
                         {
-                            outerPoints.dir(p0) = glm::normalize(outerPoints.pos(p1) - outerPoints.pos(p0));
+                            points.dir(p0) = glm::normalize(points.pos(p1) - points.pos(p0));
                         }
 
-                        // Calculate excrusion vectors
-                        outerPoints.exc(0) = glm::vec2(outerPoints.dir(0).y, -outerPoints.dir(0).x); // first point
-                        outerPoints.exc(outerPoints.size()-1) = glm::vec2(outerPoints.dir(outerPoints.size()-1).y, -outerPoints.dir(outerPoints.size()-1).x); // last point
-                        for (size_t p0 = 0, p1 = 1; p0 < outerPoints.size()-2; p0++, p1++)
+                        // Calculate normal vectors
+                        points.norm(0) = glm::vec2(points.dir(0).y, -points.dir(0).x); // first point
+                        points.norm(points.size()-1) = glm::vec2(points.dir(points.size()-1).y, -points.dir(points.size()-1).x); // last point
+                        for (size_t p0 = 0, p1 = 1; p0 < points.size()-2; p0++, p1++)
                         {
                             // rotate direction vector by 90degree CW
-                            glm::vec2 dir0 = glm::vec2(outerPoints.dir(p0).y, -outerPoints.dir(p0).x);
-                            glm::vec2 dir1 = glm::vec2(outerPoints.dir(p1).y, -outerPoints.dir(p1).x);
-                            glm::vec2 exc = (dir0 + dir1) * 0.5f;
-                            float dot = glm::dot(exc, exc);
+                            glm::vec2 dir0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x);
+                            glm::vec2 dir1 = glm::vec2(points.dir(p1).y, -points.dir(p1).x);
+                            glm::vec2 norm = (dir0 + dir1) * 0.5f;
+                            float dot = glm::dot(norm, norm);
                             if (dot > glm::epsilon<float>())
                             {
-                                exc *= glm::clamp(1.0f / dot, 0.0f, 1000.0f);
+                                norm *= glm::clamp(1.0f / dot, 0.0f, 1000.0f);
                             }
-                            outerPoints.exc(p1) = exc;
+                            points.norm(p1) = norm;
                         }
 
-                        size_t outer0 = 0;
-                        size_t outerN = outerPoints.size();
-                        size_t endCap0 = outerN;
-                        size_t endCapN = endCap0;
+                        // extrude our points
+                        outerPoints.resize(points.size());
+                        for (size_t p = 0; p < points.size(); ++p)
+                        {
+                            outerPoints[p] = points.pos(p) - points.norm(p) * halfLineWidth;
+                        }
 
-                        // add the endcap
+                        // add the end cap
                         if (state.lineCap != butt)
                         {
-                            endCap0 = --outerN;
-                            glm::vec2 dir = outerPoints.dir(endCap0) * halfLineWidth;
-                            glm::vec2 exc = outerPoints.exc(endCap0) * halfLineWidth;
+                            glm::vec2 dir = points.dir(points.size()-1) * halfLineWidth;
+                            glm::vec2 ext = points.norm(points.size()-1) * halfLineWidth;
 
                             /*
-                                          (p1)---[+dir]-->(p2)
-                                           ^               |
-                                           |               |
-                                        [-exc]          [+exc]
-                                           |               |
-                                           |               V
-                              ...>>>>>>>>>(p0)            (p3)
-                                                           |
-                                                           |
-                                                        [+exc]
-                                                           |
-                                                           V
-                                          (p5)<--[-dir]---(p4)
+                              ...>>>>>>>>>(p0)---[+dir]-->(p1)
+                              ...-----------------         |
+                                                  ---      |
+                                                     -- [+ext]
+                                                       -   |
+                                                        -  V
+                                                        - (p2)
+                                                        -  |
+                                                       -   |
+                                                     -- [+ext]
+                                                  ---      |
+                              ...-----------------         V
+                              ...<<<<<<<<<(p4)<--[-dir]---(p3)
                              */
 
-                            glm::vec2 p0 = outerPoints.pos(endCap0);
-                            glm::vec2 p1 = p0 - exc;
-                            glm::vec2 p2 = p1 + dir;
-                            glm::vec2 p3 = p2 + exc;
-                            glm::vec2 p4 = p3 + exc;
-                            glm::vec2 p5 = p4 - dir;
+                            const glm::vec2 &p0 = outerPoints[outerPoints.size()-1];
+                            glm::vec2 p1 = p0 + dir;
+                            glm::vec2 p2 = p1 + ext;
+                            glm::vec2 p3 = p2 + ext;
+                            glm::vec2 p4 = p3 - dir;
 
-
-                            // first, extrude our first end cap point.
-                            outerPoints.pos(endCap0) = p1;
-
+                            // add the endcap
                             if (state.lineCap == round)
                             {
                                 // then arc 90 degrees from p1 to p3
-                                arcTo(path, id, p2.x, p2.y, p3.x, p3.y, halfLineWidth);
+                                arcTo(outerPoints, p0, p1, p2, halfLineWidth);
 
                                 // then arc 90 degrees from p3 to p5
-                                arcTo(path, id, p4.x, p4.y, p5.x, p5.y, halfLineWidth);
+                                arcTo(outerPoints, p2, p3, p4, halfLineWidth);
                             }
                             else // square
                             {
-                                addPoint(path, id, p2);
-                                addPoint(path, id, p3);
-                                addPoint(path, id, p4);
-                                addPoint(path, id, p5);
+                                addPoint(outerPoints, p1);
+                                addPoint(outerPoints, p2);
+                                addPoint(outerPoints, p3);
+                                addPoint(outerPoints, p4);
                             }
-
-                            endCapN = outerPoints.size();
                         }
 
-                        size_t inner0 = endCapN;
-                        size_t innerN = endCapN + outerN;
-
-                        // Point[inner0] .. Point[innerN] populated by Point[outerN] .. Point[outer0] (reversed order)
-                        for (size_t outerPt = outerN - 1, innerPt = inner0; innerPt < innerN; --outerPt, ++innerPt)
+                        // extrude the 'other' side of our points in reverse.
+                        for (long p = points.size() - 1; p >= 0; --p)
                         {
-                            // add new extruded point
-                            addPoint(path, id, outerPoints.pos(outerPt) + (outerPoints.exc(outerPt) * halfLineWidth));
-                        }
-
-                        // Point[outer0] .. Point[outerN]
-                        for (size_t outerPt = outer0; outerPt < outerN; ++outerPt)
-                        {
-                            // extrude existing points
-                            outerPoints.pos(outerPt) = outerPoints.pos(outerPt) - (outerPoints.exc(outerPt) * halfLineWidth);
+                            addPoint(outerPoints, points.pos(p) + points.norm(p) * halfLineWidth);
                         }
 
                         // add the front cap
                         if (state.lineCap != butt)
                         {
-                            glm::vec2 dir = outerPoints.dir(outer0) * halfLineWidth;
-                            glm::vec2 exc = outerPoints.exc(outer0) * halfLineWidth;
+                            glm::vec2 dir = points.dir(0) * halfLineWidth;
+                            glm::vec2 ext = points.norm(0) * halfLineWidth;
 
                             /*
-                                  p0 is alreaedy excruded.
-
-                                  (p1)<--[-dir]---(p0)>>>>>>>>>>>>>>...
-                                   |
-                                   |
-                                [+exc]
-                                   |
-                                   V
-                                  (p2)
-                                   |
-                                   |
-                                [+exc]
-                                   |
-                                   V
-                                  (p3)---[+dir]-->(p4)<<<<<<<<<<<<<<...
+                                 (p3)---[+dir]-->(p4)>>>>>>>>>...
+                                   ^         -----------------...
+                                   |      ---
+                                [-exc]  --
+                                   |   -
+                                   |  -
+                                 (p2) -
+                                   ^  -
+                                   |   -
+                                [-exc]  --
+                                   |      ---
+                                   |         -----------------...
+                                 (p1)<--[-dir]---(p0)<<<<<<<<<...
                              */
 
-                            glm::vec2 p0 = outerPoints.pos(outer0);
+                            const glm::vec2 &p0 = outerPoints[outerPoints.size()-1];
                             glm::vec2 p1 = p0 - dir;
-                            glm::vec2 p2 = p1 + exc;
-                            glm::vec2 p3 = p2 + exc;
-
+                            glm::vec2 p2 = p1 - ext;
+                            glm::vec2 p3 = p2 - ext;
+                            glm::vec2 p4 = p3 + dir;
 
                             if (state.lineCap == round)
                             {
                                 // arc 90 degrees from p4 to p2
-                                arcTo(path, id, p3.x, p3.y, p2.x, p2.y, halfLineWidth);
+                                arcTo(outerPoints, p0, p1, p2, halfLineWidth);
 
                                 // then arc 90 degrees from p2 to p0
-                                arcTo(path, id, p1.x, p1.y, p0.x, p0.y, halfLineWidth);
+                                arcTo(outerPoints, p2, p3, p4, halfLineWidth);
+
+                                // remove duplicate p4 point since it is already
+                                // in outerPoints as the outerPoints[0]
+                                outerPoints.resize(outerPoints.size()-1);
                             }
                             else // square
                             {
-                                addPoint(path, id, p3);
-                                addPoint(path, id, p2);
-                                addPoint(path, id, p1);
-                                // no need to add p0 since it's already part of the contour (as the first point)
+                                addPoint(outerPoints, p1);
+                                addPoint(outerPoints, p2);
+                                addPoint(outerPoints, p3);
+                                // don't add p4 point since it is already
+                                // in outerPoints as the outerPoints[0]
                             }
-
                         }
                     }
-
                 }
-
             }
 
             void triangulate(Path2D &path)
@@ -1249,13 +1246,14 @@ namespace tunis
                 {
                     MPEPolyContext &polyContext = subPaths[id].polyContext;
                     MemPool &mempool = subPaths[id].mempool;
-                    auto &outerPoints = subPaths[id].outerPoints;
+                    auto &points = subPaths[id].points;
                     auto &innerPoints = subPaths[id].innerPoints;
+                    auto &outerPoints = subPaths[id].outerPoints;
 
                     // The maximum number of points you expect to need
                     // This value is used by the library to calculate
                     // working memory required
-                    uint32_t maxPointCount = static_cast<uint32_t>(outerPoints.size() + innerPoints.size());
+                    uint32_t maxPointCount = static_cast<uint32_t>(outerPoints.size() >= 3 ? outerPoints.size() + innerPoints.size() : points.size());
 
                     // Request how much memory (in bytes) you should
                     // allocate for the library
@@ -1269,13 +1267,14 @@ namespace tunis
                     // and max number of points from before
                     MPE_PolyInitContext(&polyContext, mempool.data(), maxPointCount);
 
-                    // fill outer polypoints buffer.
-                    if (outerPoints.size() > 2)
+
+                    if (outerPoints.size() >= 3)
                     {
+                        // fill outer polypoints buffer.
                         MPEPolyPoint* polyPoints = MPE_PolyPushPointArray(&polyContext, outerPoints.size());
                         for(size_t j = 0; j < outerPoints.size(); ++j)
                         {
-                            glm::vec2 &point = outerPoints.pos(j);
+                            glm::vec2 &point = outerPoints[j];
 
                             polyPoints[j].X = point.x;
                             polyPoints[j].Y = point.y;
@@ -1285,24 +1284,40 @@ namespace tunis
                             boundBottomRight = glm::max(boundBottomRight, point);
                         }
                         MPE_PolyAddEdge(&polyContext);
-                    }
 
-                    // fill inner polypoints buffer.
-                    if (innerPoints.size() > 2)
-                    {
-                        MPEPolyPoint* polyHoles = MPE_PolyPushPointArray(&polyContext, innerPoints.size());
-                        for(size_t j = 0; j < innerPoints.size(); ++j)
+                        if (innerPoints.size() >= 3)
                         {
-                            glm::vec2 &point = innerPoints.pos(j);
+                            // fill inner polypoints buffer.
+                            MPEPolyPoint* polyHoles = MPE_PolyPushPointArray(&polyContext, innerPoints.size());
+                            for(size_t j = 0; j < innerPoints.size(); ++j)
+                            {
+                                glm::vec2 &point = innerPoints[j];
 
-                            polyHoles[j].X = point.x;
-                            polyHoles[j].Y = point.y;
+                                polyHoles[j].X = point.x;
+                                polyHoles[j].Y = point.y;
+
+                                // update path bounds
+                                boundTopLeft     = glm::min(boundTopLeft,     point);
+                                boundBottomRight = glm::max(boundBottomRight, point);
+                            }
+                            MPE_PolyAddHole(&polyContext);
+                        }
+                    }
+                    else if (points.size() >= 3)
+                    {
+                        MPEPolyPoint* polyPoints = MPE_PolyPushPointArray(&polyContext, points.size());
+                        for(size_t j = 0; j < points.size(); ++j)
+                        {
+                            glm::vec2 &point = points.pos(j);
+
+                            polyPoints[j].X = point.x;
+                            polyPoints[j].Y = point.y;
 
                             // update path bounds
                             boundTopLeft     = glm::min(boundTopLeft,     point);
                             boundBottomRight = glm::max(boundBottomRight, point);
                         }
-                        MPE_PolyAddHole(&polyContext);
+                        MPE_PolyAddEdge(&polyContext);
                     }
 
                     MPE_PolyTriangulate(&polyContext);
