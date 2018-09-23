@@ -1124,8 +1124,20 @@ namespace tunis
                                 }
                                 else
                                 {
-                                    addPoint(outerPoints, points.pos(p1) - glm::vec2(points.dir(p0).y, -points.dir(p0).x) * halfLineWidth, POINT_ATTRIB_NONE);
-                                    addPoint(outerPoints, points.pos(p1) - glm::vec2(points.dir(p1).y, -points.dir(p1).x) * halfLineWidth, POINT_ATTRIB_NONE);
+                                    if (points.attributes(p1) & POINT_ATTRIB_LEFT_TURN)
+                                    {
+                                        addPoint(innerPoints, points.pos(p1) + points.norm(p1) * halfLineWidth, POINT_ATTRIB_NONE);
+                                        addPoint(outerPoints, points.pos(p1) - glm::vec2(points.dir(p0).y, -points.dir(p0).x) * halfLineWidth, POINT_ATTRIB_NONE);
+                                        addPoint(outerPoints, points.pos(p1) - glm::vec2(points.dir(p1).y, -points.dir(p1).x) * halfLineWidth, POINT_ATTRIB_NONE);
+                                    }
+                                    else
+                                    {
+                                        addPoint(innerPoints, points.pos(p1) + glm::vec2(points.dir(p0).y, -points.dir(p0).x) * halfLineWidth, POINT_ATTRIB_NONE);
+                                        addPoint(innerPoints, points.pos(p1) + glm::vec2(points.dir(p1).y, -points.dir(p1).x) * halfLineWidth, POINT_ATTRIB_NONE);
+                                        addPoint(outerPoints, points.pos(p1) - points.norm(p1) * halfLineWidth, POINT_ATTRIB_NONE);
+
+                                    }
+
                                 }
                             }
                             else
