@@ -543,14 +543,14 @@ namespace tunis
                         batches.texture(i).bind();
 
 
-#if 0
+#if 1
                         glDrawElements(GL_TRIANGLES,
                                        static_cast<GLsizei>(batches.count(i)),
                                        GL_UNSIGNED_SHORT,
                                        reinterpret_cast<void*>(batches.offset(i) * sizeof(GLushort)));
 #endif
 
-#if 1
+#if 0
                         // Helpful code for debugging triangles.
                         for (size_t j = 0; j < batches.count(i)/3; ++j)
                         {
@@ -1076,16 +1076,65 @@ namespace tunis
                                 norm *= glm::clamp(1.0f / dot, 0.0f, 1000.0f);
                             }
                             points.norm(p1) = norm;
+
+                            float cross = glm::cross(points.dir(p1), points.dir(p0));
+                            points.attributes(p1) |= cross > 0.0f ? POINT_ATTRIB_LEFT_TURN : POINT_ATTRIB_RIGHT_TURN;
+
+                            if (points.attributes(p1) & POINT_ATTRIB_CORNER)
+                            {
+                                if (state.lineJoin == bevel || state.lineJoin == Round ||
+                                    dot * state.miterLimit * state.miterLimit < 1.0f)
+                                {
+                                    points.attributes(p1) |= POINT_ATTRIB_BEVEL;
+                                }
+                            }
                         }
 
                         // create inner and outer contour.
-                        innerPoints.resize(points.size());
-                        outerPoints.resize(points.size());
-                        for (size_t p = 0; p < points.size(); ++p)
+                        for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
                         {
-                            glm::vec2 extrusion = points.norm(p) * halfLineWidth;
-                            innerPoints[p] = points.pos(p) + extrusion;
-                            outerPoints[p] = points.pos(p) - extrusion;
+                            if (points.attributes(p1) & POINT_ATTRIB_BEVEL)
+                            {
+                                if (state.lineJoin == Round)
+                                {
+                                    glm::vec2 ext0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x) * halfLineWidth;
+                                    glm::vec2 ext1 = points.norm(p1) * halfLineWidth;
+                                    glm::vec2 ext2 = glm::vec2(points.dir(p1).y, -points.dir(p1).x) * halfLineWidth;
+
+                                    if (points.attributes(p1) & POINT_ATTRIB_LEFT_TURN)
+                                    {
+                                        addPoint(innerPoints, points.pos(p1) + ext1, POINT_ATTRIB_NONE);
+                                        addPoint(outerPoints, points.pos(p1) - ext0, POINT_ATTRIB_NONE);
+                                        arcTo(outerPoints,
+                                              points.pos(p1) - ext0,
+                                              points.pos(p1) - ext1,
+                                              points.pos(p1) - ext2,
+                                              halfLineWidth);
+                                    }
+                                    else
+                                    {
+                                        addPoint(innerPoints, points.pos(p1) + ext0, POINT_ATTRIB_NONE);
+                                        arcTo(innerPoints,
+                                              points.pos(p1) + ext0,
+                                              points.pos(p1) + ext1,
+                                              points.pos(p1) + ext2,
+                                              halfLineWidth);
+                                        addPoint(outerPoints, points.pos(p1) - ext1, POINT_ATTRIB_NONE);
+                                    }
+                                }
+                                else
+                                {
+                                    addPoint(outerPoints, points.pos(p1) - glm::vec2(points.dir(p0).y, -points.dir(p0).x) * halfLineWidth, POINT_ATTRIB_NONE);
+                                    addPoint(outerPoints, points.pos(p1) - glm::vec2(points.dir(p1).y, -points.dir(p1).x) * halfLineWidth, POINT_ATTRIB_NONE);
+                                }
+                            }
+                            else
+                            {
+                                glm::vec2 extrusion = points.norm(p1) * halfLineWidth;
+                                addPoint(innerPoints, points.pos(p1) + extrusion, POINT_ATTRIB_NONE);
+                                addPoint(outerPoints, points.pos(p1) - extrusion, POINT_ATTRIB_NONE);
+                            }
+
                         }
 
                     }
@@ -1221,8 +1270,7 @@ namespace tunis
                         // extrude the 'other' side of our points in reverse.
                         for (long p = points.size() - 1; p >= 0; --p)
                         {
-                            if (points.attributes(p) & POINT_ATTRIB_BEVEL &&
-                                points.attributes(p) & POINT_ATTRIB_RIGHT_TURN)
+                            if (points.attributes(p) & POINT_ATTRIB_BEVEL && points.attributes(p) & POINT_ATTRIB_RIGHT_TURN)
                             {
                                 if (state.lineJoin == Round)
                                 {
