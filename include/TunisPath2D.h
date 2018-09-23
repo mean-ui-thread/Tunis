@@ -38,6 +38,15 @@ enum PathCommandType {
     RECT,
 };
 
+enum PointAttribType {
+    POINT_ATTRIB_NONE = 0,
+    POINT_ATTRIB_CORNER = 0x01,
+    POINT_ATTRIB_LEFT_TURN = 0x02,
+    POINT_ATTRIB_RIGHT_TURN = 0x04,
+    POINT_ATTRIB_BEVEL = 0x08,
+};
+using PointAttributes = int32_t;
+
 struct PathCommandArray : public SoA<PathCommandType, float, float,float, float, float, float, float, float>
 {
     inline PathCommandType &type(size_t idx) { return get<0>(idx); }
@@ -51,11 +60,13 @@ struct PathCommandArray : public SoA<PathCommandType, float, float,float, float,
     inline float &param7(size_t idx) { return get<8>(idx); }
 };
 
-struct ContourPointArray : public SoA<glm::vec2, glm::vec2, glm::vec2>
+struct ContourPointArray : public SoA<glm::vec2, glm::vec2, glm::vec2, float, PointAttributes>
 {
     inline glm::vec2 &pos(size_t idx) { return get<0>(idx); }
     inline glm::vec2 &dir(size_t idx) { return get<1>(idx); }
     inline glm::vec2 &norm(size_t idx) { return get<2>(idx); }
+    inline float &length(size_t idx) { return get<3>(idx); }
+    inline PointAttributes &attributes(size_t idx) { return get<4>(idx); }
 };
 
 using BorderPointArray = std::vector<glm::vec2>;
