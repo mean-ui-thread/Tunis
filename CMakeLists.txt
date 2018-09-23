@@ -15,8 +15,6 @@ project(Tunis)
 
 include(BuildOptions)
 
-add_subdirectory(3rdparty)
-
 add_library(Tunis
     cmake/BuildOptions.cmake
     cmake/Hunter/config.cmake
@@ -64,7 +62,10 @@ target_include_directories(Tunis
 )
 
 hunter_add_package(glm)
-find_package(glm REQUIRED)
+find_package(glm CONFIG REQUIRED)
+
+hunter_add_package(easy_profiler)
+find_package(easy_profiler CONFIG REQUIRED)
 
 find_package(OpenMP REQUIRED)
 

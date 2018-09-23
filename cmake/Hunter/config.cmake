@@ -1,0 +1,9 @@
+hunter_config(easy_profiler
+    GIT_SUBMODULE
+        "3rdparty/easy_profiler"
+    CMAKE_ARGS
+        EASY_PROFILER_NO_GUI=ON
+        EASY_PROFILER_NO_SAMPLES=ON
+        BUILD_WITH_CHRONO_HIGH_RESOLUTION_CLOCK=ON
+        BUILD_SHARED_LIBS=OFF
+)
