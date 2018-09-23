@@ -1261,7 +1261,6 @@ namespace tunis
                             glm::vec2 p3 = p2 + ext;
                             glm::vec2 p4 = p3 - dir;
 
-                            // add the endcap
                             if (state.lineCap == round)
                             {
                                 // then arc 90 degrees from p1 to p3
@@ -1316,13 +1315,13 @@ namespace tunis
                                  (p3)---[+dir]-->(p4)>>>>>>>>>...
                                    ^         -----------------...
                                    |      ---
-                                [-exc]  --
+                                [-ext]  --
                                    |   -
                                    |  -
                                  (p2) -
                                    ^  -
                                    |   -
-                                [-exc]  --
+                                [-ext]  --
                                    |      ---
                                    |         -----------------...
                                  (p1)<--[-dir]---(p0)<<<<<<<<<...
