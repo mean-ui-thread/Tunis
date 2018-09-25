@@ -89,8 +89,8 @@ Context::Context() :
 
         int flags = 0;
 
-        flags |= NVG_ANTIALIAS;
-        flags |= NVG_STENCIL_STROKES;
+//        flags |= NVG_ANTIALIAS;
+//        flags |= NVG_STENCIL_STROKES;
 #ifndef NDEBUG
         flags |= NVG_DEBUG;
 #endif
@@ -185,6 +185,7 @@ void Context::stroke(Path2D &path)
     Color color = strokeStyle.innerColor();
     nvgStrokeColor(ctx->nvg, nvgRGBA(color.r, color.g, color.b, color.a));
     nvgStrokeWidth(ctx->nvg, lineWidth);
+    nvgMiterLimit(ctx->nvg, miterLimit);
     nvgStroke(ctx->nvg);
 }
 

@@ -44,6 +44,7 @@ enum PointAttribType {
     POINT_ATTRIB_LEFT_TURN = 0x02,
     POINT_ATTRIB_RIGHT_TURN = 0x04,
     POINT_ATTRIB_BEVEL = 0x08,
+    POINT_ATTRIB_SHARP = 0x10,
 };
 using PointAttributes = int32_t;
 
