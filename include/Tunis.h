@@ -270,6 +270,34 @@ public:
      */
     void stroke(Path2D &path);
 
+    /*!
+     * \brief getLineDash gets the current line dash pattern.
+     *
+     * \return A list of numbers that specifies distances to alternately draw a
+     * line and a gap (in coordinate space units). If the number, when setting
+     * the elements, was odd, the elements of the array get copied and
+     * concatenated. For example, setting the line dash to {5, 15, 25} will
+     * result in getting back {5, 15, 25, 5, 15, 25}.
+     */
+    const std::vector<float> &getLineDash() const;
+
+    /*!
+     * \brief setLineDash sets the line dash pattern used when stroking lines,
+     * using an array of values which specify alternating lengths of lines and
+     * gaps which describe the pattern.
+     *
+     * \param segments An Array of numbers which specify distances to
+     * alternately draw a line and a gap (in coordinate space units). If the
+     * number of elements in the array is odd, the elements of the array get
+     * copied and concatenated. For example, {5, 15, 25} will become
+     * {5, 15, 25, 5, 15, 25}. If the array is empty, the line dash list is
+     * cleared and line strokes return to being solid.
+     *
+     * \note To return to using solid lines, set the line dash list to an empty
+     * array.
+     */
+    void setLineDash(std::initializer_list<float> segments);
+
 private:
 
     Path2D currentPath;

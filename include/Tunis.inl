@@ -75,6 +75,19 @@ inline void Context::stroke()
     stroke(currentPath);
 }
 
+inline const std::vector<float> &Context::getLineDash() const
+{
+    return lineDashes;
+}
+
+inline void Context::setLineDash(std::initializer_list<float> segments)
+{
+    lineDashes = std::move(segments);
+    if (lineDashes.size() % 2 != 0)
+    {
+        lineDashes.insert(lineDashes.end(), lineDashes.begin(), lineDashes.end());
+    }
+}
 
 }
 
