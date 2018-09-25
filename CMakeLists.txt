@@ -21,6 +21,7 @@ add_library(Tunis
 
     include/Tunis.inl
     include/Tunis.h
+    include/TunisCanvasGradient.h
     include/TunisColor.h
     include/TunisMath.h
     include/TunisPaint.h
