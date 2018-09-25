@@ -219,8 +219,9 @@ namespace tunis
             inline ContextState &state(size_t i) { return get<2>(i); }
         };
 
-        struct ContextPriv
+        class ContextPriv
         {
+        public:
             std::vector<ContextState> states;
 
             std::vector<Texture> textures;
@@ -1002,7 +1003,7 @@ namespace tunis
                             break;
                         }
                         case ELLIPSE:
-                            // TODO
+                            // TODO Ellipse
                             break;
                         case RECT:
                         {
@@ -1043,6 +1044,75 @@ namespace tunis
             void generateStrokeContour(Path2D &path, const ContextState& state)
             {
                 generateFillContour(path);
+
+                // if we have dash lines, we split our subpath into multiple
+                // subpaths since linecaps and lineJoin rules apply to
+                // every individual dashes.
+                if (state.lineDashes.size() > 0)
+                {
+                    // TODO figure out a way to do this without causing allocation
+                    SubPath2DArray origSubPath = path.subPaths();
+                    size_t origSubPathCount = path.subPathCount();
+                    path.subPathCount() = 0;
+
+                    for (size_t origId = 0; origId < origSubPathCount; ++origId)
+                    {
+                        auto &origPoints = origSubPath[origId].points;
+
+                        size_t p0, p1;
+                        if (origSubPath[origId].closed)
+                        {
+                            p0 = origPoints.size() - 1;
+                            p1 = 0;
+                        }
+                        else
+                        {
+                            p0 = 0;
+                            p1 = 1;
+                        }
+
+                        while(p1 < origPoints.size())
+                        {
+                            glm::vec2 delta = origPoints.pos(p1) - origPoints.pos(p0);
+                            float length = glm::length(delta);
+                            glm::vec2 dir = delta / length;
+                            glm::vec2 pos = origPoints.pos(p0);
+                            glm::vec2 offset;
+                            while (length > 0)
+                            {
+                                for(size_t ld0 = 0, ld1 = 1; length > 0 && ld0 < state.lineDashes.size(); ld0+=2, ld1+=2) // always even
+                                {
+                                    size_t id = addSubPath(path);
+                                    auto &points = path.subPaths()[id].points;
+                                    addPoint(points, pos, POINT_ATTRIB_CORNER);
+                                    offset = dir * (state.lineDashes[ld0] + state.lineDashOffset);
+                                    length -= glm::length(offset);
+                                    if (length > 0)
+                                    {
+                                        pos += offset;
+                                    }
+                                    else
+                                    {
+                                        pos = origPoints.pos(p1);
+                                    }
+                                    addPoint(points, pos, POINT_ATTRIB_CORNER);
+                                    offset = dir * (state.lineDashes[ld1] + state.lineDashOffset);
+                                    length -= glm::length(offset);
+                                    if (length > 0)
+                                    {
+                                        pos += offset;
+                                    }
+                                    else
+                                    {
+                                        pos = origPoints.pos(p1);
+                                    }
+                                }
+                            }
+
+                            p0 = p1++;
+                        }
+                    }
+                }
 
                 float halfLineWidth = state.lineWidth * 0.5f;
 

@@ -6,10 +6,16 @@
 
 namespace tunis
 {
+    namespace detail
+    {
+        class ContextPriv;
+    }
 
 class ContextState
 {
 public:
+
+    friend detail::ContextPriv;
 
     /*!
      * \brief currentTransform the current transformation matrix.

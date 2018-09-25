@@ -12,11 +12,6 @@
 namespace tunis
 {
 
-namespace detail
-{
-    struct ContextPriv;
-}
-
 class Context : public ContextState
 {
 public:

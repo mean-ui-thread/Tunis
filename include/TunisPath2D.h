@@ -22,7 +22,7 @@ class Context;
 namespace detail {
 
 // forward declaration
-struct ContextPriv;
+class ContextPriv;
 
 using MemPool = std::vector<uint8_t>;
 

@@ -12,7 +12,7 @@ static int offset = 0.0f;
 void SampleApp::render(double)
 {
 
-    ctx.setLineDash({4, 2, 5});
+    ctx.setLineDash({4, 2});
     ctx.lineDashOffset = -offset;
     ctx.strokeRect(10, 10, 100, 100);
 
