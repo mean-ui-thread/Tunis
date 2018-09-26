@@ -1076,39 +1076,47 @@ namespace tunis
                             glm::vec2 delta = origPoints.pos(p1) - origPoints.pos(p0);
                             float length = glm::length(delta);
                             glm::vec2 dir = delta / length;
-                            glm::vec2 pos = origPoints.pos(p0);
-                            glm::vec2 offset;
-                            while (length > 0)
+
+                            float currentOffset = state.lineDashOffset;
+
+                            glm::vec2 dashStartOffset, dashEndOffset;
+
+                            while (currentOffset < length)
                             {
-                                for(size_t ld0 = 0, ld1 = 1; length > 0 && ld0 < state.lineDashes.size(); ld0+=2, ld1+=2) // always even
+                                for(size_t ld0 = 0, ld1 = 1;
+                                    currentOffset < length && ld0 < state.lineDashes.size();
+                                    ld0+=2, ld1+=2) // always even
                                 {
+                                    currentOffset += state.lineDashes[ld0];
+                                    if (currentOffset + state.lineDashes[ld1] < 0)
+                                    {
+                                        // whole dash is behind p0.
+                                        // Therefore, nothing to draw.
+                                        currentOffset += state.lineDashes[ld1];
+                                        continue;
+                                    }
+                                    else if (currentOffset >= length)
+                                    {
+                                        // we're beyond p1.
+                                        // Therefore, nothing to draw.
+                                        continue;
+                                    }
+
+                                    dashStartOffset = dir * glm::max(0.0f, glm::min(currentOffset, length));
+                                    currentOffset += state.lineDashes[ld1];
+                                    dashEndOffset = dir * glm::max(0.0f, glm::min(currentOffset, length));
+
+                                    if (glm::all(glm::epsilonEqual(dashStartOffset, dashEndOffset, distTol)))
+                                    {
+                                        continue;
+                                    }
+
                                     size_t id = addSubPath(path);
                                     auto &points = path.subPaths()[id].points;
-                                    addPoint(points, pos, POINT_ATTRIB_CORNER);
-                                    offset = dir * (state.lineDashes[ld0] + state.lineDashOffset);
-                                    length -= glm::length(offset);
-                                    if (length > 0)
-                                    {
-                                        pos += offset;
-                                    }
-                                    else
-                                    {
-                                        pos = origPoints.pos(p1);
-                                    }
-                                    addPoint(points, pos, POINT_ATTRIB_CORNER);
-                                    offset = dir * (state.lineDashes[ld1] + state.lineDashOffset);
-                                    length -= glm::length(offset);
-                                    if (length > 0)
-                                    {
-                                        pos += offset;
-                                    }
-                                    else
-                                    {
-                                        pos = origPoints.pos(p1);
-                                    }
+                                    addPoint(points, origPoints.pos(p0) + dashStartOffset, POINT_ATTRIB_CORNER);
+                                    addPoint(points, origPoints.pos(p0) + dashEndOffset, POINT_ATTRIB_CORNER);
                                 }
                             }
-
                             p0 = p1++;
                         }
                     }
