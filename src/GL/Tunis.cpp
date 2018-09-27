@@ -598,6 +598,22 @@ namespace tunis
                 return id;
             }
 
+            void closePath(SubPath2D &subPath)
+            {
+                auto &points = subPath.points;
+                if (points.size() > 1)
+                {
+                    glm::vec2 delta = points.pos(0) - points.pos(points.size() - 1);
+                    float length = glm::length(delta);
+                    glm::vec2 dir = delta / length;
+
+                    points.length(points.size() - 1) = length;
+                    points.dir(points.size() - 1) = dir;
+
+                    subPath.closed = true;
+                }
+            }
+
             void addPoint(BorderPointArray &points, glm::vec2 pos, PointAttribType = POINT_ATTRIB_NONE)
             {
                 if (points.size() > 0)
@@ -619,9 +635,21 @@ namespace tunis
                     {
                         return;
                     }
-                }
 
-                points.push(std::move(pos), {}, {}, 0.0f, std::move(type));
+                    // Calculate direction vectors
+                    glm::vec2 delta = pos - points.pos(points.size() - 1);
+                    float length = glm::length(delta);
+                    glm::vec2 dir = delta / length;
+
+                    points.length(points.size() - 1) = length;
+                    points.dir(points.size() - 1) = dir;
+
+                    points.push(std::move(pos), std::move(dir), {}, std::move(length), std::move(type));
+                }
+                else
+                {
+                    points.push(std::move(pos), {}, {}, 0.0f, std::move(type));
+                }
             }
 
 
@@ -937,7 +965,7 @@ namespace tunis
                         case CLOSE:
                             if (path.subPathCount() > 0)
                             {
-                                subPaths[id].closed = true;
+                                closePath(subPaths[id]);
                             }
                             break;
                         case MOVE_TO:
@@ -1017,7 +1045,7 @@ namespace tunis
                             addPoint(points, glm::vec2(x, y+h), POINT_ATTRIB_CORNER);
                             addPoint(points, glm::vec2(x+w, y+h), POINT_ATTRIB_CORNER);
                             addPoint(points, glm::vec2(x+w, y), POINT_ATTRIB_CORNER);
-                            subPaths[id].closed = true;
+                            closePath(subPaths[id]);
                             break;
                         }
                     }
@@ -1133,14 +1161,6 @@ namespace tunis
 
                     if(subPaths[id].closed)
                     {
-                        // Calculate direction vectors
-                        for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
-                        {
-                            glm::vec2 delta = points.pos(p1) - points.pos(p0);
-                            points.length(p0) = glm::length(delta);
-                            points.dir(p0) = delta / points.length(p0);
-                        }
-
                         // Calculate normal vectors
                         for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
                         {
@@ -1236,30 +1256,6 @@ namespace tunis
                     }
                     else
                     {
-                        // Calculate direction vectors
-                        {
-                            // first point
-                            glm::vec2 delta0 = points.pos(1) - points.pos(0);
-                            points.length(0) = glm::length(delta0);
-                            points.dir(0) = delta0 / points.length(0);
-
-                            // second last point
-                            glm::vec2 deltaN_2 = points.pos(points.size()-1) - points.pos(points.size()-2);
-                            points.length(points.size()-2) = glm::length(deltaN_2);
-                            points.dir(points.size()-2) = deltaN_2 / points.length(points.size()-2);
-
-                            // last point, which should be the same direction than the second last point.
-                            points.length(points.size()-1) = points.length(points.size()-2);
-                            points.dir(points.size()-1) = points.dir(points.size()-2);
-
-                            for (size_t p0 = 1, p1 = 2; p0 < points.size()-2; ++p0, ++p1)
-                            {
-                                glm::vec2 delta = points.pos(p1) - points.pos(p0);
-                                points.length(p0) = glm::length(delta);
-                                points.dir(p0) = delta / points.length(p0);
-                            }
-                        }
-
                         // Calculate normal vectors
                         points.norm(0) = glm::vec2(points.dir(0).y, -points.dir(0).x); // first point
                         points.norm(points.size()-1) = glm::vec2(points.dir(points.size()-1).y, -points.dir(points.size()-1).x); // last point
