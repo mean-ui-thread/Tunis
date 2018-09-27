@@ -68,7 +68,7 @@ int main( int argc, char* args[] )
         bool quit = false;
         while( !quit )
         {
-
+            EASY_BLOCK(frameName);
             //Handle events on queue
             while( SDL_PollEvent( &e ) != 0 )
             {
@@ -87,7 +87,6 @@ int main( int argc, char* args[] )
 
 
             double frameTime = static_cast<double>(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
-            EASY_BLOCK(frameName);
             app.ctx.clearFrame(0, 0, fbWidth, fbHeight);
             app.ctx.beginFrame(winWidth, winHeight, pxRatio);
             app.render(frameTime);
