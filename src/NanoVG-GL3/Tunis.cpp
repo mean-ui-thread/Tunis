@@ -114,7 +114,7 @@ Context::~Context()
 
 const char * Context::backendName() const
 {
-    return "NanoVG (GL3)";
+    return "NanoVG";
 }
 
 void Context::clearFrame(int fbLeft, int fbTop, int fbWidth, int fbHeight, Color backgroundColor)

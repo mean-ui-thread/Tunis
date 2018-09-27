@@ -412,18 +412,17 @@ namespace tunis
                 if (renderQueue.size() > 0)
                 {
                     // Generate Geometry (Multi-threaded)
-                    //#pragma omp parallel for num_threads(std::thread::hardware_concurrency())
+                    #pragma omp parallel for num_threads(std::thread::hardware_concurrency())
                     for (long i = 0; i < renderQueue.size(); ++i)
                     {
                         EASY_THREAD_SCOPE("OpenMP");
-                        EASY_BLOCK("Poly2Tri", profiler::colors::DarkBlue)
                         auto &path = renderQueue.path(i);
                         if (path.dirty())
                         {
                             switch(renderQueue.op(i))
                             {
                                 case DRAW_FILL:
-                                    generateFillContour(path);
+                                    generateContour(path);
                                     break;
                                 case DRAW_STROKE:
                                     generateStrokeContour(path, renderQueue.state(i));
@@ -436,6 +435,7 @@ namespace tunis
                         }
                     }
 
+                    EASY_BLOCK("Batch", profiler::colors::DarkRed)
                     // Batch Geometry into vertex and index buffers
                     for (size_t i = 0; i < renderQueue.size(); ++i)
                     {
@@ -512,8 +512,10 @@ namespace tunis
 
                     renderQueue.resize(0);
                 }
+                EASY_END_BLOCK;
 
 
+                EASY_BLOCK("glBufferData", profiler::colors::DarkRed)
                 // flush the vertex buffer.
                 if (vertexBuffer.size() > 0) {
                     glBufferData(GL_ARRAY_BUFFER,
@@ -532,11 +534,13 @@ namespace tunis
                                  GL_STREAM_DRAW);
                     indexBuffer.resize(0);
                 }
+                EASY_END_BLOCK;
 
 
                 // flush the batches
                 if ( batches.size() > 0)
                 {
+                    EASY_BLOCK("glDrawElements", profiler::colors::DarkRed)
                     for (size_t i = 0; i < batches.size(); ++i)
                     {
                         batches.program(i)->useProgram();
@@ -574,6 +578,7 @@ namespace tunis
 
                     batches.resize(0);
                 }
+
             }
 
             size_t addSubPath(Path2D &path)
@@ -948,8 +953,9 @@ namespace tunis
             }
 
 
-            void generateFillContour(Path2D &path)
+            void generateContour(Path2D &path)
             {
+                EASY_FUNCTION(profiler::colors::DarkRed);
                 SubPath2DArray &subPaths = path.subPaths();
                 PathCommandArray &commands = path.commands();
 
@@ -1071,7 +1077,9 @@ namespace tunis
 
             void generateStrokeContour(Path2D &path, const ContextState& state)
             {
-                generateFillContour(path);
+                generateContour(path);
+                EASY_FUNCTION(profiler::colors::DarkGreen);
+
 
                 // if we have dash lines, we split our subpath into multiple
                 // subpaths since linecaps and lineJoin rules apply to
@@ -1474,6 +1482,8 @@ namespace tunis
 
             void triangulate(Path2D &path)
             {
+                EASY_FUNCTION(profiler::colors::DarkBlue);
+
                 SubPath2DArray &subPaths = path.subPaths();
                 glm::vec2 &boundTopLeft = path.boundTopLeft();
                 glm::vec2 &boundBottomRight = path.boundBottomRight();

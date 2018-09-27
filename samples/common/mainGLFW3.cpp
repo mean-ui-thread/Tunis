@@ -58,10 +58,9 @@ int main( int argc, char* args[] )
 
         glfwSetWindowTitle(window, title.str().c_str());
 
-        std::string frameName = std::string("Frame with ") + app.ctx.backendName() + " backend";
+        std::string frameName = std::string("Frame(") + app.ctx.backendName() + ")";
         while (!glfwWindowShouldClose(window))
         {
-            EASY_BLOCK(frameName);
             glfwPollEvents();
 
             int winWidth, winHeight, fbWidth , fbHeight;
@@ -75,6 +74,7 @@ int main( int argc, char* args[] )
             app.ctx.clearFrame(0, 0, fbWidth, fbHeight);
             app.ctx.beginFrame(winWidth, winHeight, pxRatio);
             app.render(frameTime);
+            EASY_BLOCK(frameName);
             app.ctx.endFrame();
             EASY_END_BLOCK;
 

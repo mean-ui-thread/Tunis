@@ -63,12 +63,11 @@ int main( int argc, char* args[] )
         SDL_Event e = {};
         Uint64 start = SDL_GetPerformanceCounter();
 
-        std::string frameName = std::string("Frame with ") + app.ctx.backendName() + " backend";
+        std::string frameName = std::string("Frame(") + app.ctx.backendName() + ")";
 
         bool quit = false;
         while( !quit )
         {
-            EASY_BLOCK(frameName);
 
             //Handle events on queue
             while( SDL_PollEvent( &e ) != 0 )
@@ -88,11 +87,11 @@ int main( int argc, char* args[] )
 
 
             double frameTime = static_cast<double>(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
+            EASY_BLOCK(frameName);
             app.ctx.clearFrame(0, 0, fbWidth, fbHeight);
             app.ctx.beginFrame(winWidth, winHeight, pxRatio);
             app.render(frameTime);
             app.ctx.endFrame();
-
             EASY_END_BLOCK;
 
             SDL_GL_SwapWindow(window);
