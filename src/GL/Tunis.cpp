@@ -1115,12 +1115,11 @@ namespace tunis
                                     currentOffset < length && ld0 < state.lineDashes.size();
                                     ld0+=2, ld1+=2) // always even
                                 {
-                                    currentOffset += state.lineDashes[ld0];
-                                    if (currentOffset + state.lineDashes[ld1] < 0)
+                                    if (currentOffset < 0)
                                     {
                                         // whole dash is behind p0.
                                         // Therefore, nothing to draw.
-                                        currentOffset += state.lineDashes[ld1];
+                                        currentOffset += state.lineDashes[ld0] + state.lineDashes[ld1];
                                         continue;
                                     }
                                     else if (currentOffset >= length)
@@ -1131,8 +1130,9 @@ namespace tunis
                                     }
 
                                     dashStartOffset = dir * glm::max(0.0f, glm::min(currentOffset, length));
-                                    currentOffset += state.lineDashes[ld1];
+                                    currentOffset += state.lineDashes[ld0];
                                     dashEndOffset = dir * glm::max(0.0f, glm::min(currentOffset, length));
+                                    currentOffset += state.lineDashes[ld1];
 
                                     if (glm::all(glm::epsilonEqual(dashStartOffset, dashEndOffset, distTol)))
                                     {
