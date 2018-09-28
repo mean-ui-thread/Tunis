@@ -603,22 +603,6 @@ namespace tunis
                 return id;
             }
 
-            void closePath(SubPath2D &subPath)
-            {
-                auto &points = subPath.points;
-                if (points.size() > 1)
-                {
-                    glm::vec2 delta = points.pos(0) - points.pos(points.size() - 1);
-                    float length = glm::length(delta);
-                    glm::vec2 dir = delta / length;
-
-                    points.length(points.size() - 1) = length;
-                    points.dir(points.size() - 1) = dir;
-
-                    subPath.closed = true;
-                }
-            }
-
             void addPoint(BorderPointArray &points, glm::vec2 pos, PointAttribType = POINT_ATTRIB_NONE)
             {
                 if (points.size() > 0)
@@ -640,21 +624,8 @@ namespace tunis
                     {
                         return;
                     }
-
-                    // Calculate direction vectors
-                    glm::vec2 delta = pos - points.pos(points.size() - 1);
-                    float length = glm::length(delta);
-                    glm::vec2 dir = delta / length;
-
-                    points.length(points.size() - 1) = length;
-                    points.dir(points.size() - 1) = dir;
-
-                    points.push(std::move(pos), std::move(dir), {}, std::move(length), std::move(type));
                 }
-                else
-                {
-                    points.push(std::move(pos), {}, {}, 0.0f, std::move(type));
-                }
+                points.push(std::move(pos), {}, {}, 0.0f, std::move(type));
             }
 
 
@@ -971,7 +942,7 @@ namespace tunis
                         case CLOSE:
                             if (path.subPathCount() > 0)
                             {
-                                closePath(subPaths[id]);
+                                subPaths[id].closed = true;
                             }
                             break;
                         case MOVE_TO:
@@ -1051,7 +1022,7 @@ namespace tunis
                             addPoint(points, glm::vec2(x, y+h), POINT_ATTRIB_CORNER);
                             addPoint(points, glm::vec2(x+w, y+h), POINT_ATTRIB_CORNER);
                             addPoint(points, glm::vec2(x+w, y), POINT_ATTRIB_CORNER);
-                            closePath(subPaths[id]);
+                            subPaths[id].closed = true;
                             break;
                         }
                     }
@@ -1075,17 +1046,65 @@ namespace tunis
                 }
             }
 
+            void calculateSegmentDirection(Path2D &path)
+            {
+                // Calculate direction vectors for each points of each subpaths
+                for(size_t id = 0; id < path.subPathCount(); ++id)
+                {
+                    SubPath2D &subPath = path.subPaths()[id];
+
+                    size_t p0, p1;
+
+                    if (subPath.closed)
+                    {
+                        p0 = subPath.points.size() - 1;
+                        p1 = 0;
+                    }
+                    else
+                    {
+                        p0 = 0;
+                        p1 = 1;
+                    }
+
+                    while(p1 < subPath.points.size())
+                    {
+                        glm::vec2 delta = subPath.points.pos(p1) - subPath.points.pos(p0);
+                        float length = glm::length(delta);
+                        subPath.points.length(p0) = length;
+                        subPath.points.dir(p0) = delta / length;
+                        p0 = p1++;
+                    }
+
+                    if (!subPath.closed)
+                    {
+                        // last point should have the same direction than its
+                        // previous point.
+                        subPath.points.dir(p0) = subPath.points.dir(p0-1);
+                    }
+
+                }
+            }
+
             void generateStrokeContour(Path2D &path, const ContextState& state)
             {
                 generateContour(path);
                 EASY_FUNCTION(profiler::colors::DarkGreen);
 
+                float halfLineWidth = state.lineWidth * 0.5f;
+                SubPath2DArray &subPaths = path.subPaths();
+
+                calculateSegmentDirection(path);
 
                 // if we have dash lines, we split our subpath into multiple
                 // subpaths since linecaps and lineJoin rules apply to
                 // every individual dashes.
                 if (state.lineDashes.size() > 0)
                 {
+                    size_t p0, p1;
+                    glm::vec2 offset;
+                    float currentOffset;
+                    size_t id = 0, lineDashId;
+
                     // TODO figure out a way to do this without causing allocation
                     SubPath2DArray origSubPath = path.subPaths();
                     size_t origSubPathCount = path.subPathCount();
@@ -1095,7 +1114,6 @@ namespace tunis
                     {
                         auto &origPoints = origSubPath[origId].points;
 
-                        size_t p0, p1;
                         if (origSubPath[origId].closed)
                         {
                             p0 = origPoints.size() - 1;
@@ -1109,58 +1127,71 @@ namespace tunis
 
                         while(p1 < origPoints.size())
                         {
-                            glm::vec2 delta = origPoints.pos(p1) - origPoints.pos(p0);
-                            float length = glm::length(delta);
-                            glm::vec2 dir = delta / length;
+                            currentOffset = state.lineDashOffset;
 
-                            float currentOffset = state.lineDashOffset;
+                            lineDashId = 0;
 
-                            glm::vec2 dashStartOffset, dashEndOffset;
-
-                            while (currentOffset < length)
+                            // fast foward negative offset to the nearest to zero dash bound.
+                            // It should remain negative to be able to create a truncated
+                            // starting dash (truncated using glm::clamp below)
+                            while (currentOffset + state.lineDashes[lineDashId] <= distTol)
                             {
-                                for(size_t ld0 = 0, ld1 = 1;
-                                    currentOffset < length && ld0 < state.lineDashes.size();
-                                    ld0+=2, ld1+=2) // always even
+                                currentOffset += state.lineDashes[lineDashId];
+                                if (++lineDashId == state.lineDashes.size())
                                 {
-                                    if (currentOffset < 0)
-                                    {
-                                        // whole dash is behind p0.
-                                        // Therefore, nothing to draw.
-                                        currentOffset += state.lineDashes[ld0] + state.lineDashes[ld1];
-                                        continue;
-                                    }
-                                    else if (currentOffset >= length)
-                                    {
-                                        // we're beyond p1.
-                                        // Therefore, nothing to draw.
-                                        continue;
-                                    }
-
-                                    dashStartOffset = dir * glm::max(0.0f, glm::min(currentOffset, length));
-                                    currentOffset += state.lineDashes[ld0];
-                                    dashEndOffset = dir * glm::max(0.0f, glm::min(currentOffset, length));
-                                    currentOffset += state.lineDashes[ld1];
-
-                                    if (glm::all(glm::epsilonEqual(dashStartOffset, dashEndOffset, distTol)))
-                                    {
-                                        continue;
-                                    }
-
-                                    size_t id = addSubPath(path);
-                                    auto &points = path.subPaths()[id].points;
-                                    addPoint(points, origPoints.pos(p0) + dashStartOffset, POINT_ATTRIB_CORNER);
-                                    addPoint(points, origPoints.pos(p0) + dashEndOffset, POINT_ATTRIB_CORNER);
+                                    lineDashId = 0;
                                 }
                             }
+
+                            while (true)
+                            {
+                                if (currentOffset >= origPoints.length(p0))
+                                {
+                                    // If this statement is true, this most likely because we reached the end
+                                    // of the line while having an unfinished dash line at the end of it.
+                                    // We just adding one last point to finish and truncate the final dash.
+                                    if (path.subPathCount() > 0 && path.subPaths()[id].points.size() == 1)
+                                    {
+                                        addPoint(path.subPaths()[id].points, origPoints.pos(p1), POINT_ATTRIB_CORNER);
+                                    }
+                                    break;
+                                }
+
+                                offset = origPoints.dir(p0) * glm::clamp(currentOffset, 0.0f, origPoints.length(p0));
+
+                                switch(lineDashId % 2)
+                                {
+                                    case 0: // Dash Start
+
+                                        id = addSubPath(path, origPoints.pos(p0) + offset);
+                                        break;
+
+                                    case 1: // Dash End
+
+                                        // because of the fast forwarding above it's possible to be starting
+                                        // on a dash gap. If that is the case, we must not add any points.
+                                        if (path.subPathCount() > 0 && path.subPaths()[id].points.size() == 1)
+                                        {
+                                            addPoint(path.subPaths()[id].points, origPoints.pos(p0) + offset, POINT_ATTRIB_CORNER);
+                                        }
+                                        break;
+                                }
+
+                                currentOffset += state.lineDashes[lineDashId];
+
+                                if (++lineDashId == state.lineDashes.size())
+                                {
+                                    lineDashId = 0;
+                                }
+                            }
+
                             p0 = p1++;
                         }
                     }
+
+                    calculateSegmentDirection(path);
                 }
 
-                float halfLineWidth = state.lineWidth * 0.5f;
-
-                SubPath2DArray &subPaths = path.subPaths();
                 for (size_t id = 0; id < path.subPathCount(); ++id)
                 {
                     auto &points = subPaths[id].points;
