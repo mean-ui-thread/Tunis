@@ -6,6 +6,7 @@
 #include <TunisPaint.h>
 #include <TunisPath2D.h>
 #include <TunisMath.h>
+#include <TunisGradient.h>
 
 #include <memory>
 
@@ -292,6 +293,32 @@ public:
      * array.
      */
     void setLineDash(std::initializer_list<float> segments);
+
+    /*!
+     * \brief createLinearGradient creates a gradient along the line given by
+     * the coordinates represented by the parameters.
+     * \param x0 The x axis of the coordinate of the start point.
+     * \param y0 The y axis of the coordinate of the start point.
+     * \param x1 The x axis of the coordinate of the end point.
+     * \param y1 The y axis of the coordinate of the end point.
+     * \return A linear Gradient initialized with the specified line.
+     */
+    Gradient createLinearGradient(float x0, float y0,
+                                  float x1, float y1);
+
+    /*!
+     * \brief createRadialGradient creates a radial gradient given by the
+     * coordinates of the two circles represented by the parameters.
+     * \param x0 The x axis of the coordinate of the start circle.
+     * \param y0 The y axis of the coordinate of the start circle.
+     * \param r0 The radius of the start circle.
+     * \param x1 The x axis of the coordinate of the end circle.
+     * \param y1 The y axis of the coordinate of the end circle.
+     * \param r1 The radius of the end circle.
+     * \return A radial Gradient initialized with the two specified circles.
+     */
+    Gradient createRadialGradient(float x0, float y0, float r0,
+                                  float x1, float y1, float r1);
 
 private:
 

@@ -2,105 +2,52 @@
 #define TUNISPAINT_H
 
 #include <TunisColor.h>
-#include <TunisTypes.h>
+#include <TunisGradient.h>
 #include <TunisSOA.h>
+#include <TunisTypes.h>
 
 #include <algorithm>
 #include <array>
 
-#include <glm/common.hpp>
-
 namespace tunis
 {
 
-class Paint : public RefCountedSOA<
-        SVGMatrix,
-        Position,
-        float,
-        float,
-        Color,
-        Color,
-        size_t>
-{
-public:
-
-    inline SVGMatrix &xform() { return get<0>(); }
-    inline Position &extend() { return get<1>(); }
-    inline float & radius() { return get<2>(); }
-    inline float & feather() { return get<3>(); }
-    inline Color & innerColor() { return get<4>(); }
-    inline Color & outerColor() { return get<5>(); }
-    inline size_t & image() { return get<6>(); }
-
-    inline static Paint createLinearGradient(float startX, float startY,
-                                             float endX, float endY,
-                                             Color innerColor,
-                                             Color outerColor)
+    class Paint : public RefCountedSOA<
+            SVGMatrix,
+            Position,
+            float,
+            float,
+            Color,
+            Color,
+            size_t>
     {
-        float dx, dy, d;
-        const float large = 1e5;
-        // Calculate transform aligned to the line
-        dx = endX - startX;
-        dy = endY - startY;
-        d = sqrtf(dx*dx + dy*dy);
-        if (d > 0.0001f)
-        {
-            dx /= d;
-            dy /= d;
-        }
-        else
-        {
-            dx = 0;
-            dy = 1;
-        }
+    public:
 
-        Paint paint;
-        paint.xform() = {dy, -dx, dx, dy, startX - dx*large, startY - dy*large};
-        paint.extend() = {large, large + d*0.5f};
-        paint.radius() = 0.0f;
-        paint.feather() = glm::max(1.0f, d);
-        paint.innerColor() = innerColor;
-        paint.outerColor() = outerColor;
-        paint.image() = 0;
+        inline SVGMatrix &xform() { return get<0>(); }
+        inline Position &extend() { return get<1>(); }
+        inline float & radius() { return get<2>(); }
+        inline float & feather() { return get<3>(); }
+        inline Color & innerColor() { return get<4>(); }
+        inline Color & outerColor() { return get<5>(); }
+        inline size_t & image() { return get<6>(); }
 
-        return paint;
-    }
+        inline const SVGMatrix &xform() const { return get<0>(); }
+        inline const Position &extend() const { return get<1>(); }
+        inline const float & radius() const { return get<2>(); }
+        inline const float & feather() const { return get<3>(); }
+        inline const Color & innerColor() const{ return get<4>(); }
+        inline const Color & outerColor() const { return get<5>(); }
+        inline const size_t & image() const { return get<6>(); }
 
-    inline Paint()
-    {
-        xform() = SVGMatrix(1.0f);
-        extend() = Position(0.0f);
-        radius() = 0.0f;
-        feather() = 1.0f;
-        innerColor() = Black;
-        outerColor() = Transparent;
-        image() = 0;
-    }
+        Paint();
+        Paint(const Color &color);
+        Paint(const char* colorName);
+        Paint(const Gradient &gradient);
 
-    inline Paint(const Color &color)
-    {
-        xform() = SVGMatrix(1.0f);
-        extend() = Position(0.0f);
-        radius() = 0.0f;
-        feather() = 1.0f;
-        innerColor() = color;
-        outerColor() = Transparent;
-        image() = 0;
-    }
-
-    inline Paint(const char* colorName)
-    {
-        xform() = SVGMatrix(1.0f);
-        extend() = Position(0.0f);
-        radius() = 0.0f;
-        feather() = 1.0f;
-        innerColor() = Color(colorName);
-        outerColor() = Transparent;
-        image() = 0;
-    }
-
-};
+    };
 
 }
+
+#include "TunisPaint.inl"
 
 #endif // TUNISPAINT_H

@@ -23,6 +23,8 @@ add_library(Tunis
     include/Tunis.h
     include/TunisCanvasGradient.h
     include/TunisColor.h
+    include/TunisGradient.h
+    include/TunisGradient.inl
     include/TunisMath.h
     include/TunisPaint.h
     include/TunisPath2D.h
