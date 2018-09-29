@@ -14,28 +14,28 @@ using SVGMatrix = glm::mat2x3;
 using TCoord = glm::u16vec2;
 using Viewport = glm::ivec4;
 
-enum LineCap
+enum class LineCap : uint8_t
 {
     butt = 0, //! The ends of lines are squared off at the endpoints.
     round, //! The ends of lines are rounded.
     square, //! he ends of lines are squared off by adding a box with an equal width and half the height of the line's thickness.
 };
 
-enum LineJoin
+enum class LineJoin : uint8_t
 {
     bevel = 0, //! Fills an additional triangular area between the common endpoint of connected segments, and the separate outside rectangular corners of each segment.
-    Round, //! Rounds off the corners of a shape by filling an additional sector of disc centered at the common endpoint of connected segments. The radius for these rounded corners is equal to the line width.
+    round, //! Rounds off the corners of a shape by filling an additional sector of disc centered at the common endpoint of connected segments. The radius for these rounded corners is equal to the line width.
     miter, //! Connected segments are joined by extending their outside edges to connect at a single point, with the effect of filling an additional lozenge-shaped area. This setting is affected by the miterLimit property.
 };
 
 
-enum FillRule
+enum class FillRule : uint8_t
 {
     nonzero, //! The non-zero winding rule, which is the default rule.
     evenodd, //! The even-odd winding rule.
 };
 
-enum CompositeOp
+enum class CompositeOp : uint8_t
 {
     source_over = 0, //! This is the default setting and draws new shapes on top of the existing window content.
     source_in, //! The new shape is drawn only where both the new shape and the destination window overlap. Everything else is made transparent.
@@ -65,7 +65,7 @@ enum CompositeOp
     luminosity, //! Preserves the hue and chroma of the bottom layer, while adopting the luma of the top layer.
 };
 
-enum TextAlign
+enum class TextAlign : uint8_t
 {
     left = 0, //! The text is left-aligned.
     right, //! The text is right-aligned.
@@ -74,7 +74,7 @@ enum TextAlign
     end, //! The text is aligned at the normal end of the line (right-aligned for left-to-right locales, left-aligned for right-to-left locales).
 };
 
-enum TextBaseline
+enum class TextBaseline : uint8_t
 {
     top, //! The text baseline is the top of the em square.
     hanging, //! The text baseline is the hanging baseline. (Used by Tibetan and other Indic scripts.)
@@ -84,7 +84,7 @@ enum TextBaseline
     bottom, //! The text baseline is the bottom of the bounding box. This differs from the ideographic baseline in that the ideographic baseline doesn't consider descenders.
 };
 
-enum Direction
+enum class Direction : uint8_t
 {
     ltr, //! The text direction is left-to-right.
     rtl, //! The text direction is right-to-left.

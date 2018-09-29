@@ -240,7 +240,7 @@ public:
      * \param fillRule The algorithm by which to determine if a point is inside
      * a path or outside a path.
      */
-    void fill(FillRule fillRule = nonzero);
+    void fill(FillRule fillRule = FillRule::nonzero);
 
     /*!
      * \brief fill fills the given path with the current fill style using the
@@ -250,7 +250,7 @@ public:
      * \param fillRule The algorithm by which to determine if a point is inside
      * a path or outside a path.
      */
-    void fill(Path2D &path, FillRule fillRule = nonzero);
+    void fill(Path2D &path, FillRule fillRule = FillRule::nonzero);
 
     /*!
      * \brief stroke strokes the current or given path with the current stroke

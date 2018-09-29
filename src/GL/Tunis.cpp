@@ -599,11 +599,11 @@ namespace tunis
             size_t addSubPath(Path2D &path, glm::vec2 startPos)
             {
                 size_t id = addSubPath(path);
-                path.subPaths()[id].points.push(std::move(startPos), {}, {}, 0.0f, POINT_ATTRIB_CORNER);
+                path.subPaths()[id].points.push(std::move(startPos), {}, {}, 0.0f, PointProperties::corner);
                 return id;
             }
 
-            void addPoint(BorderPointArray &points, glm::vec2 pos, PointAttribType = POINT_ATTRIB_NONE)
+            void addPoint(BorderPointArray &points, glm::vec2 pos, PointProperties = PointProperties::none)
             {
                 if (points.size() > 0)
                 {
@@ -616,7 +616,7 @@ namespace tunis
                 points.emplace_back(std::move(pos));
             }
 
-            void addPoint(ContourPointArray &points, glm::vec2 pos, PointAttribType type)
+            void addPoint(ContourPointArray &points, glm::vec2 pos, PointProperties type)
             {
                 if (points.size() > 0)
                 {
@@ -638,7 +638,7 @@ namespace tunis
                         float x4, float y4)
             {
                 recursiveBezier(points, x1, y1, x2, y2, x3, y3, x4, y4, 0);
-                addPoint(points, glm::vec2(x4, y4), POINT_ATTRIB_CORNER);
+                addPoint(points, glm::vec2(x4, y4), PointProperties::corner);
             }
             float calcSqrtDistance(float x1, float y1, float x2, float y2)
             {
@@ -721,7 +721,7 @@ namespace tunis
                         {
                             if(d2 < tessTol)
                             {
-                                addPoint(points, glm::vec2(x2, y2), POINT_ATTRIB_NONE);
+                                addPoint(points, glm::vec2(x2, y2), PointProperties::none);
                                 return;
                             }
                         }
@@ -729,7 +729,7 @@ namespace tunis
                         {
                             if(d3 < tessTol)
                             {
-                                addPoint(points, glm::vec2(x3, y3), POINT_ATTRIB_NONE);
+                                addPoint(points, glm::vec2(x3, y3), PointProperties::none);
                                 return;
                             }
                         }
@@ -740,7 +740,7 @@ namespace tunis
                         //----------------------
                         if(d3 * d3 <= tessTol * (dx*dx + dy*dy))
                         {
-                            addPoint(points, glm::vec2(x23, y23), POINT_ATTRIB_NONE);
+                            addPoint(points, glm::vec2(x23, y23), PointProperties::none);
                             return;
                         }
                         break;
@@ -750,7 +750,7 @@ namespace tunis
                         //----------------------
                         if(d2 * d2 <= tessTol * (dx*dx + dy*dy))
                         {
-                            addPoint(points, glm::vec2(x23, y23), POINT_ATTRIB_NONE);
+                            addPoint(points, glm::vec2(x23, y23), PointProperties::none);
                             return;
                         }
                         break;
@@ -760,7 +760,7 @@ namespace tunis
                         //-----------------
                         if((d2 + d3)*(d2 + d3) <= tessTol * (dx*dx + dy*dy))
                         {
-                            addPoint(points, glm::vec2(x23, y23), POINT_ATTRIB_NONE);
+                            addPoint(points, glm::vec2(x23, y23), PointProperties::none);
                             return;
                         }
                         break;
@@ -820,7 +820,7 @@ namespace tunis
                 glm::vec2 dir(glm::cos(startAngle), glm::sin(startAngle));
                 glm::vec2 prev = center + dir * radius;
                 glm::vec2 prevTan(-dir.y * tangentFactor * radius, dir.x * tangentFactor * radius);
-                addPoint(points, prev, POINT_ATTRIB_CORNER);
+                addPoint(points, prev, PointProperties::corner);
 
                 for (int32_t segment = 1; segment <= segmentCount; ++segment)
                 {
@@ -865,25 +865,25 @@ namespace tunis
             {
                 if (glm::all(glm::epsilonEqual(p0, p1, distTol)))
                 {
-                    addPoint(points, p1, POINT_ATTRIB_CORNER);
+                    addPoint(points, p1, PointProperties::corner);
                     return;
                 }
 
                 if (glm::all(glm::epsilonEqual(p1, p2, distTol)))
                 {
-                    addPoint(points, p1, POINT_ATTRIB_CORNER);
+                    addPoint(points, p1, PointProperties::corner);
                     return;
                 }
 
                 if (distPtSeg(p1, p0, p2) < (distTol * distTol))
                 {
-                    addPoint(points, p1, POINT_ATTRIB_CORNER);
+                    addPoint(points, p1, PointProperties::corner);
                     return;
                 }
 
                 if (radius < distTol)
                 {
-                    addPoint(points, p1, POINT_ATTRIB_CORNER);
+                    addPoint(points, p1, PointProperties::corner);
                     return;
                 }
 
@@ -894,7 +894,7 @@ namespace tunis
 
                 if (d > 10000.0f)
                 {
-                    addPoint(points, p1, POINT_ATTRIB_CORNER);
+                    addPoint(points, p1, PointProperties::corner);
                     return;
                 }
 
@@ -939,20 +939,20 @@ namespace tunis
                 {
                     switch(commands.type(i))
                     {
-                        case CLOSE:
+                        case PathCommandType::close:
                             if (path.subPathCount() > 0)
                             {
                                 subPaths[id].closed = true;
                             }
                             break;
-                        case MOVE_TO:
+                        case PathCommandType::moveTo:
                             id = addSubPath(path, glm::vec2(commands.param0(i), commands.param1(i)));
                             break;
-                        case LINE_TO:
+                        case PathCommandType::lineTo:
                             if (path.subPathCount() == 0) { id = addSubPath(path, glm::vec2(0.0f)); }
-                            addPoint(subPaths[id].points, glm::vec2(commands.param0(i), commands.param1(i)), POINT_ATTRIB_CORNER);
+                            addPoint(subPaths[id].points, glm::vec2(commands.param0(i), commands.param1(i)), PointProperties::corner);
                             break;
-                        case BEZIER_TO:
+                        case PathCommandType::bezierCurveTo:
                         {
                             if (path.subPathCount() == 0) { id = addSubPath(path, glm::vec2(0.0f)); }
                             auto &points = subPaths[id].points;
@@ -965,7 +965,7 @@ namespace tunis
 
                             break;
                         }
-                        case QUAD_TO:
+                        case PathCommandType::quadraticCurveTo:
                         {
                             if (path.subPathCount() == 0) { id = addSubPath(path, glm::vec2(0.0f)); }
                             auto &points = subPaths[id].points;
@@ -983,7 +983,7 @@ namespace tunis
                             bezierTo(points, x0, y0, c1x, c1y, c2x, c2y, x, y);
                             break;
                         }
-                        case ARC:
+                        case PathCommandType::arc:
                             if (path.subPathCount() == 0) { id = addSubPath(path); }
                             arc(subPaths[id].points,
                                 glm::vec2(commands.param0(i),
@@ -993,7 +993,7 @@ namespace tunis
                                 commands.param4(i),
                                 commands.param5(i) > 0.5f);
                             break;
-                        case ARC_TO:
+                        case PathCommandType::arcTo:
                         {
                             if (path.subPathCount() == 0) { id = addSubPath(path, glm::vec2(0.0f)); }
                             auto &points = subPaths[id].points;
@@ -1007,10 +1007,10 @@ namespace tunis
                                   commands.param4(i));
                             break;
                         }
-                        case ELLIPSE:
+                        case PathCommandType::ellipse:
                             // TODO Ellipse
                             break;
-                        case RECT:
+                        case PathCommandType::rect:
                         {
                             float x = commands.param0(i);
                             float y = commands.param1(i);
@@ -1018,10 +1018,10 @@ namespace tunis
                             float h = commands.param3(i);
                             id = addSubPath(path);
                             auto &points = subPaths[id].points;
-                            addPoint(points, glm::vec2(x, y), POINT_ATTRIB_CORNER);
-                            addPoint(points, glm::vec2(x, y+h), POINT_ATTRIB_CORNER);
-                            addPoint(points, glm::vec2(x+w, y+h), POINT_ATTRIB_CORNER);
-                            addPoint(points, glm::vec2(x+w, y), POINT_ATTRIB_CORNER);
+                            addPoint(points, glm::vec2(x, y), PointProperties::corner);
+                            addPoint(points, glm::vec2(x, y+h), PointProperties::corner);
+                            addPoint(points, glm::vec2(x+w, y+h), PointProperties::corner);
+                            addPoint(points, glm::vec2(x+w, y), PointProperties::corner);
                             subPaths[id].closed = true;
                             break;
                         }
@@ -1152,7 +1152,7 @@ namespace tunis
                                     // We just adding one last point to finish and truncate the final dash.
                                     if (path.subPathCount() > 0 && path.subPaths()[id].points.size() == 1)
                                     {
-                                        addPoint(path.subPaths()[id].points, origPoints.pos(p1), POINT_ATTRIB_CORNER);
+                                        addPoint(path.subPaths()[id].points, origPoints.pos(p1), PointProperties::corner);
                                     }
                                     break;
                                 }
@@ -1172,7 +1172,7 @@ namespace tunis
                                         // on a dash gap. If that is the case, we must not add any points.
                                         if (path.subPathCount() > 0 && path.subPaths()[id].points.size() == 1)
                                         {
-                                            addPoint(path.subPaths()[id].points, origPoints.pos(p0) + offset, POINT_ATTRIB_CORNER);
+                                            addPoint(path.subPaths()[id].points, origPoints.pos(p0) + offset, PointProperties::corner);
                                         }
                                         break;
                                 }
@@ -1215,20 +1215,20 @@ namespace tunis
                             points.norm(p1) = norm;
 
                             float cross = glm::cross(points.dir(p1), points.dir(p0));
-                            points.attributes(p1) |= cross > 0.0f ? POINT_ATTRIB_LEFT_TURN : POINT_ATTRIB_RIGHT_TURN;
+                            points.properties(p1) |= cross > 0.0f ? PointProperties::leftTurn : PointProperties::rightTurn;
 
                             float sharpnessLimit = glm::min(points.length(p0), points.length(p1)) * (1.0f / halfLineWidth);
                             if (dot * sharpnessLimit * sharpnessLimit > 1.0f)
                             {
-                                points.attributes(p1) |= POINT_ATTRIB_SHARP;
+                                points.properties(p1) |= PointProperties::sharp;
                             }
 
-                            if (points.attributes(p1) & POINT_ATTRIB_CORNER)
+                            if (!!(points.properties(p1) & PointProperties::corner))
                             {
-                                if (state.lineJoin == bevel || state.lineJoin == Round ||
+                                if (state.lineJoin == LineJoin::bevel || state.lineJoin == LineJoin::round ||
                                     dot * state.miterLimit * state.miterLimit < 1.0f)
                                 {
-                                    points.attributes(p1) |= POINT_ATTRIB_BEVEL;
+                                    points.properties(p1) |= PointProperties::bevel;
                                 }
                             }
                         }
@@ -1236,15 +1236,15 @@ namespace tunis
                         // create inner and outer contour.
                         for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
                         {
-                            if (points.attributes(p1) & POINT_ATTRIB_BEVEL)
+                            if (!!(points.properties(p1) & PointProperties::bevel))
                             {
-                                if (state.lineJoin == Round)
+                                if (state.lineJoin == LineJoin::round)
                                 {
                                     glm::vec2 ext0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x) * halfLineWidth;
                                     glm::vec2 ext1 = points.norm(p1) * halfLineWidth;
                                     glm::vec2 ext2 = glm::vec2(points.dir(p1).y, -points.dir(p1).x) * halfLineWidth;
 
-                                    if (points.attributes(p1) & POINT_ATTRIB_LEFT_TURN)
+                                    if (!!(points.properties(p1) & PointProperties::leftTurn))
                                     {
                                         addPoint(innerPoints, points.pos(p1) + ext1);
                                         addPoint(outerPoints, points.pos(p1) - ext0);
@@ -1267,7 +1267,7 @@ namespace tunis
                                 }
                                 else
                                 {
-                                    if (points.attributes(p1) & POINT_ATTRIB_LEFT_TURN)
+                                    if (!!(points.properties(p1) & PointProperties::leftTurn))
                                     {
                                         addPoint(innerPoints, points.pos(p1) + points.norm(p1) * halfLineWidth);
                                         addPoint(outerPoints, points.pos(p1) - glm::vec2(points.dir(p0).y, -points.dir(p0).x) * halfLineWidth);
@@ -1312,21 +1312,21 @@ namespace tunis
                             points.norm(p1) = norm;
 
                             float cross = glm::cross(points.dir(p1), points.dir(p0));
-                            points.attributes(p1) |= cross > 0.0f ? POINT_ATTRIB_LEFT_TURN : POINT_ATTRIB_RIGHT_TURN;
+                            points.properties(p1) |= cross > 0.0f ? PointProperties::leftTurn : PointProperties::rightTurn;
 
                             float sharpnessLimit = glm::max(1.0f, glm::min(points.length(p0), points.length(p1)) * (1.0f / halfLineWidth));
                             if (dot * sharpnessLimit * sharpnessLimit > 1.0f)
                             {
-                                points.attributes(p1) |= POINT_ATTRIB_SHARP;
+                                points.properties(p1) |= PointProperties::sharp;
                             }
 
-                            if (points.attributes(p1) & POINT_ATTRIB_CORNER)
+                            if (!!(points.properties(p1) & PointProperties::corner))
                             {
-                                if (state.lineJoin == bevel ||
-                                    state.lineJoin == Round ||
+                                if (state.lineJoin == LineJoin::bevel ||
+                                    state.lineJoin == LineJoin::round ||
                                     dot * state.miterLimit * state.miterLimit < 1.0f)
                                 {
-                                    points.attributes(p1) |= POINT_ATTRIB_BEVEL;
+                                    points.properties(p1) |= PointProperties::bevel;
                                 }
                             }
                         }
@@ -1334,9 +1334,9 @@ namespace tunis
                         // extrude our points
                         for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
                         {
-                            if (points.attributes(p1) & POINT_ATTRIB_BEVEL && points.attributes(p1) & POINT_ATTRIB_LEFT_TURN)
+                            if (!!(points.properties(p1) & PointProperties::bevel) && !!(points.properties(p1) & PointProperties::leftTurn))
                             {
-                                if (state.lineJoin == Round)
+                                if (state.lineJoin == LineJoin::round)
                                 {
                                     glm::vec2 v0 = points.pos(p1) - glm::vec2(points.dir(p1-1).y, -points.dir(p1-1).x) * halfLineWidth;
                                     glm::vec2 v1 = points.pos(p1) - points.norm(p1) * halfLineWidth;
@@ -1347,7 +1347,7 @@ namespace tunis
                                 else
                                 {
                                     glm::vec2 v0, v1;
-                                    if (points.attributes(p1) & POINT_ATTRIB_SHARP)
+                                    if (!!(points.properties(p1) & PointProperties::sharp))
                                     {
                                         // rotate direction vectors by 90degree CW
                                         glm::vec2 dir0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x);
@@ -1373,7 +1373,7 @@ namespace tunis
                         }
 
                         // add the end cap
-                        if (state.lineCap != butt)
+                        if (state.lineCap != LineCap::butt)
                         {
                             glm::vec2 dir = points.dir(points.size()-1) * halfLineWidth;
                             glm::vec2 ext = points.norm(points.size()-1) * halfLineWidth;
@@ -1400,7 +1400,7 @@ namespace tunis
                             glm::vec2 p3 = p2 + ext;
                             glm::vec2 p4 = p3 - dir;
 
-                            if (state.lineCap == round)
+                            if (state.lineCap == LineCap::round)
                             {
                                 // then arc 90 degrees from p1 to p3
                                 arcTo(outerPoints, p0, p1, p2, halfLineWidth);
@@ -1420,9 +1420,9 @@ namespace tunis
                         // extrude the 'other' side of our points in reverse.
                         for (size_t p0 = points.size(), p1 = points.size() - 1; p0 > 0; p0 = p1--)
                         {
-                            if (points.attributes(p1) & POINT_ATTRIB_BEVEL && points.attributes(p1) & POINT_ATTRIB_RIGHT_TURN)
+                            if (!!(points.properties(p1) & PointProperties::bevel) && !!(points.properties(p1) & PointProperties::rightTurn))
                             {
-                                if (state.lineJoin == Round)
+                                if (state.lineJoin == LineJoin::round)
                                 {
                                     glm::vec2 v0 = points.pos(p1) + glm::vec2(points.dir(p1).y, -points.dir(p1).x) * halfLineWidth;
                                     glm::vec2 v1 = points.pos(p1) + points.norm(p1) * halfLineWidth;
@@ -1433,7 +1433,7 @@ namespace tunis
                                 else
                                 {
                                     glm::vec2 v0, v1;
-                                    if (points.attributes(p1) & POINT_ATTRIB_SHARP)
+                                    if (!!(points.properties(p1) & PointProperties::sharp))
                                     {
                                         // rotate direction vectors by 90degree CW
                                         glm::vec2 dir0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x);
@@ -1459,7 +1459,7 @@ namespace tunis
                         }
 
                         // add the front cap
-                        if (state.lineCap != butt)
+                        if (state.lineCap != LineCap::butt)
                         {
                             glm::vec2 dir = points.dir(0) * halfLineWidth;
                             glm::vec2 ext = points.norm(0) * halfLineWidth;
@@ -1486,7 +1486,7 @@ namespace tunis
                             glm::vec2 p3 = p2 - ext;
                             glm::vec2 p4 = p3 + dir;
 
-                            if (state.lineCap == round)
+                            if (state.lineCap == LineCap::round)
                             {
                                 // arc 90 degrees from p4 to p2
                                 arcTo(outerPoints, p0, p1, p2, halfLineWidth);

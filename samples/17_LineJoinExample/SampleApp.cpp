@@ -9,7 +9,7 @@ int SampleApp::getWindowHeight() { return 200; }
  */
 void SampleApp::render(double)
 {
-    LineJoin lineJoin[] = {tunis::Round, tunis::bevel, tunis::miter};
+    LineJoin lineJoin[] = {LineJoin::round, LineJoin::bevel, LineJoin::miter};
     ctx.lineWidth = 10;
     for (int i = 0; i < sizeof(lineJoin)/sizeof(LineJoin); i++) {
         ctx.lineJoin = lineJoin[i];

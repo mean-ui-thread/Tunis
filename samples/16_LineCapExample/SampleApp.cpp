@@ -9,7 +9,7 @@ int SampleApp::getWindowHeight() { return 200; }
  */
 void SampleApp::render(double)
 {
-    LineCap lineCap[] = {tunis::butt, tunis::round, tunis::square};
+    LineCap lineCap[] = {LineCap::butt, LineCap::round, LineCap::square};
 
     // Draw guides
     ctx.lineWidth = 1;

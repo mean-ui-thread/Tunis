@@ -1,15 +1,18 @@
 #ifndef TUNISPATH2D_H
 #define TUNISPATH2D_H
 
+#include <TunisBitMask.h>
 #include <TunisTypes.h>
 #include <TunisSOA.h>
 
+// required for fast-poly2tri on MSVC....
 #if defined(_MSC_VER)
-#include <basetsd.h>
-#include <stdlib.h>
-#include <search.h>
-typedef SSIZE_T ssize_t;
+    #include <basetsd.h>
+    #include <stdlib.h>
+    #include <search.h>
+    typedef SSIZE_T ssize_t;
 #endif
+
 #include <MPE_fastpoly2tri.h>
 
 
@@ -26,27 +29,29 @@ class ContextPriv;
 
 using MemPool = std::vector<uint8_t>;
 
-enum PathCommandType {
-    CLOSE = 0,
-    MOVE_TO,
-    LINE_TO,
-    BEZIER_TO,
-    QUAD_TO,
-    ARC,
-    ARC_TO,
-    ELLIPSE,
-    RECT,
+enum class PathCommandType : uint8_t
+{
+    close = 0,
+    moveTo,
+    lineTo,
+    bezierCurveTo,
+    quadraticCurveTo,
+    arc,
+    arcTo,
+    ellipse,
+    rect,
 };
 
-enum PointAttribType {
-    POINT_ATTRIB_NONE = 0,
-    POINT_ATTRIB_CORNER = 0x01,
-    POINT_ATTRIB_LEFT_TURN = 0x02,
-    POINT_ATTRIB_RIGHT_TURN = 0x04,
-    POINT_ATTRIB_BEVEL = 0x08,
-    POINT_ATTRIB_SHARP = 0x10,
+enum class PointProperties : uint8_t
+{
+    none = 0,
+    corner = 0x01,
+    leftTurn = 0x02,
+    rightTurn = 0x04,
+    bevel = 0x08,
+    sharp = 0x10,
 };
-using PointAttributes = int32_t;
+TUNIS_ENABLE_BITMASK_OPERATORS(PointProperties)
 
 struct PathCommandArray : public SoA<PathCommandType, float, float,float, float, float, float, float, float>
 {
@@ -61,13 +66,13 @@ struct PathCommandArray : public SoA<PathCommandType, float, float,float, float,
     inline float &param7(size_t idx) { return get<8>(idx); }
 };
 
-struct ContourPointArray : public SoA<glm::vec2, glm::vec2, glm::vec2, float, PointAttributes>
+struct ContourPointArray : public SoA<glm::vec2, glm::vec2, glm::vec2, float, PointProperties>
 {
     inline glm::vec2 &pos(size_t idx) { return get<0>(idx); }
     inline glm::vec2 &dir(size_t idx) { return get<1>(idx); }
     inline glm::vec2 &norm(size_t idx) { return get<2>(idx); }
     inline float &length(size_t idx) { return get<3>(idx); }
-    inline PointAttributes &attributes(size_t idx) { return get<4>(idx); }
+    inline PointProperties &properties(size_t idx) { return get<4>(idx); }
 };
 
 using BorderPointArray = std::vector<glm::vec2>;
