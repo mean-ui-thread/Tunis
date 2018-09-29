@@ -22,6 +22,7 @@ add_library(Tunis
 
     include/Tunis.h
     include/Tunis.inl
+    include/TunisBitMask.h
     include/TunisColor.h
     include/TunisContextState.h
     include/TunisGL.h
