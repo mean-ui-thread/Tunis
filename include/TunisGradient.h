@@ -17,8 +17,8 @@ namespace tunis
 
     /*!
      * \brief The Gradient class represents an object describing a gradient. It
-     * is returned by the methods Tunis::createLinearGradient() or
-     * Tunis::createRadialGradient().
+     * is returned by the methods Context::createLinearGradient() or
+     * Context::createRadialGradient().
      *
      * \note It can be used as a fillStyle or strokeStyle.
      */

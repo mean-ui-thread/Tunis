@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.2)
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -19,14 +20,16 @@ add_library(Tunis
     cmake/BuildOptions.cmake
     cmake/Hunter/config.cmake
 
-    include/Tunis.inl
     include/Tunis.h
-    include/TunisCanvasGradient.h
+    include/Tunis.inl
     include/TunisColor.h
+    include/TunisContextState.h
+    include/TunisGL.h
     include/TunisGradient.h
     include/TunisGradient.inl
     include/TunisMath.h
     include/TunisPaint.h
+    include/TunisPaint.inl
     include/TunisPath2D.h
     include/TunisPath2D.inl
     include/TunisRect.h
@@ -57,7 +60,6 @@ add_library(Tunis
 target_include_directories(Tunis
     PUBLIC include
     PUBLIC include/${TUNIS_BACKEND}
-    PUBLIC 3rdparty/libtess2/Include
     PUBLIC 3rdparty/StructureOfArrays/include
     PUBLIC 3rdparty/fast-poly2tri
     PRIVATE src
@@ -65,11 +67,10 @@ target_include_directories(Tunis
 )
 
 hunter_add_package(glm)
-find_package(glm CONFIG REQUIRED)
-
 hunter_add_package(easy_profiler)
-find_package(easy_profiler CONFIG REQUIRED)
 
+find_package(glm CONFIG REQUIRED)
+find_package(easy_profiler CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
 
 target_link_libraries(Tunis PUBLIC glm easy_profiler OpenMP::OpenMP_CXX)

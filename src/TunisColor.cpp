@@ -2,8 +2,18 @@
 
 #include <iostream>
 
+#if defined(_MSC_VER)
+    #define TUNIS_STRCASECMP _stricmp
+    #define TUNIS_STRNCASECMP _strnicmp
+    #define TUNIS_SSCANF sscanf_s
+#else
+    #define TUNIS_STRCASECMP strcasecmp
+    #define TUNIS_STRNCASECMP strncasecmp
+    #define TUNIS_SSCANF sscanf
+#endif
+
 #define RGBA_COLOR(COLOR_NAME, r, g, b, a) const tunis::Color tunis::COLOR_NAME = tunis::Color(r, g, b, a)
-#define RGB_COLOR(COLOR_NAME, r, g, b) RGBA_COLOR(COLOR_NAME, r, g, b, 1.0f)
+#define RGB_COLOR(COLOR_NAME, r, g, b) RGBA_COLOR(COLOR_NAME, r, g, b, 255)
 
 RGBA_COLOR(Transparent, 0, 0, 0, 0);
 
@@ -213,12 +223,31 @@ tunis::Color::Color(const char* colorName)
                 return;
         }
     }
+    else
+    {
+        uint32_t red, green, blue;
+        float alpha;
 
-#if defined(_MSC_VER)
-    #define RETURN_IF_MATCH(COLOR_NAME) do { if(_stricmp(colorName, #COLOR_NAME) == 0) { r=COLOR_NAME.r; g=COLOR_NAME.g; b=COLOR_NAME.b; a=COLOR_NAME.a;  return; } } while((void)0, 0)
-#else
-    #define RETURN_IF_MATCH(COLOR_NAME) do { if(strcasecmp(colorName, #COLOR_NAME) == 0) { r=COLOR_NAME.r; g=COLOR_NAME.g; b=COLOR_NAME.b; a=COLOR_NAME.a;  return; } } while((void)0, 0)
-#endif
+        if (TUNIS_SSCANF(colorName, "rgba(%u, %u, %u, %f)", &red, &green, &blue, &alpha) == 4)
+        {
+            r = static_cast<uint8_t>(red);
+            g = static_cast<uint8_t>(green);
+            b = static_cast<uint8_t>(blue);
+            a = static_cast<uint8_t>(alpha / 255.0f);
+            return;
+        }
+
+        if (TUNIS_SSCANF(colorName, "rgb(%u, %u, %u)", &red, &green, &blue) == 3)
+        {
+            r = static_cast<uint8_t>(red);
+            g = static_cast<uint8_t>(green);
+            b = static_cast<uint8_t>(blue);
+            a = 255;
+            return;
+        }
+    }
+
+    #define RETURN_IF_MATCH(COLOR_NAME) do { if(TUNIS_STRCASECMP(colorName, #COLOR_NAME) == 0) { r=COLOR_NAME.r; g=COLOR_NAME.g; b=COLOR_NAME.b; a=COLOR_NAME.a;  return; } } while((void)0, 0)
 
     RETURN_IF_MATCH(Transparent);
 
