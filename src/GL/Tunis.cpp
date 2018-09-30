@@ -20,9 +20,9 @@
 #include <Tunis.h>
 
 #include <TunisGL.h>
-#include <TunisGraphicStates.h>
 #include <TunisPaint.h>
 #include <TunisPath2D.h>
+#include <TunisShaderProgram.h>
 #include <TunisSOA.h>
 #include <TunisTexture.h>
 #include <TunisVertex.h>
@@ -47,163 +47,6 @@ namespace tunis
             DRAW_STROKE
         };
 
-        struct ShaderProgram
-        {
-
-            GLuint programId = 0;
-
-            // attribute locations
-            GLint a_position = 0;
-            GLint a_texcoord = 0;
-            GLint a_color = 0;
-
-            // uniform locations
-            GLint u_viewSize = 0;
-            GLint u_texture0 = 0;
-
-            // uniform values
-            int32_t viewWidth = 0;
-            int32_t viewHeight = 0;
-            int32_t texture0 = 0;
-
-            ShaderProgram() = default;
-            virtual ~ShaderProgram() = default;
-
-            virtual void init()
-            {
-                GLuint vert = glCreateShader(GL_VERTEX_SHADER);
-                GLuint frag = glCreateShader(GL_FRAGMENT_SHADER);
-                programId = glCreateProgram();
-
-                const char * vertSrc =
-                        "#if defined(GL_ES)\n"
-                        "precision highp float;\n"
-                        "#endif\n"
-                        "\n"
-                        "uniform vec2 u_viewSize;\n"
-                        "\n"
-                        "attribute vec2 a_position;\n"
-                        "attribute vec2 a_texcoord;\n"
-                        "attribute vec4 a_color;\n"
-                        "\n"
-                        "varying vec2 v_texcoord;\n"
-                        "varying vec4 v_color;\n"
-                        "\n"
-                        "void main()\n"
-                        "{\n"
-                        "    v_texcoord   = a_texcoord;\n"
-                        "    v_color      = a_color;\n"
-                        "    gl_Position  = vec4(2.0*a_position.x/u_viewSize.x - 1.0, 1.0 - 2.0*a_position.y/u_viewSize.y, 0, 1);\n"
-                        "}\n";
-
-                const char * fragSrc =
-                        "#if defined(GL_ES)\n"
-                        "precision highp float;\n"
-                        "#endif\n"
-                        "\n"
-                        "varying vec2 v_texcoord;\n"
-                        "varying vec4 v_color;\n"
-                        "\n"
-                        "uniform sampler2D u_texture0;\n"
-                        "\n"
-                        "void main()\n"
-                        "{\n"
-                        "    gl_FragColor = texture2D(u_texture0, v_texcoord) * v_color;\n"
-                        "}\n";
-
-                GLint vert_len = static_cast<GLint>(strlen(vertSrc));
-                GLint frag_len = static_cast<GLint>(strlen(fragSrc));
-
-                glShaderSource(vert, 1, &vertSrc, &vert_len);
-                glShaderSource(frag, 1, &fragSrc, &frag_len);
-
-                glCompileShader(vert);
-                glCompileShader(frag);
-
-                glAttachShader(programId, vert);
-                glAttachShader(programId, frag);
-
-                glLinkProgram(programId);
-
-                glDeleteShader(vert);
-                glDeleteShader(frag);
-
-                // attribute locations
-                a_position = glGetAttribLocation(programId, "a_position");
-                a_texcoord = glGetAttribLocation(programId, "a_texcoord");
-                a_color = glGetAttribLocation(programId, "a_color");
-
-                // uniform locations
-                u_viewSize = glGetUniformLocation(programId, "u_viewSize");
-                u_texture0 = glGetUniformLocation(programId, "u_texture0");
-
-                // activate shader program.
-                useProgram();
-
-                // shader's sampler setup
-                setTexture0Uniform(0);
-            }
-
-            virtual void shutdown()
-            {
-                if (gfxStates.programId == programId)
-                {
-                    glUseProgram(0);
-                    gfxStates.programId = 0;
-                }
-
-                glDeleteProgram(programId);
-
-                programId = 0;
-                a_position = 0;
-                a_texcoord = 0;
-                a_color = 0;
-                u_viewSize = 0;
-                u_texture0 = 0;
-                viewWidth = 0;
-                viewHeight = 0;
-                texture0 = 0;
-            }
-
-
-            void useProgram()
-            {
-                if (gfxStates.programId != programId)
-                {
-                    glUseProgram(programId);
-                    gfxStates.programId = programId;
-                }
-            }
-
-            void setTexture0Uniform(int32_t value)
-            {
-                assert(value >= 0 && value < 32);
-                assert(gfxStates.programId == programId);
-
-                if (texture0 != value)
-                {
-                    glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(value));
-                    glUniform1i(u_texture0, value);
-                    texture0 = value;
-                }
-            }
-
-            void setViewSizeUniform(int32_t width, int32_t height)
-            {
-                assert(gfxStates.programId == programId);
-
-                if (viewWidth != width || viewHeight != height)
-                {
-                    glUniform2f(u_viewSize,
-                                static_cast<GLfloat>(width),
-                                static_cast<GLfloat>(height));
-
-                    viewWidth = width;
-                    viewHeight = height;
-                }
-            }
-        };
-
         struct BatchArray : public SoA<ShaderProgram*, Texture, size_t, size_t>
         {
             inline ShaderProgram* &program(size_t i) { return get<0>(i); }
@@ -226,7 +69,7 @@ namespace tunis
 
             std::vector<Texture> textures;
 
-            ShaderProgram default2DProgram;
+            std::unique_ptr<ShaderProgram> default2DProgram;
             GLuint vao = 0;
 
             enum {
@@ -273,7 +116,10 @@ namespace tunis
                 indexBuffer.reserve((TUNIS_VERTEX_MAX-2)*3);
 
                 // Initialize our default shader.
-                default2DProgram.init();
+                ShaderVertDefault vert;
+                ShaderFragDefault frag;
+
+                default2DProgram = std::make_unique<ShaderProgram>(vert, frag, "default2DProgram");
 
                 if (tunisGLSupport(GL_VERSION_3_0))
                 {
@@ -288,12 +134,12 @@ namespace tunis
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[ContextPriv::IBO]);
 
                 // Configure our vertex attributes
-                glVertexAttribPointer(static_cast<GLuint>(default2DProgram.a_position), decltype(Vertex::pos)::length(),    GL_FLOAT,          GL_FALSE, sizeof(Vertex), reinterpret_cast<const void *>(0));
-                glVertexAttribPointer(static_cast<GLuint>(default2DProgram.a_texcoord), decltype(Vertex::tcoord)::length(), GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(Vertex), reinterpret_cast<const void *>(sizeof(Vertex::pos)));
-                glVertexAttribPointer(static_cast<GLuint>(default2DProgram.a_color),    decltype(Vertex::color)::length(),  GL_UNSIGNED_BYTE,  GL_TRUE,  sizeof(Vertex), reinterpret_cast<const void *>(sizeof(Vertex::pos) + sizeof(Vertex::tcoord)));
-                glEnableVertexAttribArray(static_cast<GLuint>(default2DProgram.a_position));
-                glEnableVertexAttribArray(static_cast<GLuint>(default2DProgram.a_texcoord));
-                glEnableVertexAttribArray(static_cast<GLuint>(default2DProgram.a_color));
+                glVertexAttribPointer(static_cast<GLuint>(default2DProgram->a_position), decltype(Vertex::pos)::length(),    GL_FLOAT,          GL_FALSE, sizeof(Vertex), reinterpret_cast<const void *>(0));
+                glVertexAttribPointer(static_cast<GLuint>(default2DProgram->a_texcoord), decltype(Vertex::tcoord)::length(), GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(Vertex), reinterpret_cast<const void *>(sizeof(Vertex::pos)));
+                glVertexAttribPointer(static_cast<GLuint>(default2DProgram->a_color),    decltype(Vertex::color)::length(),  GL_UNSIGNED_BYTE,  GL_TRUE,  sizeof(Vertex), reinterpret_cast<const void *>(sizeof(Vertex::pos) + sizeof(Vertex::tcoord)));
+                glEnableVertexAttribArray(static_cast<GLuint>(default2DProgram->a_position));
+                glEnableVertexAttribArray(static_cast<GLuint>(default2DProgram->a_texcoord));
+                glEnableVertexAttribArray(static_cast<GLuint>(default2DProgram->a_color));
 
                 /* set default state */
                 glEnable(GL_CULL_FACE);
@@ -313,7 +159,7 @@ namespace tunis
                 batches.resize(0);
 
                 // unload shader program
-                default2DProgram.shutdown();
+                default2DProgram.reset();
 
                 // unload vertex and index buffers
                 glDeleteBuffers(2, buffers);
@@ -470,7 +316,7 @@ namespace tunis
 
                             Vertex *verticies;
                             Index *indices;
-                            uint16_t offset = addBatch(&default2DProgram,
+                            uint16_t offset = addBatch(default2DProgram.get(),
                                                        textures.back(),
                                                        vertexCount,
                                                        indexCount,
