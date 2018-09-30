@@ -51,7 +51,7 @@ enum class PointProperties : uint8_t
     bevel = 0x08,
     sharp = 0x10,
 };
-TUNIS_ENABLE_BITMASK_OPERATORS(PointProperties)
+TUNIS_ENABLE_BITMASK_OPERATORS(PointProperties);
 
 struct PathCommandArray : public SoA<PathCommandType, float, float,float, float, float, float, float, float>
 {
@@ -64,6 +64,16 @@ struct PathCommandArray : public SoA<PathCommandType, float, float,float, float,
     inline float &param5(size_t idx) { return get<6>(idx); }
     inline float &param6(size_t idx) { return get<7>(idx); }
     inline float &param7(size_t idx) { return get<8>(idx); }
+
+    inline const PathCommandType &type(size_t idx) const { return get<0>(idx); }
+    inline const float &param0(size_t idx) const { return get<1>(idx); }
+    inline const float &param1(size_t idx) const { return get<2>(idx); }
+    inline const float &param2(size_t idx) const { return get<3>(idx); }
+    inline const float &param3(size_t idx) const { return get<4>(idx); }
+    inline const float &param4(size_t idx) const { return get<5>(idx); }
+    inline const float &param5(size_t idx) const { return get<6>(idx); }
+    inline const float &param6(size_t idx) const { return get<7>(idx); }
+    inline const float &param7(size_t idx) const { return get<8>(idx); }
 };
 
 struct ContourPointArray : public SoA<glm::vec2, glm::vec2, glm::vec2, float, PointProperties>
@@ -73,6 +83,12 @@ struct ContourPointArray : public SoA<glm::vec2, glm::vec2, glm::vec2, float, Po
     inline glm::vec2 &norm(size_t idx) { return get<2>(idx); }
     inline float &length(size_t idx) { return get<3>(idx); }
     inline PointProperties &properties(size_t idx) { return get<4>(idx); }
+
+    inline const glm::vec2 &pos(size_t idx) const { return get<0>(idx); }
+    inline const glm::vec2 &dir(size_t idx) const { return get<1>(idx); }
+    inline const glm::vec2 &norm(size_t idx) const { return get<2>(idx); }
+    inline const float &length(size_t idx) const { return get<3>(idx); }
+    inline const PointProperties &properties(size_t idx) const { return get<4>(idx); }
 };
 
 using BorderPointArray = std::vector<glm::vec2>;
@@ -105,6 +121,13 @@ class Path2D : public RefCountedSOA<
     inline uint8_t &dirty() { return get<3>(); }
     inline glm::vec2 &boundTopLeft() { return get<4>(); }
     inline glm::vec2 &boundBottomRight() { return get<5>(); }
+
+    inline const detail::PathCommandArray &commands() const { return get<0>(); }
+    inline const detail::SubPath2DArray &subPaths() const { return get<1>(); }
+    inline const size_t &subPathCount() const { return get<2>(); }
+    inline const uint8_t &dirty() const { return get<3>(); }
+    inline const glm::vec2 &boundTopLeft() const { return get<4>(); }
+    inline const glm::vec2 &boundBottomRight() const { return get<5>(); }
 
     friend Context;
     friend detail::ContextPriv;
