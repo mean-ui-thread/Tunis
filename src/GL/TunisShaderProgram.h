@@ -7,6 +7,9 @@
 #include <string>
 #include <iostream>
 
+#define GLSL(shader)  #shader
+
+
 namespace tunis
 {
     namespace detail
@@ -81,25 +84,8 @@ namespace tunis
             ShaderVertDefault() : Shader("ShaderVertDefault")
             {
                 const char * source =
-                        "#if defined(GL_ES)\n"
-                        "precision highp float;\n"
-                        "#endif\n"
-                        "\n"
-                        "uniform vec2 u_viewSize;\n"
-                        "\n"
-                        "attribute vec2 a_position;\n"
-                        "attribute vec2 a_texcoord;\n"
-                        "attribute vec4 a_color;\n"
-                        "\n"
-                        "varying vec2 v_texcoord;\n"
-                        "varying vec4 v_color;\n"
-                        "\n"
-                        "void main()\n"
-                        "{\n"
-                        "    v_texcoord   = a_texcoord;\n"
-                        "    v_color      = a_color;\n"
-                        "    gl_Position  = vec4(2.0*a_position.x/u_viewSize.x - 1.0, 1.0 - 2.0*a_position.y/u_viewSize.y, 0, 1);\n"
-                        "}\n";
+                    #include "GL/default.vert"
+                ;
 
                 compile(GL_VERTEX_SHADER, source, strlen(source));
             }
@@ -111,24 +97,12 @@ namespace tunis
             ShaderFragDefault() : Shader("ShaderFragDefault")
             {
                 const char * source =
-                        "#if defined(GL_ES)\n"
-                        "precision highp float;\n"
-                        "#endif\n"
-                        "\n"
-                        "varying vec2 v_texcoord;\n"
-                        "varying vec4 v_color;\n"
-                        "\n"
-                        "uniform sampler2D u_texture0;\n"
-                        "\n"
-                        "void main()\n"
-                        "{\n"
-                        "    gl_FragColor = texture2D(u_texture0, v_texcoord) * v_color;\n"
-                        "}\n";
+                    #include "GL/default.frag"
+                ;
 
                 compile(GL_FRAGMENT_SHADER, source, strlen(source));
             }
         };
-
 
         class ShaderProgram
         {
