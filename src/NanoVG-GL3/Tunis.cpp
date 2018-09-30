@@ -15,8 +15,9 @@ namespace detail
 {
     GraphicStates gfxStates;
 
-    struct ContextPriv
+    class ContextPriv
     {
+    public:
         NVGcontext *nvg = nullptr;
         Path2D currentPath;
 
@@ -28,45 +29,45 @@ namespace detail
             {
                 switch(path.commands().type(i))
                 {
-                case detail::CLOSE:
+                case PathCommandType::close:
                     nvgClosePath(nvg);
                     break;
-                case detail::MOVE_TO:
+                case PathCommandType::moveTo:
                     nvgMoveTo(nvg, path.commands().param0(i), path.commands().param1(i));
                     break;
-                case detail::LINE_TO:
+                case PathCommandType::lineTo:
                     nvgLineTo(nvg, path.commands().param0(i), path.commands().param1(i));
                     break;
-                case detail::BEZIER_TO:
+                case PathCommandType::bezierCurveTo:
                     nvgBezierTo(nvg,
                                 path.commands().param0(i), path.commands().param1(i),
                                 path.commands().param2(i), path.commands().param3(i),
                                 path.commands().param4(i), path.commands().param5(i));
                     break;
-                case detail::QUAD_TO:
+                case PathCommandType::quadraticCurveTo:
                     nvgQuadTo(nvg,
                               path.commands().param0(i), path.commands().param1(i),
                               path.commands().param2(i), path.commands().param3(i));
                     break;
-                case detail::ARC:
+                case PathCommandType::arc:
                     nvgArc(nvg,
                            path.commands().param0(i), path.commands().param1(i),
                            path.commands().param2(i), path.commands().param3(i),
                            path.commands().param4(i), path.commands().param5(i) > 0.5f ? NVG_CCW : NVG_CW);
                     break;
-                case detail::ARC_TO:
+                case PathCommandType::arcTo:
                     nvgArcTo(nvg,
                              path.commands().param0(i), path.commands().param1(i),
                              path.commands().param2(i), path.commands().param3(i),
                              path.commands().param4(i));
                     break;
-                case detail::ELLIPSE:
+                case PathCommandType::ellipse:
                     // TODO figure out how to use rotation, startAngle, endAngle, anticlockwise here...
                     nvgEllipse(nvg,
                                path.commands().param0(i), path.commands().param1(i),
                                path.commands().param2(i), path.commands().param3(i));
                     break;
-                case detail::RECT:
+                case PathCommandType::rect:
                     nvgRect(nvg,
                             path.commands().param0(i), path.commands().param1(i),
                             path.commands().param2(i), path.commands().param3(i));
