@@ -69,7 +69,8 @@ namespace tunis
 
             std::vector<Texture> textures;
 
-            std::unique_ptr<ShaderProgram> default2DProgram;
+            std::unique_ptr<ShaderProgram> programDefault;
+            std::unique_ptr<ShaderProgramGradientRadial> programGradientRadial;
             GLuint vao = 0;
 
             enum {
@@ -115,11 +116,13 @@ namespace tunis
                 vertexBuffer.reserve(TUNIS_VERTEX_MAX);
                 indexBuffer.reserve((TUNIS_VERTEX_MAX-2)*3);
 
-                // Initialize our default shader.
-                ShaderVertDefault vert;
-                ShaderFragDefault frag;
+                // Initialize our shader programs.
+                ShaderVertDefault defaultVert;
+                ShaderFragDefault defaultFrag;
+                ShaderFragGradientRadial gradientRadialfrag;
 
-                default2DProgram = std::make_unique<ShaderProgram>(vert, frag, "default2DProgram");
+                programDefault = std::make_unique<ShaderProgram>(defaultVert, defaultFrag);
+                programGradientRadial = std::make_unique<ShaderProgramGradientRadial>(defaultVert, gradientRadialfrag);
 
                 if (tunisGLSupport(GL_VERSION_3_0))
                 {
@@ -134,12 +137,12 @@ namespace tunis
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[ContextPriv::IBO]);
 
                 // Configure our vertex attributes
-                glVertexAttribPointer(static_cast<GLuint>(default2DProgram->a_position), decltype(Vertex::pos)::length(),    GL_FLOAT,          GL_FALSE, sizeof(Vertex), reinterpret_cast<const void *>(0));
-                glVertexAttribPointer(static_cast<GLuint>(default2DProgram->a_texcoord), decltype(Vertex::tcoord)::length(), GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(Vertex), reinterpret_cast<const void *>(sizeof(Vertex::pos)));
-                glVertexAttribPointer(static_cast<GLuint>(default2DProgram->a_color),    decltype(Vertex::color)::length(),  GL_UNSIGNED_BYTE,  GL_TRUE,  sizeof(Vertex), reinterpret_cast<const void *>(sizeof(Vertex::pos) + sizeof(Vertex::tcoord)));
-                glEnableVertexAttribArray(static_cast<GLuint>(default2DProgram->a_position));
-                glEnableVertexAttribArray(static_cast<GLuint>(default2DProgram->a_texcoord));
-                glEnableVertexAttribArray(static_cast<GLuint>(default2DProgram->a_color));
+                glVertexAttribPointer(static_cast<GLuint>(programDefault->a_position), decltype(Vertex::pos)::length(),    GL_FLOAT,          GL_FALSE, sizeof(Vertex), reinterpret_cast<const void *>(0));
+                glVertexAttribPointer(static_cast<GLuint>(programDefault->a_texcoord), decltype(Vertex::tcoord)::length(), GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(Vertex), reinterpret_cast<const void *>(sizeof(Vertex::pos)));
+                glVertexAttribPointer(static_cast<GLuint>(programDefault->a_color),    decltype(Vertex::color)::length(),  GL_UNSIGNED_BYTE,  GL_TRUE,  sizeof(Vertex), reinterpret_cast<const void *>(sizeof(Vertex::pos) + sizeof(Vertex::tcoord)));
+                glEnableVertexAttribArray(static_cast<GLuint>(programDefault->a_position));
+                glEnableVertexAttribArray(static_cast<GLuint>(programDefault->a_texcoord));
+                glEnableVertexAttribArray(static_cast<GLuint>(programDefault->a_color));
 
                 /* set default state */
                 glEnable(GL_CULL_FACE);
@@ -158,8 +161,9 @@ namespace tunis
                 textures.resize(0);
                 batches.resize(0);
 
-                // unload shader program
-                default2DProgram.reset();
+                // unload shader programs
+                programDefault.reset();
+                programGradientRadial.reset();
 
                 // unload vertex and index buffers
                 glDeleteBuffers(2, buffers);
@@ -316,7 +320,7 @@ namespace tunis
 
                             Vertex *verticies;
                             Index *indices;
-                            uint16_t offset = addBatch(default2DProgram.get(),
+                            uint16_t offset = addBatch(programDefault.get(),
                                                        textures.back(),
                                                        vertexCount,
                                                        indexCount,

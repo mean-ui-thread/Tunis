@@ -91,6 +91,7 @@ namespace tunis
             }
         };
 
+
         class ShaderFragDefault : public Shader
         {
         public:
@@ -104,11 +105,24 @@ namespace tunis
             }
         };
 
+        class ShaderFragGradientRadial : public Shader
+        {
+        public:
+            ShaderFragGradientRadial() : Shader("ShaderFragGradientRadial")
+            {
+                const char * source =
+                    #include "GL/gradientRadial.frag"
+                ;
+
+                compile(GL_FRAGMENT_SHADER, source, strlen(source));
+            }
+        };
+
         class ShaderProgram
         {
         public:
 
-            ShaderProgram(const Shader &vert, const Shader &frag, const char *name) : programName(name)
+            ShaderProgram(const Shader &vert, const Shader &frag, const char *name = "programDefault") : programName(name)
             {
                 if (!vert.status())
                 {
@@ -254,6 +268,18 @@ namespace tunis
             int32_t viewWidth = 0;
             int32_t viewHeight = 0;
             int32_t texture0 = 0;
+
+        };
+
+        class ShaderProgramGradientRadial : public ShaderProgram
+        {
+        public:
+            ShaderProgramGradientRadial(const Shader &vert, const Shader &frag) :
+                ShaderProgram(vert, frag, "ShaderProgramGradientRadial")
+            {
+
+            }
+
 
         };
     }
