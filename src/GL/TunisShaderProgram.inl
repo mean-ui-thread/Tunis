@@ -11,8 +11,6 @@ namespace tunis
 {
     namespace detail
     {
-        extern GraphicStates gfxStates;
-
         inline Shader::Shader(const char * name) : shaderName(name)
         {
         }

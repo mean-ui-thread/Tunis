@@ -41,12 +41,10 @@ add_library(Tunis
     include/TunisSize.h
     include/TunisSize.inl
     include/TunisSpinLock.h
-    include/TunisTexture.h
     include/TunisTypes.h
     include/TunisVertex.h
     src/${TUNIS_BACKEND}/Backend.cmake
     src/${TUNIS_BACKEND}/Tunis.cpp
-    src/${TUNIS_BACKEND}/TunisTexture.cpp
     src/${TUNIS_BACKEND}/TunisGraphicStates.h
     src/TunisColor.cpp
 

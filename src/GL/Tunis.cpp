@@ -47,10 +47,10 @@ namespace tunis
             DRAW_STROKE
         };
 
-        struct BatchArray : public SoA<ShaderProgram*, Texture, size_t, size_t>
+        struct BatchArray : public SoA<ShaderProgram*, Texture*, size_t, size_t>
         {
             inline ShaderProgram* &program(size_t i) { return get<0>(i); }
-            inline Texture &texture(size_t i) { return get<1>(i); }
+            inline Texture* &texture(size_t i) { return get<1>(i); }
             inline size_t &offset(size_t i) { return get<2>(i); }
             inline size_t &count(size_t i) { return get<3>(i); }
         };
@@ -67,7 +67,7 @@ namespace tunis
         public:
             std::vector<ContextState> states;
 
-            std::vector<Texture> textures;
+            std::vector<std::unique_ptr<Texture>> textures;
 
             std::unique_ptr<ShaderProgramTexture> programTexture;
             std::unique_ptr<ShaderProgramGradientRadial> programGradientRadial;
@@ -105,8 +105,8 @@ namespace tunis
 #else
                 glGetIntegerv(GL_MAX_TEXTURE_SIZE, &global.maxTexSize);
 #endif
-                Texture tex = Texture(gfxStates.maxTexSize, gfxStates.maxTexSize);
-                textures.push_back(tex); // retain
+                std::unique_ptr<Texture> tex = std::make_unique<Texture>(gfxStates.maxTexSize, gfxStates.maxTexSize);
+                textures.emplace_back(std::move(tex)); // retain
 
                 Paint::reserve(64);
                 Path2D::reserve(64);
@@ -204,7 +204,7 @@ namespace tunis
             }
 
 
-            uint16_t addBatch(ShaderProgram *program, Texture texture, uint32_t vertexCount, uint32_t indexCount, VertexTexture **vout, Index **iout)
+            uint16_t addBatch(ShaderProgram *program, Texture *texture, uint32_t vertexCount, uint32_t indexCount, VertexTexture **vout, Index **iout)
             {
                 assert(vertexCount >= 3);
 
@@ -314,7 +314,7 @@ namespace tunis
                             VertexTexture *verticies;
                             Index *indices;
                             uint16_t offset = addBatch(programTexture.get(),
-                                                       textures.back(),
+                                                       textures.back().get(),
                                                        vertexCount,
                                                        indexCount,
                                                        &verticies,
@@ -388,7 +388,7 @@ namespace tunis
                     {
                         batches.program(i)->useProgram();
                         batches.program(i)->setViewSizeUniform(viewWidth, viewHeight);
-                        batches.texture(i).bind();
+                        batches.texture(i)->bind();
 
 
 #if 1
