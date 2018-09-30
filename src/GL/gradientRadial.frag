@@ -4,21 +4,27 @@ R"(
 precision highp float;
 #endif
 
-varying vec2 v_texcoord;
-varying vec4 v_color;
+uniform vec4 u_frag[2];
+
+//#define u_resolution     u_frag[0].xy
+//#define u_gradientCenter u_frag[0].zw
+//#define u_radius         u_frag[1].x
 
 void main()
 {
-    vec2 start = gl_FragCoord.xy/vec2(100, 100);
-    vec2 end = vec2(1,1);
-    float t = distance(start, end);
+    vec2 u_resolution = vec2(200, 200);
+    vec2 u_gradientCenter = vec2(100, 100);
+    float u_radius = 25.0;
 
-    vec3 color1 = vec3(1.0, 0, 0);
-    vec3 color2 = vec3(  0, 0, 1.0);
+    vec2 fragPos = gl_FragCoord.xy / u_resolution;
+    float t = distance(fragPos, u_gradientCenter) * u_radius;
 
-    vec3 color = mix(color1, color2, t);
+    vec4 color1 = vec4(1, 0, 0, 1);
+    vec4 color2 = vec4(0, 0, 1, 1);
 
-    gl_FragColor = vec4(color, 1.0);
+    vec4 color = mix(color1, color2, t);
+
+    gl_FragColor = color;
 };
 
 )"

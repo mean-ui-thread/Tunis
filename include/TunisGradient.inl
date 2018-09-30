@@ -22,6 +22,7 @@ namespace tunis
 
     inline void Gradient::addColorStop(float offset, Color color)
     {
+        assert(offset >= 0.0f && offset <= 1.0f);
         colorStops().push(std::move(offset), std::move(color));
     }
 }

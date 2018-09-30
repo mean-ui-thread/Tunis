@@ -2,261 +2,71 @@
 #define TUNISSHADERPROGRAM_H
 
 #include <TunisGL.h>
-#include <TunisGraphicStates.h>
 
-#include <string>
-#include <iostream>
 
-#define GLSL(shader)  #shader
 
 
 namespace tunis
 {
     namespace detail
     {
-        extern GraphicStates gfxStates;
 
         class Shader
         {
         public:
 
-            Shader(const char * name) : shaderName(name)
-            {
-            }
-
-            virtual ~Shader()
-            {
-                if (shaderId)
-                {
-                    glDeleteShader(shaderId);
-                    shaderId = 0;
-                }
-            }
-
-            operator GLuint() const
-            {
-                return shaderId;
-            }
-
-            bool status() const
-            {
-                return compileStatus == GL_TRUE;
-            }
-
-            const char *name() const
-            {
-                return shaderName;
-            }
+            Shader(const char * name);
+            virtual ~Shader();
+            operator GLuint() const;
+            bool status() const;
+            const char *name() const;
 
         protected:
 
-            void compile(GLenum type, const char *source, int len)
-            {
-                shaderId = glCreateShader(type);
-                glShaderSource(shaderId, 1, &source, &len);
-                glCompileShader(shaderId);
-                glGetShaderiv(shaderId, GL_COMPILE_STATUS, &compileStatus);
-
-                if(compileStatus == GL_FALSE)
-                {
-                    GLint infoLogLength = 0;
-                    glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &infoLogLength);
-                    if(infoLogLength > 1)
-                    {
-                        std::string infoLog;
-                        infoLog.resize(infoLogLength);
-                        glGetShaderInfoLog(shaderId, infoLogLength, nullptr, const_cast<char*>(infoLog.data()));
-                        std::cerr << "Error compiling " << shaderName << ":\n" << infoLog << "\n\n";
-                    }
-                    glDeleteShader(shaderId);
-                    shaderId = 0;
-                }
-            }
+            void compile(GLenum type, const char *source, int len);
 
             const char *shaderName;
             GLuint shaderId = 0;
             GLint compileStatus = GL_FALSE;
         };
 
-        class ShaderVertDefault : public Shader
+        class ShaderVertTexture : public Shader
         {
-        public:
-            ShaderVertDefault() : Shader("ShaderVertDefault")
-            {
-                const char * source =
-                    #include "GL/default.vert"
-                ;
-
-                compile(GL_VERTEX_SHADER, source, strlen(source));
-            }
+        public: ShaderVertTexture();
         };
 
 
-        class ShaderFragDefault : public Shader
+        class ShaderFragTexture : public Shader
         {
-        public:
-            ShaderFragDefault() : Shader("ShaderFragDefault")
-            {
-                const char * source =
-                    #include "GL/default.frag"
-                ;
+        public: ShaderFragTexture();
+        };
 
-                compile(GL_FRAGMENT_SHADER, source, strlen(source));
-            }
+        class ShaderVertGradientRadial : public Shader
+        {
+        public: ShaderVertGradientRadial();
         };
 
         class ShaderFragGradientRadial : public Shader
         {
-        public:
-            ShaderFragGradientRadial() : Shader("ShaderFragGradientRadial")
-            {
-                const char * source =
-                    #include "GL/gradientRadial.frag"
-                ;
-
-                compile(GL_FRAGMENT_SHADER, source, strlen(source));
-            }
+        public: ShaderFragGradientRadial();
         };
 
         class ShaderProgram
         {
         public:
 
-            ShaderProgram(const Shader &vert, const Shader &frag, const char *name = "programDefault") : programName(name)
-            {
-                if (!vert.status())
-                {
-                    std::cerr << "Cannot attach broken " << vert.name() << " to " << programName << "\n";
-                    return;
-                }
+            ShaderProgram(const Shader &vert, const Shader &frag, const char *name);
+            virtual ~ShaderProgram();
+            operator GLuint() const;
+            bool status() const;
+            const char *name() const;
+            void useProgram();
 
-                if (!frag.status())
-                {
-                    std::cerr << "Cannot attach broken " << frag.name() << " to " << programName << "\n";
-                    return;
-                }
+            void setViewSizeUniform(int32_t width, int32_t height);
 
-                programId = glCreateProgram();
-                glAttachShader(programId, vert);
-                glAttachShader(programId, frag);
-                glLinkProgram(programId);
-                glGetProgramiv(programId, GL_LINK_STATUS, &linkStatus);
+            virtual void enableVertexAttribArray() = 0;
+            virtual void disableVertexAttribArray() = 0;
 
-                if(linkStatus == GL_FALSE)
-                {
-                    GLint infoLogLength = 0;
-                    glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &infoLogLength);
-
-                    if(infoLogLength > 1)
-                    {
-                        std::string infoLog;
-                        infoLog.resize(infoLogLength);
-                        glGetShaderInfoLog(programId, infoLogLength, nullptr, const_cast<char*>(infoLog.data()));
-                        std::cerr << "Error linking " << name << ":\n" << infoLog << "\n\n";
-                    }
-
-                    glDeleteProgram(programId);
-                    programId = 0;
-                    return;
-                }
-
-                // attribute locations
-                a_position = glGetAttribLocation(programId, "a_position");
-                a_texcoord = glGetAttribLocation(programId, "a_texcoord");
-                a_color = glGetAttribLocation(programId, "a_color");
-
-                // uniform locations
-                u_viewSize = glGetUniformLocation(programId, "u_viewSize");
-                u_texture0 = glGetUniformLocation(programId, "u_texture0");
-
-                // activate shader program.
-                useProgram();
-
-                // shader's sampler setup
-                setTexture0Uniform(0);
-            }
-
-            virtual ~ShaderProgram()
-            {
-                if (gfxStates.programId == programId)
-                {
-                    glUseProgram(0);
-                    gfxStates.programId = 0;
-                }
-
-                glDeleteProgram(programId);
-
-                programId = 0;
-                a_position = 0;
-                a_texcoord = 0;
-                a_color = 0;
-                u_viewSize = 0;
-                u_texture0 = 0;
-                viewWidth = 0;
-                viewHeight = 0;
-                texture0 = 0;
-            }
-
-            operator GLuint() const
-            {
-                return programId;
-            }
-
-            bool status() const
-            {
-                return linkStatus == GL_TRUE;
-            }
-
-            const char *name() const
-            {
-                return programName;
-            }
-
-            void useProgram()
-            {
-                if (gfxStates.programId != programId)
-                {
-                    glUseProgram(programId);
-                    gfxStates.programId = programId;
-                }
-            }
-
-            void setTexture0Uniform(int32_t value)
-            {
-                assert(value >= 0 && value < 32);
-                assert(gfxStates.programId == programId);
-
-                if (texture0 != value)
-                {
-                    glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(value));
-                    glUniform1i(u_texture0, value);
-                    texture0 = value;
-                }
-            }
-
-            void setViewSizeUniform(int32_t width, int32_t height)
-            {
-                assert(gfxStates.programId == programId);
-
-                if (viewWidth != width || viewHeight != height)
-                {
-                    glUniform2f(u_viewSize,
-                                static_cast<GLfloat>(width),
-                                static_cast<GLfloat>(height));
-
-                    viewWidth = width;
-                    viewHeight = height;
-                }
-            }
-
-            // mandatory attribute locations
-            GLint a_position = 0;
-            GLint a_texcoord = 0;
-            GLint a_color = 0;
-
-            // mandatory uniform locations
-            GLint u_viewSize = 0;
-            GLint u_texture0 = 0;
 
         protected:
 
@@ -264,27 +74,67 @@ namespace tunis
             GLuint programId = 0;
             GLint linkStatus = GL_FALSE;
 
+            // uniform locations
+            GLint u_viewSize = 0;
+
             // uniform values
             int32_t viewWidth = 0;
             int32_t viewHeight = 0;
-            int32_t texture0 = 0;
 
         };
+
+        class ShaderProgramTexture : public ShaderProgram
+        {
+        public:
+            ShaderProgramTexture();
+            void setTexture0Uniform(int32_t value);
+
+            virtual void enableVertexAttribArray() override;
+            virtual void disableVertexAttribArray() override;
+
+        protected:
+
+            // attribute locations
+            GLint a_position = 0;
+            GLint a_texcoord = 0;
+            GLint a_color = 0;
+
+            // uniform locations
+            GLint u_viewSize = 0;
+            GLint u_texture0 = 0;
+
+            // uniform values
+            int32_t texture0 = 0;
+        };
+
 
         class ShaderProgramGradientRadial : public ShaderProgram
         {
         public:
-            ShaderProgramGradientRadial(const Shader &vert, const Shader &frag) :
-                ShaderProgram(vert, frag, "ShaderProgramGradientRadial")
-            {
 
-            }
+            ShaderProgramGradientRadial();
+            void setViewSizeUniform(int32_t width, int32_t height);
 
+            virtual void enableVertexAttribArray() override;
+            virtual void disableVertexAttribArray() override;
+
+        protected:
+
+            // attribute locations
+            GLint a_position = 0;
+
+            // uniform locations
+            GLint u_viewSize = 0;
+
+            // uniform values
+            int32_t viewWidth = 0;
+            int32_t viewHeight = 0;
 
         };
     }
 
 }
 
+#include "TunisShaderProgram.inl"
 
 #endif // TUNISSHADERPROGRAM_H

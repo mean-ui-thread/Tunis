@@ -6,16 +6,25 @@
 
 namespace tunis
 {
+    namespace detail
+    {
 
-struct Vertex
-{
-    Position pos;
-    TCoord tcoord;
-    Color color;
-};
+        struct VertexGradient
+        {
+            Position pos;
+        };
 
-using Index = uint16_t;
 
+        struct VertexTexture
+        {
+            Position pos;
+            TCoord tcoord;
+            Color color;
+        };
+
+        using Index = uint16_t;
+
+    }
 }
 
 #endif // TUNISVERTEX_H

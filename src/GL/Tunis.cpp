@@ -69,7 +69,7 @@ namespace tunis
 
             std::vector<Texture> textures;
 
-            std::unique_ptr<ShaderProgram> programDefault;
+            std::unique_ptr<ShaderProgramTexture> programTexture;
             std::unique_ptr<ShaderProgramGradientRadial> programGradientRadial;
             GLuint vao = 0;
 
@@ -82,7 +82,7 @@ namespace tunis
             int32_t viewWidth = 0;
             int32_t viewHeight = 0;
 
-            std::vector<Vertex> vertexBuffer; // write-only interleaved VBO data. DO NOT USE SoA on this member!!!
+            std::vector<VertexTexture> vertexBuffer; // write-only interleaved VBO data. DO NOT USE SoA on this member!!!
             std::vector<uint16_t> indexBuffer; // write-only
 
             DrawOpArray renderQueue;
@@ -116,14 +116,6 @@ namespace tunis
                 vertexBuffer.reserve(TUNIS_VERTEX_MAX);
                 indexBuffer.reserve((TUNIS_VERTEX_MAX-2)*3);
 
-                // Initialize our shader programs.
-                ShaderVertDefault defaultVert;
-                ShaderFragDefault defaultFrag;
-                ShaderFragGradientRadial gradientRadialfrag;
-
-                programDefault = std::make_unique<ShaderProgram>(defaultVert, defaultFrag);
-                programGradientRadial = std::make_unique<ShaderProgramGradientRadial>(defaultVert, gradientRadialfrag);
-
                 if (tunisGLSupport(GL_VERSION_3_0))
                 {
                     // Create a dummy vertex array object (mandatory since GL Core profile)
@@ -136,13 +128,14 @@ namespace tunis
                 glBindBuffer(GL_ARRAY_BUFFER, buffers[ContextPriv::VBO]);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[ContextPriv::IBO]);
 
-                // Configure our vertex attributes
-                glVertexAttribPointer(static_cast<GLuint>(programDefault->a_position), decltype(Vertex::pos)::length(),    GL_FLOAT,          GL_FALSE, sizeof(Vertex), reinterpret_cast<const void *>(0));
-                glVertexAttribPointer(static_cast<GLuint>(programDefault->a_texcoord), decltype(Vertex::tcoord)::length(), GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(Vertex), reinterpret_cast<const void *>(sizeof(Vertex::pos)));
-                glVertexAttribPointer(static_cast<GLuint>(programDefault->a_color),    decltype(Vertex::color)::length(),  GL_UNSIGNED_BYTE,  GL_TRUE,  sizeof(Vertex), reinterpret_cast<const void *>(sizeof(Vertex::pos) + sizeof(Vertex::tcoord)));
-                glEnableVertexAttribArray(static_cast<GLuint>(programDefault->a_position));
-                glEnableVertexAttribArray(static_cast<GLuint>(programDefault->a_texcoord));
-                glEnableVertexAttribArray(static_cast<GLuint>(programDefault->a_color));
+                // Initialize our shader programs.
+                programTexture = std::make_unique<ShaderProgramTexture>();
+                programGradientRadial = std::make_unique<ShaderProgramGradientRadial>();
+
+                // Use our default texture program.
+                programTexture->useProgram();
+
+                tunisGLCheckError();
 
                 /* set default state */
                 glEnable(GL_CULL_FACE);
@@ -162,7 +155,7 @@ namespace tunis
                 batches.resize(0);
 
                 // unload shader programs
-                programDefault.reset();
+                programTexture.reset();
                 programGradientRadial.reset();
 
                 // unload vertex and index buffers
@@ -211,7 +204,7 @@ namespace tunis
             }
 
 
-            uint16_t addBatch(ShaderProgram *program, Texture texture, uint32_t vertexCount, uint32_t indexCount, Vertex **vout, Index **iout)
+            uint16_t addBatch(ShaderProgram *program, Texture texture, uint32_t vertexCount, uint32_t indexCount, VertexTexture **vout, Index **iout)
             {
                 assert(vertexCount >= 3);
 
@@ -318,16 +311,16 @@ namespace tunis
                             }
 
 
-                            Vertex *verticies;
+                            VertexTexture *verticies;
                             Index *indices;
-                            uint16_t offset = addBatch(programDefault.get(),
+                            uint16_t offset = addBatch(programTexture.get(),
                                                        textures.back(),
                                                        vertexCount,
                                                        indexCount,
                                                        &verticies,
                                                        &indices);
 
-                            Color color = paint->innerColor();
+                            Color color = paint->color();
                             color.a *= state.globalAlpha;
 
                             //populate the vertices
@@ -369,7 +362,7 @@ namespace tunis
                 // flush the vertex buffer.
                 if (vertexBuffer.size() > 0) {
                     glBufferData(GL_ARRAY_BUFFER,
-                                 static_cast<GLsizeiptr>(vertexBuffer.size() * sizeof(Vertex)),
+                                 static_cast<GLsizeiptr>(vertexBuffer.size() * sizeof(VertexTexture)),
                                  &vertexBuffer.front(),
                                  GL_STREAM_DRAW);
                     vertexBuffer.resize(0);
