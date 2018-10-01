@@ -51,7 +51,8 @@ enum class PointProperties : uint8_t
     bevel = 0x08,
     sharp = 0x10,
 };
-TUNIS_ENABLE_BITMASK_OPERATORS(PointProperties);
+using PointMask = BitMask<PointProperties>;
+
 
 struct PathCommandArray : public SoA<PathCommandType, float, float,float, float, float, float, float, float>
 {
@@ -76,19 +77,19 @@ struct PathCommandArray : public SoA<PathCommandType, float, float,float, float,
     inline const float &param7(size_t idx) const { return get<8>(idx); }
 };
 
-struct ContourPointArray : public SoA<glm::vec2, glm::vec2, glm::vec2, float, PointProperties>
+struct ContourPointArray : public SoA<glm::vec2, glm::vec2, glm::vec2, float, PointMask>
 {
     inline glm::vec2 &pos(size_t idx) { return get<0>(idx); }
     inline glm::vec2 &dir(size_t idx) { return get<1>(idx); }
     inline glm::vec2 &norm(size_t idx) { return get<2>(idx); }
     inline float &length(size_t idx) { return get<3>(idx); }
-    inline PointProperties &properties(size_t idx) { return get<4>(idx); }
+    inline PointMask &properties(size_t idx) { return get<4>(idx); }
 
     inline const glm::vec2 &pos(size_t idx) const { return get<0>(idx); }
     inline const glm::vec2 &dir(size_t idx) const { return get<1>(idx); }
     inline const glm::vec2 &norm(size_t idx) const { return get<2>(idx); }
     inline const float &length(size_t idx) const { return get<3>(idx); }
-    inline const PointProperties &properties(size_t idx) const { return get<4>(idx); }
+    inline const PointMask &properties(size_t idx) const { return get<4>(idx); }
 };
 
 using BorderPointArray = std::vector<glm::vec2>;

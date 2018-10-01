@@ -1077,20 +1077,20 @@ namespace tunis
                             points.norm(p1) = norm;
 
                             float cross = glm::cross(points.dir(p1), points.dir(p0));
-                            points.properties(p1) |= cross > 0.0f ? PointProperties::leftTurn : PointProperties::rightTurn;
+                            points.properties(p1).set(cross > 0.0f ? PointProperties::leftTurn : PointProperties::rightTurn);
 
                             float sharpnessLimit = glm::min(points.length(p0), points.length(p1)) * (1.0f / halfLineWidth);
                             if (dot * sharpnessLimit * sharpnessLimit > 1.0f)
                             {
-                                points.properties(p1) |= PointProperties::sharp;
+                                points.properties(p1).set(PointProperties::sharp);
                             }
 
-                            if (!!(points.properties(p1) & PointProperties::corner))
+                            if (points.properties(p1).test(PointProperties::corner))
                             {
                                 if (state.lineJoin == LineJoin::bevel || state.lineJoin == LineJoin::round ||
                                     dot * state.miterLimit * state.miterLimit < 1.0f)
                                 {
-                                    points.properties(p1) |= PointProperties::bevel;
+                                    points.properties(p1).set(PointProperties::bevel);
                                 }
                             }
                         }
@@ -1098,7 +1098,7 @@ namespace tunis
                         // create inner and outer contour.
                         for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
                         {
-                            if (!!(points.properties(p1) & PointProperties::bevel))
+                            if (points.properties(p1).test(PointProperties::bevel))
                             {
                                 if (state.lineJoin == LineJoin::round)
                                 {
@@ -1106,7 +1106,7 @@ namespace tunis
                                     glm::vec2 ext1 = points.norm(p1) * halfLineWidth;
                                     glm::vec2 ext2 = glm::vec2(points.dir(p1).y, -points.dir(p1).x) * halfLineWidth;
 
-                                    if (!!(points.properties(p1) & PointProperties::leftTurn))
+                                    if (points.properties(p1).test(PointProperties::leftTurn))
                                     {
                                         addPoint(innerPoints, points.pos(p1) + ext1);
                                         addPoint(outerPoints, points.pos(p1) - ext0);
@@ -1129,7 +1129,7 @@ namespace tunis
                                 }
                                 else
                                 {
-                                    if (!!(points.properties(p1) & PointProperties::leftTurn))
+                                    if (points.properties(p1).test(PointProperties::leftTurn))
                                     {
                                         addPoint(innerPoints, points.pos(p1) + points.norm(p1) * halfLineWidth);
                                         addPoint(outerPoints, points.pos(p1) - glm::vec2(points.dir(p0).y, -points.dir(p0).x) * halfLineWidth);
@@ -1174,21 +1174,21 @@ namespace tunis
                             points.norm(p1) = norm;
 
                             float cross = glm::cross(points.dir(p1), points.dir(p0));
-                            points.properties(p1) |= cross > 0.0f ? PointProperties::leftTurn : PointProperties::rightTurn;
+                            points.properties(p1).set(cross > 0.0f ? PointProperties::leftTurn : PointProperties::rightTurn);
 
                             float sharpnessLimit = glm::max(1.0f, glm::min(points.length(p0), points.length(p1)) * (1.0f / halfLineWidth));
                             if (dot * sharpnessLimit * sharpnessLimit > 1.0f)
                             {
-                                points.properties(p1) |= PointProperties::sharp;
+                                points.properties(p1).set(PointProperties::sharp);
                             }
 
-                            if (!!(points.properties(p1) & PointProperties::corner))
+                            if (points.properties(p1).test(PointProperties::corner))
                             {
                                 if (state.lineJoin == LineJoin::bevel ||
                                     state.lineJoin == LineJoin::round ||
                                     dot * state.miterLimit * state.miterLimit < 1.0f)
                                 {
-                                    points.properties(p1) |= PointProperties::bevel;
+                                    points.properties(p1).set(PointProperties::bevel);
                                 }
                             }
                         }
@@ -1196,7 +1196,7 @@ namespace tunis
                         // extrude our points
                         for (size_t p0 = points.size() - 1, p1 = 0; p1 < points.size(); p0 = p1++)
                         {
-                            if (!!(points.properties(p1) & PointProperties::bevel) && !!(points.properties(p1) & PointProperties::leftTurn))
+                            if (points.properties(p1).test(PointProperties::bevel) && points.properties(p1).test(PointProperties::leftTurn))
                             {
                                 if (state.lineJoin == LineJoin::round)
                                 {
@@ -1209,7 +1209,7 @@ namespace tunis
                                 else
                                 {
                                     glm::vec2 v0, v1;
-                                    if (!!(points.properties(p1) & PointProperties::sharp))
+                                    if (points.properties(p1).test(PointProperties::sharp))
                                     {
                                         // rotate direction vectors by 90degree CW
                                         glm::vec2 dir0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x);
@@ -1282,7 +1282,7 @@ namespace tunis
                         // extrude the 'other' side of our points in reverse.
                         for (size_t p0 = points.size(), p1 = points.size() - 1; p0 > 0; p0 = p1--)
                         {
-                            if (!!(points.properties(p1) & PointProperties::bevel) && !!(points.properties(p1) & PointProperties::rightTurn))
+                            if (points.properties(p1).test(PointProperties::bevel) && points.properties(p1).test(PointProperties::rightTurn))
                             {
                                 if (state.lineJoin == LineJoin::round)
                                 {
@@ -1295,7 +1295,7 @@ namespace tunis
                                 else
                                 {
                                     glm::vec2 v0, v1;
-                                    if (!!(points.properties(p1) & PointProperties::sharp))
+                                    if (points.properties(p1).test(PointProperties::sharp))
                                     {
                                         // rotate direction vectors by 90degree CW
                                         glm::vec2 dir0 = glm::vec2(points.dir(p0).y, -points.dir(p0).x);
