@@ -1,5 +1,6 @@
 #define MPE_POLY2TRI_IMPLEMENTATION
 #define TUNIS_GL_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -30,8 +31,8 @@
 
 #include <easy/profiler.h>
 #include <glm/gtc/epsilon.hpp>
-
 #include <glm/gtx/exterior_product.hpp>
+#include <stb/stb_image.h>
 
 #include <thread>
 
@@ -39,7 +40,10 @@ namespace tunis
 {
     namespace detail
     {
+        moodycamel::ConcurrentQueue< std::function<void(ContextPriv*)> > taskQueue(128);
+
         GraphicStates gfxStates;
+        Image blankImage;
 
         enum DrawOp
         {
@@ -106,7 +110,18 @@ namespace tunis
                 glGetIntegerv(GL_MAX_TEXTURE_SIZE, &global.maxTexSize);
 #endif
                 std::unique_ptr<Texture> tex = std::make_unique<Texture>(gfxStates.maxTexSize, gfxStates.maxTexSize);
+
+                // pixel width in 16bit.
+                uint16_t pixelWidth = static_cast<uint16_t>((1.0f / gfxStates.maxTexSize) * 0xFFFF);
+
+                blankImage.sourceWidth() = 1;
+                blankImage.sourceHeight() = 1;
+                blankImage.bounds() = glm::u16vec4(0, 0, pixelWidth, pixelWidth);
+                blankImage.parent() = tex.get();
+
                 textures.emplace_back(std::move(tex)); // retain
+
+
 
                 Paint::reserve(64);
                 Path2D::reserve(64);
@@ -134,8 +149,6 @@ namespace tunis
 
                 // Use our default texture program.
                 programTexture->useProgram();
-
-                tunisGLCheckError();
 
                 /* set default state */
                 glEnable(GL_CULL_FACE);
@@ -251,6 +264,12 @@ namespace tunis
 
             void endFrame()
             {
+                std::function<void(ContextPriv*)> task;
+                while (detail::taskQueue.try_dequeue(task))
+                {
+                    task(this);
+                }
+
                 // flush the render Queue.
                 if (renderQueue.size() > 0)
                 {
@@ -1519,6 +1538,38 @@ namespace tunis
                               path.clone<Path2D>(),
                               std::move(*this));
         path.reset();
+    }
+
+    void Image::sourceChanged(detail::ContextPriv *ctx)
+    {
+        Image self = *this; // to prevent destruction when refcount reaches 0
+        std::string url = source(); // make a copy in case it changes on us.
+
+        #pragma omp task
+        {
+            int w, h, n;
+            uint8_t *raw = stbi_load(url.c_str(), &w, &h, &n, 4); // force RGBA
+            size_t dataSize = w * h * 4;
+            data().resize(dataSize);
+            memcpy(&data()[0], &raw[0], dataSize);
+            stbi_image_free(raw);
+            sourceWidth() = w;
+            sourceHeight() = h;
+            detail::enqueueTask(&Image::dataChanged, this);
+        }
+    }
+
+    void Image::dataChanged(detail::ContextPriv *ctx)
+    {
+        for(size_t i = 0; i < ctx->textures.size(); ++i)
+        {
+#if 0 // UNDER CONSTRUCTION
+            if (ctx->textures[i]->tryAppendImage(*this));
+            {
+                break;
+            }
+#endif
+        }
     }
 
 }

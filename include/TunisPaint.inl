@@ -11,24 +11,30 @@ namespace tunis
     inline Paint::Paint()
     {
         color() = Black;
-        image() = 0;
+        image() = detail::blankImage;
     }
 
     inline Paint::Paint(const Color &c)
     {
         color() = c;
-        image() = 0;
+        image() = detail::blankImage;
     }
 
     inline Paint::Paint(const char* c)
     {
         color() = Color(c);
-        image() = 0;
+        image() = detail::blankImage;
     }
 
     inline Paint::Paint(const Gradient &gradient)
     {
         // TODO
+    }
+
+    inline Paint::Paint(const Image &img)
+    {
+        color() = White;
+        image() = img;
     }
 
 }

@@ -5,6 +5,7 @@
 #include <TunisGradient.h>
 #include <TunisSOA.h>
 #include <TunisTypes.h>
+#include <TunisImage.h>
 
 #include <algorithm>
 #include <array>
@@ -12,22 +13,21 @@
 namespace tunis
 {
 
-    class Paint : public RefCountedSOA<
-            Color,
-            size_t>
+    class Paint : public RefCountedSOA<Color, Image>
     {
     public:
 
         inline Color & color() { return get<0>(); }
-        inline size_t & image(){ return get<1>(); }
+        inline Image & image(){ return get<1>(); }
 
         inline const Color & color() const{ return get<0>(); }
-        inline const size_t & image() const { return get<1>(); }
+        inline const Image & image() const { return get<1>(); }
 
         Paint();
         Paint(const Color &color);
         Paint(const char* colorName);
         Paint(const Gradient &gradient);
+        Paint(const Image &image);
 
     };
 

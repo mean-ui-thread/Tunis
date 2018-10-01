@@ -3,6 +3,7 @@
 
 #include <TunisContextState.h>
 #include <TunisColor.h>
+#include <TunisImage.h>
 #include <TunisPaint.h>
 #include <TunisPath2D.h>
 #include <TunisMath.h>

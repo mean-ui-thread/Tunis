@@ -28,6 +28,8 @@ add_library(Tunis
     include/TunisGL.h
     include/TunisGradient.h
     include/TunisGradient.inl
+    include/TunisImage.h
+    include/TunisImage.inl
     include/TunisMath.h
     include/TunisPaint.h
     include/TunisPaint.inl
@@ -54,6 +56,9 @@ add_library(Tunis
     # StructureOfArrays from https://github.com/Lunarsong/StructureOfArrays
     3rdparty/StructureOfArrays/include/mapped_soa.h
     3rdparty/StructureOfArrays/include/soa.h
+
+    # concurrent queue
+    3rdparty/concurrentqueue/concurrentqueue.h
 )
 
 target_include_directories(Tunis
@@ -61,18 +66,26 @@ target_include_directories(Tunis
     PUBLIC include/${TUNIS_BACKEND}
     PUBLIC 3rdparty/StructureOfArrays/include
     PUBLIC 3rdparty/fast-poly2tri
+    PUBLIC 3rdparty/concurrentqueue
     PRIVATE src
     PRIVATE src/${TUNIS_BACKEND}
 )
 
 hunter_add_package(glm)
 hunter_add_package(easy_profiler)
+hunter_add_package(stb)
 
 find_package(glm CONFIG REQUIRED)
 find_package(easy_profiler CONFIG REQUIRED)
+find_package(stb CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
 
-target_link_libraries(Tunis PUBLIC glm easy_profiler OpenMP::OpenMP_CXX)
+target_link_libraries(Tunis PUBLIC
+    glm
+    easy_profiler
+    stb::stb
+    OpenMP::OpenMP_CXX
+)
 
 include(src/${TUNIS_BACKEND}/Backend.cmake)
 tunis_backend_dependencies()
