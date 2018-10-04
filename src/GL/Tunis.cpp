@@ -51,12 +51,13 @@ namespace tunis
             DRAW_STROKE
         };
 
-        struct BatchArray : public SoA<ShaderProgram*, Texture*, size_t, size_t>
+        struct BatchArray : public SoA<ShaderProgram*, Texture*, size_t, size_t, Paint>
         {
             inline ShaderProgram* &program(size_t i) { return get<0>(i); }
             inline Texture* &texture(size_t i) { return get<1>(i); }
             inline size_t &offset(size_t i) { return get<2>(i); }
             inline size_t &count(size_t i) { return get<3>(i); }
+            inline Paint &paint(size_t i) { return get<4>(i); }
         };
 
         struct DrawOpArray : public SoA<DrawOp, Path2D, ContextState>
@@ -74,7 +75,7 @@ namespace tunis
             std::vector<std::unique_ptr<Texture>> textures;
 
             std::unique_ptr<ShaderProgramTexture> programTexture;
-            std::unique_ptr<ShaderProgramGradientRadial> programGradientRadial;
+            std::unique_ptr<ShaderProgramGradient> programGradientRadial;
             GLuint vao = 0;
 
             enum {
@@ -86,7 +87,8 @@ namespace tunis
             int32_t viewWidth = 0;
             int32_t viewHeight = 0;
 
-            std::vector<VertexTexture> vertexBuffer; // write-only interleaved VBO data. DO NOT USE SoA on this member!!!
+            uint32_t currentVertexOffset = 0;
+            std::vector<uint8_t> vertexBuffer; // write-only interleaved VBO data.
             std::vector<uint16_t> indexBuffer; // write-only
 
             DrawOpArray renderQueue;
@@ -95,7 +97,7 @@ namespace tunis
             float tessTol = 0.25f;
             float distTol = 0.01f;
 
-            ContextPriv()
+            inline ContextPriv()
             {
                 auto tunisGL_initialized = tunisGLInit();
                 if (!tunisGL_initialized)
@@ -128,7 +130,7 @@ namespace tunis
                 renderQueue.reserve(1024);
                 batches.reserve(1024);
 
-                vertexBuffer.reserve(TUNIS_VERTEX_MAX);
+                vertexBuffer.reserve(TUNIS_VERTEX_MAX*sizeof(VertexTexture));
                 indexBuffer.reserve((TUNIS_VERTEX_MAX-2)*3);
 
                 if (tunisGLSupport(GL_VERSION_3_0))
@@ -145,7 +147,7 @@ namespace tunis
 
                 // Initialize our shader programs.
                 programTexture = std::make_unique<ShaderProgramTexture>();
-                programGradientRadial = std::make_unique<ShaderProgramGradientRadial>();
+                programGradientRadial = std::make_unique<ShaderProgramGradient>();
 
                 // Use our default texture program.
                 programTexture->useProgram();
@@ -161,7 +163,7 @@ namespace tunis
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
             }
 
-            ~ContextPriv()
+            inline ~ContextPriv()
             {
                 // unload texture data by deleting every potential texture holders.
                 textures.resize(0);
@@ -192,7 +194,7 @@ namespace tunis
                 tunisGLShutdown();
             }
 
-            void clearFrame(int32_t fbLeft, int32_t fbTop, int32_t fbWidth, int32_t fbHeight, Color backgroundColor)
+            inline void clearFrame(int32_t fbLeft, int32_t fbTop, int32_t fbWidth, int32_t fbHeight, Color backgroundColor)
             {
                 // update the clear color if necessary
                 if (gfxStates.backgroundColor != backgroundColor)
@@ -217,7 +219,8 @@ namespace tunis
             }
 
 
-            uint16_t addBatch(ShaderProgram *program, Texture *texture, uint32_t vertexCount, uint32_t indexCount, VertexTexture **vout, Index **iout)
+            template <typename Vertex_t>
+            inline uint16_t addBatch(ShaderProgram *program, Texture *texture, uint32_t vertexCount, uint32_t indexCount, Vertex_t **vout, Index **iout)
             {
                 assert(vertexCount >= 3);
 
@@ -227,9 +230,12 @@ namespace tunis
                 if (iout) *iout = &indexBuffer[istart];
 
                 size_t vstart = vertexBuffer.size();
-                size_t vend = vstart + vertexCount;
+                size_t vend = vstart + (vertexCount * sizeof(Vertex_t));
                 vertexBuffer.resize(vend);
-                if (vout) *vout = &vertexBuffer[vstart];
+                if (vout) *vout = reinterpret_cast<Vertex_t*>(&vertexBuffer[vstart]);
+
+                uint16_t offset = static_cast<uint16_t>(currentVertexOffset);
+                currentVertexOffset += vertexCount;
 
                 if (batches.size() > 0)
                 {
@@ -240,7 +246,7 @@ namespace tunis
                     {
                         // the batch may continue
                         batches.count(id) += indexCount;
-                        return static_cast<uint16_t>(vstart);
+                        return offset;
                     }
                 }
 
@@ -249,12 +255,54 @@ namespace tunis
                 batches.push(std::move(program),
                              std::move(texture),
                              std::move(istart),
-                             std::move(indexCount));
+                             std::move(indexCount),
+                             {});
 
-                return static_cast<uint16_t>(vstart);
+                return offset;
             }
 
-            void beginFrame(int w, int h, float devicePixelRatio)
+            template <typename Vertex_t>
+            inline uint16_t addBatch(ShaderProgram *program, Texture *texture, Paint paint, uint32_t vertexCount, uint32_t indexCount, Vertex_t **vout, Index **iout)
+            {
+                assert(vertexCount >= 3);
+
+                size_t istart = indexBuffer.size();
+                size_t iend = istart + indexCount;
+                indexBuffer.resize(iend);
+                if (iout) *iout = &indexBuffer[istart];
+
+                size_t vstart = vertexBuffer.size();
+                size_t vend = vstart + (vertexCount * sizeof(Vertex_t));
+                vertexBuffer.resize(vend);
+                if (vout) *vout = reinterpret_cast<Vertex_t*>(&vertexBuffer[vstart]);
+
+                uint16_t offset = static_cast<uint16_t>(currentVertexOffset);
+                currentVertexOffset += vertexCount;
+
+                if (batches.size() > 0)
+                {
+                    size_t id = batches.size() - 1; // last batch.
+
+                    if (batches.program(id) == program &&
+                        batches.texture(id) == texture &&
+                        batches.paint(id) == paint)
+                    {
+                        // the batch may continue
+                        batches.count(id) += indexCount;
+                        return offset;
+                    }
+                }
+
+                batches.push(std::move(program),
+                             std::move(texture),
+                             std::move(istart),
+                             std::move(indexCount),
+                             std::move(paint));
+
+                return offset;
+            }
+
+            inline void beginFrame(int w, int h, float devicePixelRatio)
             {
                 viewWidth = std::move(w);
                 viewHeight = std::move(h);
@@ -262,7 +310,7 @@ namespace tunis
                 distTol = 0.01f / devicePixelRatio;
             }
 
-            void endFrame()
+            inline void endFrame()
             {
                 std::function<void(ContextPriv*)> task;
                 while (detail::taskQueue.try_dequeue(task))
@@ -317,59 +365,112 @@ namespace tunis
 
                         glm::vec2 range = path.boundBottomRight() - path.boundTopLeft();
 
-                        for(size_t id = 0; id < path.subPathCount(); ++id)
+                        switch (paint->type())
                         {
-                            MPEPolyContext &polyContext = path.subPaths()[id].polyContext;
+                            case PaintType::solid:
+                            case PaintType::image:
+                                for(size_t id = 0; id < path.subPathCount(); ++id)
+                                {
+                                    MPEPolyContext &polyContext = path.subPaths()[id].polyContext;
 
-                            uint32_t vertexCount = polyContext.PointPoolCount;
-                            uint16_t indexCount = polyContext.TriangleCount*3;
+                                    uint32_t vertexCount = polyContext.PointPoolCount;
+                                    uint16_t indexCount = polyContext.TriangleCount*3;
 
-                            if (vertexCount < 3)
-                            {
-                                continue; // not enough vertices to make a fill. Skip
-                            }
+                                    if (vertexCount < 3)
+                                    {
+                                        continue; // not enough vertices to make a fill. Skip
+                                    }
 
+                                    VertexTexture *verticies;
+                                    Index *indices;
+                                    uint16_t offset = addBatch(programTexture.get(),
+                                                               textures.back().get(),
+                                                               vertexCount,
+                                                               indexCount,
+                                                               &verticies,
+                                                               &indices);
 
-                            VertexTexture *verticies;
-                            Index *indices;
-                            uint16_t offset = addBatch(programTexture.get(),
-                                                       textures.back().get(),
-                                                       vertexCount,
-                                                       indexCount,
-                                                       &verticies,
-                                                       &indices);
+                                    Color color = paint->colorStops().color(0);
+                                    color.a *= state.globalAlpha;
 
-                            Color color = paint->color();
-                            color.a *= state.globalAlpha;
+                                    //populate the vertices
+                                    for (size_t vid = 0; vid < polyContext.PointPoolCount; ++vid)
+                                    {
+                                        MPEPolyPoint &Point = polyContext.PointsPool[vid];
+                                        Position pos(Point.X, Point.Y);
+                                        glm::vec2 tcoord = TCoord(((pos - path.boundTopLeft()) / range) * 16.0f / static_cast<float>(gfxStates.maxTexSize) * static_cast<float>(0xFFFF));
+                                        verticies[vid].pos = pos;
+                                        verticies[vid].tcoord.x = static_cast<uint16_t>(tcoord.s);
+                                        verticies[vid].tcoord.t = static_cast<uint16_t>(tcoord.t);
+                                        verticies[vid].color = color;
+                                    }
 
-                            //populate the vertices
-                            for (size_t vid = 0; vid < polyContext.PointPoolCount; ++vid)
-                            {
-                                MPEPolyPoint &Point = polyContext.PointsPool[vid];
-                                Position pos(Point.X, Point.Y);
-                                glm::vec2 tcoord = TCoord(((pos - path.boundTopLeft()) / range) * 16.0f / static_cast<float>(gfxStates.maxTexSize) * static_cast<float>(0xFFFF));
-                                verticies[vid].pos = pos;
-                                verticies[vid].tcoord.x = static_cast<uint16_t>(tcoord.s);
-                                verticies[vid].tcoord.t = static_cast<uint16_t>(tcoord.t);
-                                verticies[vid].color = color;
-                            }
+                                    //populate the indicies
+                                    for (size_t tid = 0; tid < polyContext.TriangleCount; ++tid)
+                                    {
+                                        MPEPolyTriangle* triangle = polyContext.Triangles[tid];
 
-                            //populate the indicies
-                            for (size_t tid = 0; tid < polyContext.TriangleCount; ++tid)
-                            {
-                                MPEPolyTriangle* triangle = polyContext.Triangles[tid];
+                                        // get the array index by pointer address arithmetic.
+                                        uint16_t p0 = static_cast<uint16_t>(triangle->Points[0] - polyContext.PointsPool);
+                                        uint16_t p1 = static_cast<uint16_t>(triangle->Points[1] - polyContext.PointsPool);
+                                        uint16_t p2 = static_cast<uint16_t>(triangle->Points[2] - polyContext.PointsPool);
 
-                                // get the array index by pointer address arithmetic.
-                                uint16_t p0 = static_cast<uint16_t>(triangle->Points[0] - polyContext.PointsPool);
-                                uint16_t p1 = static_cast<uint16_t>(triangle->Points[1] - polyContext.PointsPool);
-                                uint16_t p2 = static_cast<uint16_t>(triangle->Points[2] - polyContext.PointsPool);
+                                        size_t iid = tid * 3;
+                                        indices[iid+0] = offset+p2;
+                                        indices[iid+1] = offset+p1;
+                                        indices[iid+2] = offset+p0;
+                                    }
+                                }
+                                break;
+                            case PaintType::gradient:
+                                for(size_t id = 0; id < path.subPathCount(); ++id)
+                                {
+                                    MPEPolyContext &polyContext = path.subPaths()[id].polyContext;
 
-                                size_t iid = tid * 3;
-                                indices[iid+0] = offset+p2;
-                                indices[iid+1] = offset+p1;
-                                indices[iid+2] = offset+p0;
-                            }
+                                    uint32_t vertexCount = polyContext.PointPoolCount;
+                                    uint16_t indexCount = polyContext.TriangleCount*3;
+
+                                    if (vertexCount < 3)
+                                    {
+                                        continue; // not enough vertices to make a fill. Skip
+                                    }
+
+                                    VertexGradient *verticies;
+                                    Index *indices;
+                                    uint16_t offset = addBatch(programGradientRadial.get(),
+                                                               textures.back().get(),
+                                                               *paint,
+                                                               vertexCount,
+                                                               indexCount,
+                                                               &verticies,
+                                                               &indices);
+
+                                    //populate the vertices
+                                    for (size_t vid = 0; vid < polyContext.PointPoolCount; ++vid)
+                                    {
+                                        MPEPolyPoint &Point = polyContext.PointsPool[vid];
+                                        verticies[vid].pos = Position(Point.X, Point.Y);
+                                    }
+
+                                    //populate the indicies
+                                    for (size_t tid = 0; tid < polyContext.TriangleCount; ++tid)
+                                    {
+                                        MPEPolyTriangle* triangle = polyContext.Triangles[tid];
+
+                                        // get the array index by pointer address arithmetic.
+                                        uint16_t p0 = static_cast<uint16_t>(triangle->Points[0] - polyContext.PointsPool);
+                                        uint16_t p1 = static_cast<uint16_t>(triangle->Points[1] - polyContext.PointsPool);
+                                        uint16_t p2 = static_cast<uint16_t>(triangle->Points[2] - polyContext.PointsPool);
+
+                                        size_t iid = tid * 3;
+                                        indices[iid+0] = offset+p2;
+                                        indices[iid+1] = offset+p1;
+                                        indices[iid+2] = offset+p0;
+                                    }
+                                }
+                                break;
                         }
+
                     }
 
                     renderQueue.resize(0);
@@ -385,6 +486,7 @@ namespace tunis
                                  &vertexBuffer.front(),
                                  GL_STREAM_DRAW);
                     vertexBuffer.resize(0);
+                    currentVertexOffset = 0;
                 }
 
 
@@ -398,6 +500,7 @@ namespace tunis
                 }
                 EASY_END_BLOCK;
 
+                detail::Frag frag;
 
                 // flush the batches
                 if ( batches.size() > 0)
@@ -407,6 +510,27 @@ namespace tunis
                     {
                         batches.program(i)->useProgram();
                         batches.program(i)->setViewSizeUniform(viewWidth, viewHeight);
+
+                        const Paint &paint = batches.paint(i);
+                        if (paint.type() == detail::PaintType::gradient)
+                        {
+                            frag.u_start = paint.start();
+                            frag.u_end = paint.end();
+                            frag.u_radius = paint.radius();
+                            size_t colorStopCount = glm::min<size_t>(4, paint.colorStops().size());
+                            frag.u_count = static_cast<float>(colorStopCount);
+                            for (size_t i = 0; i < colorStopCount; ++i)
+                            {
+                                frag.u_offset[i] = paint.colorStops().offset(i);
+                                frag.u_color[i].r = paint.colorStops().color(i).r / 255.0f;
+                                frag.u_color[i].g = paint.colorStops().color(i).g / 255.0f;
+                                frag.u_color[i].b = paint.colorStops().color(i).b / 255.0f;
+                                frag.u_color[i].a = paint.colorStops().color(i).a / 255.0f;
+                            }
+
+                            static_cast<ShaderProgramGradient*>(batches.program(i))->setFragUniform(frag);
+                        }
+
                         batches.texture(i)->bind();
 
 
@@ -443,7 +567,7 @@ namespace tunis
 
             }
 
-            size_t addSubPath(Path2D &path)
+            inline size_t addSubPath(Path2D &path)
             {
                 size_t id = path.subPathCount()++;
 
@@ -458,14 +582,14 @@ namespace tunis
                 return id;
             }
 
-            size_t addSubPath(Path2D &path, glm::vec2 startPos)
+            inline size_t addSubPath(Path2D &path, glm::vec2 startPos)
             {
                 size_t id = addSubPath(path);
                 path.subPaths()[id].points.push(std::move(startPos), {}, {}, 0.0f, PointProperties::corner);
                 return id;
             }
 
-            void addPoint(BorderPointArray &points, glm::vec2 pos, PointProperties = PointProperties::none)
+            inline void addPoint(BorderPointArray &points, glm::vec2 pos, PointProperties = PointProperties::none)
             {
                 if (points.size() > 0)
                 {
@@ -478,7 +602,7 @@ namespace tunis
                 points.emplace_back(std::move(pos));
             }
 
-            void addPoint(ContourPointArray &points, glm::vec2 pos, PointProperties type)
+            inline void addPoint(ContourPointArray &points, glm::vec2 pos, PointProperties type)
             {
                 if (points.size() > 0)
                 {
@@ -493,28 +617,28 @@ namespace tunis
 
             // based of http://antigrain.com/__code/src/agg_curves.cpp.html by Maxim Shemanarev
             template<typename PointArray>
-            void bezierTo(PointArray &points,
-                        float x1, float y1,
-                        float x2, float y2,
-                        float x3, float y3,
-                        float x4, float y4)
+            inline void bezierTo(PointArray &points,
+                                 float x1, float y1,
+                                 float x2, float y2,
+                                 float x3, float y3,
+                                 float x4, float y4)
             {
                 recursiveBezier(points, x1, y1, x2, y2, x3, y3, x4, y4, 0);
                 addPoint(points, glm::vec2(x4, y4), PointProperties::corner);
             }
-            float calcSqrtDistance(float x1, float y1, float x2, float y2)
+            inline float calcSqrtDistance(float x1, float y1, float x2, float y2)
             {
                 float dx = x2-x1;
                 float dy = y2-y1;
                 return dx * dx + dy * dy;
             }
             template<typename PointArray>
-            void recursiveBezier(PointArray &points,
-                                 float x1, float y1,
-                                 float x2, float y2,
-                                 float x3, float y3,
-                                 float x4, float y4,
-                                 int32_t level)
+            inline void recursiveBezier(PointArray &points,
+                                        float x1, float y1,
+                                        float x2, float y2,
+                                        float x3, float y3,
+                                        float x4, float y4,
+                                        int32_t level)
             {
                 if(level > TUNIS_CURVE_RECURSION_LIMIT)
                 {
@@ -635,8 +759,8 @@ namespace tunis
             }
 
             template <typename PointArray>
-            void arc(PointArray &points, glm::vec2 center, float radius,
-                     float startAngle, float endAngle, bool anticlockwise)
+            inline void arc(PointArray &points, glm::vec2 center, float radius,
+                            float startAngle, float endAngle, bool anticlockwise)
             {
                 float deltaAngle = endAngle - startAngle;
 
@@ -702,7 +826,7 @@ namespace tunis
                 }
             }
 
-            float distPtSeg(const glm::vec2 &c, const glm::vec2 &p, const glm::vec2 &q)
+            inline float distPtSeg(const glm::vec2 &c, const glm::vec2 &p, const glm::vec2 &q)
             {
                 glm::vec2 pq = q - p;
                 glm::vec2 pc = c - p;
@@ -723,7 +847,7 @@ namespace tunis
             }
 
             template <typename PointArray>
-            void arcTo(PointArray &points, glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, float radius)
+            inline void arcTo(PointArray &points, glm::vec2 p0, glm::vec2 p1, glm::vec2 p2, float radius)
             {
                 if (glm::all(glm::epsilonEqual(p0, p1, distTol)))
                 {
@@ -786,7 +910,7 @@ namespace tunis
             }
 
 
-            void generateContour(Path2D &path)
+            inline void generateContour(Path2D &path)
             {
                 EASY_FUNCTION(profiler::colors::DarkRed);
                 SubPath2DArray &subPaths = path.subPaths();
@@ -908,7 +1032,7 @@ namespace tunis
                 }
             }
 
-            void calculateSegmentDirection(Path2D &path)
+            inline void calculateSegmentDirection(Path2D &path)
             {
                 // Calculate direction vectors for each points of each subpaths
                 for(size_t id = 0; id < path.subPathCount(); ++id)
@@ -947,7 +1071,7 @@ namespace tunis
                 }
             }
 
-            void generateStrokeContour(Path2D &path, const ContextState& state)
+            inline void generateStrokeContour(Path2D &path, const ContextState& state)
             {
                 generateContour(path);
                 EASY_FUNCTION(profiler::colors::DarkGreen);
@@ -1373,7 +1497,7 @@ namespace tunis
                 }
             }
 
-            void triangulate(Path2D &path)
+            inline void triangulate(Path2D &path)
             {
                 EASY_FUNCTION(profiler::colors::DarkBlue);
 

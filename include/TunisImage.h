@@ -35,7 +35,6 @@ namespace tunis
         inline const glm::u16vec4 &paddedBounds() const { return get<5>(); }
         inline const detail::Texture* parent() const { return get<6>(); }
 
-        friend Context;
         friend detail::ContextPriv;
 
         class Source

@@ -6,7 +6,6 @@
 #include <string>
 #include <iostream>
 
-
 namespace tunis
 {
     namespace detail
@@ -53,7 +52,7 @@ namespace tunis
                 if(infoLogLength > 1)
                 {
                     std::string infoLog;
-                    infoLog.resize(infoLogLength);
+                    infoLog.resize(static_cast<size_t>(infoLogLength));
                     glGetShaderInfoLog(shaderId, infoLogLength, nullptr, const_cast<char*>(infoLog.data()));
                     std::cerr << "Error compiling " << shaderName << ":\n" << infoLog << "\n\n";
                 }
@@ -68,7 +67,7 @@ namespace tunis
                 #include "GL/texture.vert"
                     ;
 
-            compile(GL_VERTEX_SHADER, source, strlen(source));
+            compile(GL_VERTEX_SHADER, source, static_cast<int>(strlen(source)));
         }
 
 
@@ -78,7 +77,7 @@ namespace tunis
                 #include "GL/texture.frag"
                     ;
 
-            compile(GL_FRAGMENT_SHADER, source, strlen(source));
+            compile(GL_FRAGMENT_SHADER, source, static_cast<int>(strlen(source)));
         }
 
         inline ShaderVertGradientRadial::ShaderVertGradientRadial() : Shader("ShaderVertGradientRadial")
@@ -87,7 +86,7 @@ namespace tunis
                 #include "GL/gradientRadial.vert"
                     ;
 
-            compile(GL_VERTEX_SHADER, source, strlen(source));
+            compile(GL_VERTEX_SHADER, source, static_cast<int>(strlen(source)));
         }
 
         inline ShaderFragGradientRadial::ShaderFragGradientRadial() : Shader("ShaderFragGradientRadial")
@@ -96,8 +95,13 @@ namespace tunis
                 #include "GL/gradientRadial.frag"
                     ;
 
-            compile(GL_FRAGMENT_SHADER, source, strlen(source));
+            compile(GL_FRAGMENT_SHADER, source, static_cast<int>(strlen(source)));
         }
+
+
+        /**
+         * ShaderProgram (Base)
+         */
 
         inline ShaderProgram::ShaderProgram(const Shader &vert, const Shader &frag, const char *name) : programName(name)
         {
@@ -138,6 +142,8 @@ namespace tunis
 
             // uniform locations
             u_viewSize = glGetUniformLocation(programId, "u_viewSize");
+            assert(u_viewSize != -1);
+
         }
 
         inline ShaderProgram::~ShaderProgram()
@@ -193,6 +199,12 @@ namespace tunis
             }
         }
 
+
+        /**
+         * ShaderProgramTexture
+         */
+
+
         inline ShaderProgramTexture::ShaderProgramTexture() :
             ShaderProgram(ShaderVertTexture(), ShaderFragTexture(), "ShaderProgramTexture")
         {
@@ -201,21 +213,9 @@ namespace tunis
             a_texcoord = glGetAttribLocation(programId, "a_texcoord");
             a_color = glGetAttribLocation(programId, "a_color");
 
-            // uniform locations
-            u_texture0 = glGetUniformLocation(programId, "u_texture0");
-        }
-
-        inline void ShaderProgramTexture::setTexture0Uniform(int32_t value)
-        {
-            assert(value >= 0 && value < 32);
-            assert(gfxStates.programId == programId);
-
-            if (texture0 != value)
-            {
-                glActiveTexture(GL_TEXTURE0 + static_cast<GLenum>(value));
-                glUniform1i(u_texture0, value);
-                texture0 = value;
-            }
+            assert(a_position != -1);
+            assert(a_texcoord != -1);
+            assert(a_color != -1);
         }
 
         inline void ShaderProgramTexture::enableVertexAttribArray()
@@ -235,34 +235,38 @@ namespace tunis
             glDisableVertexAttribArray(static_cast<GLuint>(a_color));
         }
 
-        ShaderProgramGradientRadial::ShaderProgramGradientRadial() :
+
+        /**
+         * ShaderProgramGradient
+         */
+
+        inline ShaderProgramGradient::ShaderProgramGradient() :
             ShaderProgram(ShaderVertGradientRadial(), ShaderFragGradientRadial(), "ShaderProgramGradientRadial")
         {
 
             // attribute locations
             a_position = glGetAttribLocation(programId, "a_position");
+            assert(a_position != -1);
 
 
             // uniform locations
-            u_viewSize = glGetUniformLocation(programId, "u_viewSize");
-
-            glVertexAttribPointer(static_cast<GLuint>(a_position),
-                                  decltype(VertexGradient::pos)::length(),
-                                  GL_FLOAT,
-                                  GL_FALSE,
-                                  sizeof(VertexGradient),
-                                  reinterpret_cast<const void *>(0));
-
-            tunisGLCheckError();
-
+            u_frag = glGetUniformLocation(programId, "u_frag");
+            assert(u_frag != -1);
         }
 
-        void ShaderProgramGradientRadial::enableVertexAttribArray()
+        inline void ShaderProgramGradient::setFragUniform(const Frag &f)
         {
+            assert(gfxStates.programId == programId);
+            glUniform4fv(u_frag, static_cast<GLsizei>(sizeof(Frag)/sizeof(glm::vec4)), reinterpret_cast<const GLfloat*>(&f));
+        }
+
+        inline void ShaderProgramGradient::enableVertexAttribArray()
+        {
+            glVertexAttribPointer(static_cast<GLuint>(a_position), decltype(VertexGradient::pos)::length(), GL_FLOAT, GL_FALSE, sizeof(VertexGradient), reinterpret_cast<const void *>(0));
             glEnableVertexAttribArray(static_cast<GLuint>(a_position));
         }
 
-        void ShaderProgramGradientRadial::disableVertexAttribArray()
+        inline void ShaderProgramGradient::disableVertexAttribArray()
         {
             glDisableVertexAttribArray(static_cast<GLuint>(a_position));
         }

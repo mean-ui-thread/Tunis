@@ -10,30 +10,43 @@ namespace tunis
 
     inline Paint::Paint()
     {
-        color() = Black;
+        type() = detail::PaintType::solid;
+        colorStops().resize(1);
+        colorStops().color(0) = Black;
         image() = detail::blankImage;
     }
 
     inline Paint::Paint(const Color &c)
     {
-        color() = c;
+        type() = detail::PaintType::solid;
+        colorStops().resize(1);
+        colorStops().color(0) = c;
         image() = detail::blankImage;
     }
 
     inline Paint::Paint(const char* c)
     {
-        color() = Color(c);
+        type() = detail::PaintType::solid;
+        colorStops().resize(1);
+        colorStops().color(0) = c;
         image() = detail::blankImage;
     }
 
-    inline Paint::Paint(const Gradient &gradient)
+    inline Paint::Paint(const Gradient &g)
     {
-        // TODO
+        type() = detail::PaintType::gradient;
+        start() = g.start();
+        end() = g.end();
+        radius() = g.radius();
+        colorStops() = g.colorStops();
+        image() = detail::blankImage;
     }
 
     inline Paint::Paint(const Image &img)
     {
-        color() = White;
+        type() = detail::PaintType::image;
+        colorStops().resize(1);
+        colorStops().color(0) = White;
         image() = img;
     }
 

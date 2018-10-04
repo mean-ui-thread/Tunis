@@ -70,6 +70,9 @@ public:
     RefCountedSOA &operator=(const RefCountedSOA &other);
     RefCountedSOA &operator=(RefCountedSOA &&other);
 
+    bool operator==(const RefCountedSOA &other);
+    bool operator!=(const RefCountedSOA &other);
+
     template <typename T> T clone();
 
     static void reserve(size_t size);

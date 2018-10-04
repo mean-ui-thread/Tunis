@@ -16,6 +16,8 @@ project(Tunis)
 
 include(BuildOptions)
 
+file(GLOB_RECURSE BACKEND_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/${TUNIS_BACKEND}/*)
+
 add_library(Tunis
     cmake/BuildOptions.cmake
     cmake/Hunter/config.cmake
@@ -45,10 +47,8 @@ add_library(Tunis
     include/TunisSpinLock.h
     include/TunisTypes.h
     include/TunisVertex.h
-    src/${TUNIS_BACKEND}/Backend.cmake
-    src/${TUNIS_BACKEND}/Tunis.cpp
-    src/${TUNIS_BACKEND}/TunisGraphicStates.h
     src/TunisColor.cpp
+    ${BACKEND_SRC}
 
     # fast-poly2tri
     3rdparty/fast-poly2tri/MPE_fastpoly2tri.h

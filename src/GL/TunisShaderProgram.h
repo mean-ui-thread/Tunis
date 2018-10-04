@@ -3,7 +3,9 @@
 
 #include <TunisGL.h>
 
-
+#include <array>
+#include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
 
 
 namespace tunis
@@ -67,12 +69,13 @@ namespace tunis
             virtual void enableVertexAttribArray() = 0;
             virtual void disableVertexAttribArray() = 0;
 
-
         protected:
 
             const char* programName;
             GLuint programId = 0;
             GLint linkStatus = GL_FALSE;
+
+        private:
 
             // uniform locations
             GLint u_viewSize = 0;
@@ -87,49 +90,51 @@ namespace tunis
         {
         public:
             ShaderProgramTexture();
-            void setTexture0Uniform(int32_t value);
 
             virtual void enableVertexAttribArray() override;
             virtual void disableVertexAttribArray() override;
 
-        protected:
+        private:
 
             // attribute locations
             GLint a_position = 0;
             GLint a_texcoord = 0;
             GLint a_color = 0;
 
-            // uniform locations
-            GLint u_viewSize = 0;
-            GLint u_texture0 = 0;
-
-            // uniform values
-            int32_t texture0 = 0;
         };
 
+        struct Frag
+        {
+            glm::vec2 u_start;
+            glm::vec2 u_end;
+            glm::vec2 u_radius;
+            float u_count;
+            float U_UNUSED;
+            float u_offset[4];
+            glm::vec4 u_color[4];
+        };
 
-        class ShaderProgramGradientRadial : public ShaderProgram
+        class ShaderProgramGradient : public ShaderProgram
         {
         public:
 
-            ShaderProgramGradientRadial();
-            void setViewSizeUniform(int32_t width, int32_t height);
+            ShaderProgramGradient();
 
             virtual void enableVertexAttribArray() override;
             virtual void disableVertexAttribArray() override;
 
-        protected:
+            void setFragUniform(const Frag &frag);
+
+        private:
 
             // attribute locations
             GLint a_position = 0;
 
-            // uniform locations
-            GLint u_viewSize = 0;
+            // uniform lacations
+            GLint u_frag = 0;
 
-            // uniform values
-            int32_t viewWidth = 0;
-            int32_t viewHeight = 0;
-
+            // uniform values;
+            Frag frag;
         };
     }
 

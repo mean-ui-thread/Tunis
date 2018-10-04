@@ -92,15 +92,14 @@ inline void Context::setLineDash(std::initializer_list<float> segments)
 inline Gradient Context::createLinearGradient(float x0, float y0,
                                               float x1, float y1)
 {
-    return Gradient(glm::vec2(x0, y0), glm::vec2(x1, y1));
+    return Gradient(x0, y0, x1, y1);
 }
 
 inline Gradient Context::createRadialGradient(float x0, float y0, float r0,
                                               float x1, float y1, float r1)
 {
-    return Gradient(glm::vec2(x0, y0), glm::vec2(x1, y1), glm::vec2(r0, r1));
+    return Gradient(x0, y0, r0, x1, y1, r1);
 }
-
 
 }
 

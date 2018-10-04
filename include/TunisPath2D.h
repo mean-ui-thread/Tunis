@@ -130,7 +130,6 @@ class Path2D : public RefCountedSOA<
     inline const glm::vec2 &boundTopLeft() const { return get<4>(); }
     inline const glm::vec2 &boundBottomRight() const { return get<5>(); }
 
-    friend Context;
     friend detail::ContextPriv;
 
 public:

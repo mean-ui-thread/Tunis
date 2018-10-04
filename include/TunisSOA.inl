@@ -80,6 +80,18 @@ inline RefCountedSOA<Elements...> &RefCountedSOA<Elements...>::operator=(RefCoun
 }
 
 template <typename... Elements>
+bool RefCountedSOA<Elements...>::operator==(const RefCountedSOA &other)
+{
+    return _id == other._id;
+}
+
+template <typename... Elements>
+bool RefCountedSOA<Elements...>::operator!=(const RefCountedSOA &other)
+{
+    return _id != other._id;
+}
+
+template <typename... Elements>
 template <typename T>
 inline T RefCountedSOA<Elements...>::clone()
 {
