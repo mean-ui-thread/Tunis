@@ -80,6 +80,25 @@ namespace tunis
             compile(GL_FRAGMENT_SHADER, source, static_cast<int>(strlen(source)));
         }
 
+        inline ShaderVertGradientLinear::ShaderVertGradientLinear() : Shader("ShaderVertGradientLinear")
+        {
+            const char * source =
+                #include "GL/gradientLinear.vert"
+                    ;
+
+            compile(GL_VERTEX_SHADER, source, static_cast<int>(strlen(source)));
+        }
+
+        inline ShaderFragGradientLinear::ShaderFragGradientLinear() : Shader("ShaderFragGradientLinear")
+        {
+            const char * source =
+                #include "GL/gradientLinear.frag"
+                    ;
+
+            compile(GL_FRAGMENT_SHADER, source, static_cast<int>(strlen(source)));
+        }
+
+
         inline ShaderVertGradientRadial::ShaderVertGradientRadial() : Shader("ShaderVertGradientRadial")
         {
             const char * source =
@@ -240,8 +259,10 @@ namespace tunis
          * ShaderProgramGradient
          */
 
-        inline ShaderProgramGradient::ShaderProgramGradient() :
-            ShaderProgram(ShaderVertGradientRadial(), ShaderFragGradientRadial(), "ShaderProgramGradientRadial")
+        inline ShaderProgramGradient::ShaderProgramGradient(const Shader &vert,
+                                                            const Shader &frag,
+                                                            const char *name) :
+            ShaderProgram(vert, frag, name)
         {
 
             // attribute locations
@@ -254,11 +275,6 @@ namespace tunis
             assert(u_uniforms != -1);
         }
 
-        inline void ShaderProgramGradient::setUniforms(const UniformBlock &f)
-        {
-            assert(gfxStates.programId == programId);
-            glUniform4fv(u_uniforms, static_cast<GLsizei>(sizeof(UniformBlock)/sizeof(glm::vec4)), reinterpret_cast<const GLfloat*>(&f));
-        }
 
         inline void ShaderProgramGradient::enableVertexAttribArray()
         {
@@ -271,6 +287,25 @@ namespace tunis
             glDisableVertexAttribArray(static_cast<GLuint>(a_position));
         }
 
+        inline void ShaderProgramGradient::setUniforms(const UniformBlock &f)
+        {
+            assert(gfxStates.programId == programId);
+            glUniform4fv(u_uniforms, static_cast<GLsizei>(sizeof(UniformBlock)/sizeof(glm::vec4)), reinterpret_cast<const GLfloat*>(&f));
+        }
+
+        inline  ShaderProgramGradientLinear::ShaderProgramGradientLinear() :
+            ShaderProgramGradient(ShaderVertGradientLinear(),
+                                  ShaderFragGradientLinear(),
+                                  "ShaderProgramGradientLinear")
+        {
+        }
+
+        inline  ShaderProgramGradientRadial::ShaderProgramGradientRadial() :
+            ShaderProgramGradient(ShaderVertGradientRadial(),
+                                  ShaderFragGradientRadial(),
+                                  "ShaderProgramGradientRadial")
+        {
+        }
     }
 
 }

@@ -8,6 +8,11 @@ namespace tunis
 {
     namespace detail
     {
+        enum class GradientType : uint8_t
+        {
+            gradientLinear, gradientRadial
+        };
+
         struct ColorStopArray : public SoA<float, Color>
         {
             inline float &offset(size_t idx) { return get<0>(idx); }
@@ -25,17 +30,19 @@ namespace tunis
      *
      * \note It can be used as a fillStyle or strokeStyle.
      */
-    class Gradient : public RefCountedSOA<glm::vec2, glm::vec2, glm::vec2, detail::ColorStopArray>
+    class Gradient : public RefCountedSOA<detail::GradientType, glm::vec2, glm::vec2, glm::vec2, detail::ColorStopArray>
     {
-        inline glm::vec2 &start() { return get<0>(); }
-        inline glm::vec2 &end() { return get<1>(); }
-        inline glm::vec2 &radius() { return get<2>(); }
-        inline detail::ColorStopArray &colorStops() { return get<3>(); }
+        inline detail::GradientType &type() { return get<0>(); }
+        inline glm::vec2 &start() { return get<1>(); }
+        inline glm::vec2 &end() { return get<2>(); }
+        inline glm::vec2 &radius() { return get<3>(); }
+        inline detail::ColorStopArray &colorStops() { return get<4>(); }
 
-        inline const glm::vec2 &start() const { return get<0>(); }
-        inline const glm::vec2 &end() const { return get<1>(); }
-        inline const glm::vec2 &radius() const { return get<2>(); }
-        inline const detail::ColorStopArray &colorStops() const { return get<3>(); }
+        inline const detail::GradientType &type() const { return get<0>(); }
+        inline const glm::vec2 &start() const { return get<1>(); }
+        inline const glm::vec2 &end() const { return get<2>(); }
+        inline const glm::vec2 &radius() const { return get<3>(); }
+        inline const detail::ColorStopArray &colorStops() const { return get<4>(); }
 
         friend class Context;
         friend class Paint;

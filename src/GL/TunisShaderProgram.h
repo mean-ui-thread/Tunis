@@ -43,6 +43,16 @@ namespace tunis
         public: ShaderFragTexture();
         };
 
+        class ShaderVertGradientLinear : public Shader
+        {
+        public: ShaderVertGradientLinear();
+        };
+
+        class ShaderFragGradientLinear : public Shader
+        {
+        public: ShaderFragGradientLinear();
+        };
+
         class ShaderVertGradientRadial : public Shader
         {
         public: ShaderVertGradientRadial();
@@ -107,8 +117,8 @@ namespace tunis
         {
             struct RadialGradient
             {
-                glm::vec2 u_focal;
                 glm::vec2 u_dt;
+                glm::vec2 u_focal;
                 float u_r0;
                 float u_dr;
                 float u_a;
@@ -116,13 +126,27 @@ namespace tunis
                 glm::vec4 u_offset;
                 glm::vec4 u_color[4];
             } radialGradient;
+
+            struct LinearGradient
+            {
+                glm::vec2 u_start;
+                glm::vec2 u_dt;
+                float u_lenSq;
+                float UNUSED1;
+                float UNUSED2;
+                float u_colorStopCount;
+                glm::vec4 u_offset;
+                glm::vec4 u_color[4];
+            } linearGradient;
         };
 
         class ShaderProgramGradient : public ShaderProgram
         {
+        protected:
+            ShaderProgramGradient(const Shader &vert, const Shader &frag, const char *name);
+
         public:
 
-            ShaderProgramGradient();
 
             virtual void enableVertexAttribArray() override;
             virtual void disableVertexAttribArray() override;
@@ -136,6 +160,18 @@ namespace tunis
 
             // uniform lacations
             GLint u_uniforms = 0;
+        };
+
+        class ShaderProgramGradientLinear : public ShaderProgramGradient
+        {
+        public:
+            ShaderProgramGradientLinear();
+        };
+
+        class ShaderProgramGradientRadial : public ShaderProgramGradient
+        {
+        public:
+            ShaderProgramGradientRadial();
         };
     }
 

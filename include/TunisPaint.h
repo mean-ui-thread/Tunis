@@ -17,7 +17,7 @@ namespace tunis
     {
         enum class PaintType : uint8_t
         {
-            solid, image, gradient
+            solid, image, gradientLinear, gradientRadial
         };
 
         class ContextPriv;

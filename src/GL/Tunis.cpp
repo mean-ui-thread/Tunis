@@ -75,7 +75,8 @@ namespace tunis
             std::vector<std::unique_ptr<Texture>> textures;
 
             std::unique_ptr<ShaderProgramTexture> programTexture;
-            std::unique_ptr<ShaderProgramGradient> programGradientRadial;
+            std::unique_ptr<ShaderProgramGradientLinear> programGradientLinear;
+            std::unique_ptr<ShaderProgramGradientRadial> programGradientRadial;
             GLuint vao = 0;
 
             enum {
@@ -147,7 +148,8 @@ namespace tunis
 
                 // Initialize our shader programs.
                 programTexture = std::make_unique<ShaderProgramTexture>();
-                programGradientRadial = std::make_unique<ShaderProgramGradient>();
+                programGradientLinear = std::make_unique<ShaderProgramGradientLinear>();
+                programGradientRadial = std::make_unique<ShaderProgramGradientRadial>();
 
                 // Use our default texture program.
                 programTexture->useProgram();
@@ -171,6 +173,7 @@ namespace tunis
 
                 // unload shader programs
                 programTexture.reset();
+                programGradientLinear.reset();
                 programGradientRadial.reset();
 
                 // unload vertex and index buffers
@@ -422,7 +425,54 @@ namespace tunis
                                     }
                                 }
                                 break;
-                            case PaintType::gradient:
+                            case PaintType::gradientLinear:
+                                for(size_t id = 0; id < path.subPathCount(); ++id)
+                                {
+                                    MPEPolyContext &polyContext = path.subPaths()[id].polyContext;
+
+                                    uint32_t vertexCount = polyContext.PointPoolCount;
+                                    uint16_t indexCount = polyContext.TriangleCount*3;
+
+                                    if (vertexCount < 3)
+                                    {
+                                        continue; // not enough vertices to make a fill. Skip
+                                    }
+
+                                    VertexGradient *verticies;
+                                    Index *indices;
+                                    uint16_t offset = addBatch(programGradientLinear.get(),
+                                                               textures.back().get(),
+                                                               *paint,
+                                                               vertexCount,
+                                                               indexCount,
+                                                               &verticies,
+                                                               &indices);
+
+                                    //populate the vertices
+                                    for (size_t vid = 0; vid < polyContext.PointPoolCount; ++vid)
+                                    {
+                                        MPEPolyPoint &Point = polyContext.PointsPool[vid];
+                                        verticies[vid].pos = Position(Point.X, Point.Y);
+                                    }
+
+                                    //populate the indicies
+                                    for (size_t tid = 0; tid < polyContext.TriangleCount; ++tid)
+                                    {
+                                        MPEPolyTriangle* triangle = polyContext.Triangles[tid];
+
+                                        // get the array index by pointer address arithmetic.
+                                        uint16_t p0 = static_cast<uint16_t>(triangle->Points[0] - polyContext.PointsPool);
+                                        uint16_t p1 = static_cast<uint16_t>(triangle->Points[1] - polyContext.PointsPool);
+                                        uint16_t p2 = static_cast<uint16_t>(triangle->Points[2] - polyContext.PointsPool);
+
+                                        size_t iid = tid * 3;
+                                        indices[iid+0] = offset+p2;
+                                        indices[iid+1] = offset+p1;
+                                        indices[iid+2] = offset+p0;
+                                    }
+                                }
+                                break;
+                            case PaintType::gradientRadial:
                                 for(size_t id = 0; id < path.subPathCount(); ++id)
                                 {
                                     MPEPolyContext &polyContext = path.subPaths()[id].polyContext;
@@ -510,7 +560,38 @@ namespace tunis
                         batches.program(i)->setViewSizeUniform(viewWidth, viewHeight);
 
                         const Paint &paint = batches.paint(i);
-                        if (paint.type() == detail::PaintType::gradient)
+                        if (paint.type() == detail::PaintType::gradientLinear)
+                        {
+                            detail::UniformBlock uniforms;
+
+                            glm::vec2 start = paint.start();
+                            glm::vec2 end = paint.end();
+
+                            start.y = viewHeight - start.y ;
+                            end.y = viewHeight - end.y ;
+
+                            glm::vec2 dt = end - start;
+
+                            uniforms.linearGradient.u_start = start;
+                            uniforms.linearGradient.u_dt = dt;
+                            uniforms.linearGradient.u_lenSq = glm::dot(dt, dt);
+
+                            size_t colorStopCount = glm::min<size_t>(4, paint.colorStops().size());
+
+                            uniforms.linearGradient.u_colorStopCount = colorStopCount;
+
+                            for (size_t j = 0; j < colorStopCount; ++j)
+                            {
+                                uniforms.linearGradient.u_offset[j] = paint.colorStops().offset(j);
+                                uniforms.linearGradient.u_color[j].r = paint.colorStops().color(j).r / 255.0f;
+                                uniforms.linearGradient.u_color[j].g = paint.colorStops().color(j).g / 255.0f;
+                                uniforms.linearGradient.u_color[j].b = paint.colorStops().color(j).b / 255.0f;
+                                uniforms.linearGradient.u_color[j].a = paint.colorStops().color(j).a / 255.0f;
+                            }
+
+                            static_cast<ShaderProgramGradient*>(batches.program(i))->setUniforms(uniforms);
+                        }
+                        else if (paint.type() == detail::PaintType::gradientRadial)
                         {
                             detail::UniformBlock uniforms;
 
@@ -523,8 +604,8 @@ namespace tunis
                             glm::vec2 dt = focal - center;
                             float dr = paint.radius().x - paint.radius().y;
 
-                            uniforms.radialGradient.u_focal = focal;
                             uniforms.radialGradient.u_dt = dt;
+                            uniforms.radialGradient.u_focal = focal;
                             uniforms.radialGradient.u_r0 = paint.radius().y;
                             uniforms.radialGradient.u_dr = dr;
                             uniforms.radialGradient.u_a = dt.x * dt.x + dt.y * dt.y - dr * dr;

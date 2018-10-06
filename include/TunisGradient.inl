@@ -6,17 +6,18 @@ namespace tunis
 {
     inline Gradient::Gradient(float x0, float y0, float x1, float y1)
     {
+        type() = detail::GradientType::gradientLinear;
         start().x = x0;
         start().y = y0;
         end().x = x1;
         end().y = y1;
-        radius() = {};
         colorStops().resize(0);
     }
 
     inline Gradient::Gradient(float x0, float y0, float r0,
                               float x1, float y1, float r1)
     {
+        type() = detail::GradientType::gradientRadial;
         start().x = x0;
         start().y = y0;
         radius()[0] = r0;

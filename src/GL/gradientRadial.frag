@@ -1,5 +1,14 @@
 R"(
 
+/*******************************************************************************
+ * Special thanks to
+ *
+ *   Alex Sabourin
+ *   Zack Dawson
+ *
+ * For helping me figure this out.
+ ******************************************************************************/
+
 #if defined(GL_ES)
 precision highp float;
 #endif
@@ -7,8 +16,8 @@ precision highp float;
 uniform vec2 u_viewSize;
 uniform vec4 u_uniforms[7];
 
-#define u_focal            u_uniforms[0].xy
-#define u_dt               u_uniforms[0].zw
+#define u_dt               u_uniforms[0].xy
+#define u_focal            u_uniforms[0].zw
 #define u_r0               u_uniforms[1].x
 #define u_dr               u_uniforms[1].y
 #define u_a                u_uniforms[1].z

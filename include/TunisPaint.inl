@@ -34,7 +34,7 @@ namespace tunis
 
     inline Paint::Paint(const Gradient &g)
     {
-        type() = detail::PaintType::gradient;
+        type() = g.type() == detail::GradientType::gradientLinear ? detail::PaintType::gradientLinear : detail::PaintType::gradientRadial;
         start() = g.start();
         end() = g.end();
         radius() = g.radius();
