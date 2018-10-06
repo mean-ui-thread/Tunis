@@ -500,8 +500,6 @@ namespace tunis
                 }
                 EASY_END_BLOCK;
 
-                detail::Frag frag;
-
                 // flush the batches
                 if ( batches.size() > 0)
                 {
@@ -514,21 +512,37 @@ namespace tunis
                         const Paint &paint = batches.paint(i);
                         if (paint.type() == detail::PaintType::gradient)
                         {
-                            frag.u_start = paint.start();
-                            frag.u_end = paint.end();
-                            frag.u_radius = paint.radius();
+                            detail::UniformBlock uniforms;
+
+                            glm::vec2 center = paint.start();
+                            glm::vec2 focal = paint.end();
+
+                            center.y = viewHeight - center.y ;
+                            focal.y = viewHeight - focal.y ;
+
+                            glm::vec2 dt = focal - center;
+                            float dr = paint.radius().x - paint.radius().y;
+
+                            uniforms.radialGradient.u_focal = focal;
+                            uniforms.radialGradient.u_dt = dt;
+                            uniforms.radialGradient.u_r0 = paint.radius().y;
+                            uniforms.radialGradient.u_dr = dr;
+                            uniforms.radialGradient.u_a = dt.x * dt.x + dt.y * dt.y - dr * dr;
+
                             size_t colorStopCount = glm::min<size_t>(4, paint.colorStops().size());
-                            frag.u_count = static_cast<float>(colorStopCount);
-                            for (size_t i = 0; i < colorStopCount; ++i)
+
+                            uniforms.radialGradient.u_colorStopCount = colorStopCount;
+
+                            for (size_t j = 0; j < colorStopCount; ++j)
                             {
-                                frag.u_offset[i] = paint.colorStops().offset(i);
-                                frag.u_color[i].r = paint.colorStops().color(i).r / 255.0f;
-                                frag.u_color[i].g = paint.colorStops().color(i).g / 255.0f;
-                                frag.u_color[i].b = paint.colorStops().color(i).b / 255.0f;
-                                frag.u_color[i].a = paint.colorStops().color(i).a / 255.0f;
+                                uniforms.radialGradient.u_offset[j] = paint.colorStops().offset(j);
+                                uniforms.radialGradient.u_color[j].r = paint.colorStops().color(j).r / 255.0f;
+                                uniforms.radialGradient.u_color[j].g = paint.colorStops().color(j).g / 255.0f;
+                                uniforms.radialGradient.u_color[j].b = paint.colorStops().color(j).b / 255.0f;
+                                uniforms.radialGradient.u_color[j].a = paint.colorStops().color(j).a / 255.0f;
                             }
 
-                            static_cast<ShaderProgramGradient*>(batches.program(i))->setFragUniform(frag);
+                            static_cast<ShaderProgramGradient*>(batches.program(i))->setUniforms(uniforms);
                         }
 
                         batches.texture(i)->bind();

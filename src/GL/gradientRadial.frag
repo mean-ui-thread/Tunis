@@ -5,44 +5,30 @@ precision highp float;
 #endif
 
 uniform vec2 u_viewSize;
-uniform vec4 u_frag[7];
+uniform vec4 u_uniforms[7];
 
-#define u_x0         u_frag[0].x
-#define u_y0         u_frag[0].y
-#define u_x1         u_frag[0].z
-#define u_y1         u_frag[0].w
-#define u_radius0    u_frag[1].x
-#define u_radius1    u_frag[1].y
-#define U_UNUSED0    u_frag[1].z
-#define U_UNUSED1    u_frag[1].w
-#define u_colorStop0 u_frag[2].x
-#define u_colorStop1 u_frag[2].y
-#define u_colorStop2 u_frag[2].z
-#define u_colorStop3 u_frag[2].w
-#define u_color0     u_frag[3]
-#define u_color1     u_frag[4]
-#define u_color2     u_frag[5]
-#define u_color3     u_frag[6]
+#define u_focal            u_uniforms[0].xy
+#define u_dt               u_uniforms[0].zw
+#define u_r0               u_uniforms[1].x
+#define u_dr               u_uniforms[1].y
+#define u_a                u_uniforms[1].z
+#define u_colorStopCount   int(u_uniforms[1].w)
+#define u_colorStop(INDEX) u_uniforms[2][INDEX]
+#define u_color(INDEX)     u_uniforms[3+(INDEX)]
 
 void main()
 {
-    vec2 center = vec2(u_x0, u_viewSize.y - u_y0);
-    vec2 focal = vec2(u_x1, u_viewSize.y - u_y1);
+    float x = u_focal.x - gl_FragCoord.x;
+    float y = u_focal.y - gl_FragCoord.y;
+    float b = -2.0 * (y * u_dt.y + x * u_dt.x + u_r0 * u_dr);
+    float c = x*x + y*y - u_r0*u_r0;
+    float t = 1.0 - (0.5/u_a) * (-b + sqrt(b*b - 4.0*u_a*c));
 
-    vec2 centerDir = center - focal;
-    vec2 dir = center - gl_FragCoord.xy;
-    vec2 N = normalize(vec2(-dir.y, dir.x));
-    float focalDist = abs(dot(centerDir, N) / length(N));
-    float cutoff = sqrt(u_radius1 * u_radius1 - focalDist * focalDist) + (step(dot(dir, centerDir) / distance(dir , centerDir) , 0.0) * -2.0 + 1.0 ) * abs(dot(centerDir, dir) / length(dir));
-
-
-    float expand = u_radius0 / u_radius1;
-    float dist = (min(1.0, abs(length(gl_FragCoord.xy - center)) / cutoff) - expand) / (1.0 - expand);
-
-    vec4 color;
-    color = mix(u_color0, u_color1, smoothstep(u_colorStop0, u_colorStop1, dist));
-    color = mix(color, u_color2, smoothstep(u_colorStop1, u_colorStop2, dist));
-    //color = mix(color, u_color3, smoothstep(u_colorStop2, u_colorStop3, dist));
+    vec4 color = mix(u_color(0), u_color(1), clamp((t - u_colorStop(0))/(u_colorStop(1) - u_colorStop(0)), 0.0, 1.0));
+    for (int i = 2; i < u_colorStopCount; ++i)
+    {
+        color = mix(color, u_color(i), clamp((t - u_colorStop(i-1))/(u_colorStop(i) - u_colorStop(i-1)), 0.0, 1.0));
+    }
 
     gl_FragColor = color;
 

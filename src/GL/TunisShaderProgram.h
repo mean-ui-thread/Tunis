@@ -103,15 +103,19 @@ namespace tunis
 
         };
 
-        struct Frag
+        union UniformBlock
         {
-            glm::vec2 u_start;
-            glm::vec2 u_end;
-            glm::vec2 u_radius;
-            float u_count;
-            float U_UNUSED;
-            float u_offset[4];
-            glm::vec4 u_color[4];
+            struct RadialGradient
+            {
+                glm::vec2 u_focal;
+                glm::vec2 u_dt;
+                float u_r0;
+                float u_dr;
+                float u_a;
+                float u_colorStopCount;
+                glm::vec4 u_offset;
+                glm::vec4 u_color[4];
+            } radialGradient;
         };
 
         class ShaderProgramGradient : public ShaderProgram
@@ -123,7 +127,7 @@ namespace tunis
             virtual void enableVertexAttribArray() override;
             virtual void disableVertexAttribArray() override;
 
-            void setFragUniform(const Frag &frag);
+            void setUniforms(const UniformBlock &uniforms);
 
         private:
 
@@ -131,10 +135,7 @@ namespace tunis
             GLint a_position = 0;
 
             // uniform lacations
-            GLint u_frag = 0;
-
-            // uniform values;
-            Frag frag;
+            GLint u_uniforms = 0;
         };
     }
 

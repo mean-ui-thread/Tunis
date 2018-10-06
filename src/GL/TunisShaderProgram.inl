@@ -250,14 +250,14 @@ namespace tunis
 
 
             // uniform locations
-            u_frag = glGetUniformLocation(programId, "u_frag");
-            assert(u_frag != -1);
+            u_uniforms = glGetUniformLocation(programId, "u_uniforms");
+            assert(u_uniforms != -1);
         }
 
-        inline void ShaderProgramGradient::setFragUniform(const Frag &f)
+        inline void ShaderProgramGradient::setUniforms(const UniformBlock &f)
         {
             assert(gfxStates.programId == programId);
-            glUniform4fv(u_frag, static_cast<GLsizei>(sizeof(Frag)/sizeof(glm::vec4)), reinterpret_cast<const GLfloat*>(&f));
+            glUniform4fv(u_uniforms, static_cast<GLsizei>(sizeof(UniformBlock)/sizeof(glm::vec4)), reinterpret_cast<const GLfloat*>(&f));
         }
 
         inline void ShaderProgramGradient::enableVertexAttribArray()
