@@ -39,7 +39,7 @@ struct GraphicStates
     uint32_t programId = 0;
     int32_t maxTexSize = 0;
     int32_t texPadding = 0;
-    uint16_t pixelWidth = 0;
+    float pixelWidth = 0;
 };
 extern GraphicStates gfxStates;
 

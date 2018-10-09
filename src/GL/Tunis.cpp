@@ -137,7 +137,7 @@ namespace tunis
                 gfxStates.texPadding = gfxStates.maxTexSize/64;
 
                 // pixel width in 16bit.
-                gfxStates.pixelWidth = static_cast<uint16_t>(glm::round((1.0f / gfxStates.maxTexSize) * 0xFFFF));
+                gfxStates.pixelWidth = static_cast<float>(0xFFFF) / static_cast<float>(gfxStates.maxTexSize);
 
                 std::unique_ptr<Texture> tex = std::make_unique<Texture>(gfxStates.maxTexSize, gfxStates.maxTexSize);
                 textures.emplace_back(std::move(tex)); // retain
@@ -410,25 +410,25 @@ namespace tunis
                                                                &verticies,
                                                                &indices);
 
-                                    glm::vec2 toffset = glm::vec2(paint->image().bounds().x(), paint->image().bounds().y()) / static_cast<float>(gfxStates.maxTexSize);
-                                    glm::vec2 tsize = glm::vec2(paint->image().bounds().width(), paint->image().bounds().height()) / static_cast<float>(gfxStates.maxTexSize);
+                                    glm::vec2 toffset = glm::vec2(paint->image().bounds().x(), paint->image().bounds().y()) * gfxStates.pixelWidth;
+                                    glm::vec2 tsize = glm::vec2(paint->image().bounds().width(), paint->image().bounds().height()) * gfxStates.pixelWidth;
                                     glm::vec2 tscale;
 
                                     switch (paint->repetition())
                                     {
                                         case RepeatType::repeat:
-                                            tscale = range / static_cast<float>(gfxStates.maxTexSize);
+                                            tscale = glm::vec2(gfxStates.pixelWidth, gfxStates.pixelWidth);
                                             break;
                                         case RepeatType::repeat_x:
-                                            tscale.x = range.x / static_cast<float>(gfxStates.maxTexSize);
-                                            tscale.y = tsize.y;
+                                            tscale.x = gfxStates.pixelWidth;
+                                            tscale.y = tsize.y / range.y;
                                             break;
                                         case RepeatType::repeat_y:
-                                            tscale.x = tsize.x;
-                                            tscale.y = range.y / static_cast<float>(gfxStates.maxTexSize);
+                                            tscale.x = tsize.x / range.x;
+                                            tscale.y = gfxStates.pixelWidth;
                                             break;
                                         case RepeatType::no_repeat:
-                                            tscale = tsize;
+                                            tscale = tsize / range;
                                             break;
                                     }
 
@@ -440,15 +440,15 @@ namespace tunis
                                     {
                                         MPEPolyPoint &Point = polyContext.PointsPool[vid];
                                         Position pos(Point.X, Point.Y);
-                                        glm::vec2 tcoord = tscale * ((pos - path.boundTopLeft()) / range);
+                                        glm::vec2 tcoord = tscale * (pos - path.boundTopLeft());
 
                                         verticies[vid].pos = pos;
-                                        verticies[vid].tcoord.s = static_cast<uint16_t>(tcoord.s * 0xFFFF);
-                                        verticies[vid].tcoord.t = static_cast<uint16_t>(tcoord.t * 0xFFFF);
-                                        verticies[vid].toffset.s = static_cast<uint16_t>(toffset.s * 0xFFFF);
-                                        verticies[vid].toffset.t = static_cast<uint16_t>(toffset.t * 0xFFFF);
-                                        verticies[vid].tsize.s = static_cast<uint16_t>(tsize.s * 0xFFFF);
-                                        verticies[vid].tsize.t = static_cast<uint16_t>(tsize.t * 0xFFFF);
+                                        verticies[vid].tcoord.s = static_cast<uint16_t>(tcoord.s);
+                                        verticies[vid].tcoord.t = static_cast<uint16_t>(tcoord.t);
+                                        verticies[vid].toffset.s = static_cast<uint16_t>(toffset.s);
+                                        verticies[vid].toffset.t = static_cast<uint16_t>(toffset.t);
+                                        verticies[vid].tsize.s = static_cast<uint16_t>(tsize.s);
+                                        verticies[vid].tsize.t = static_cast<uint16_t>(tsize.t);
 
                                         verticies[vid].color = color;
                                     }
