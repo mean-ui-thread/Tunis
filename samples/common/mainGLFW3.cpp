@@ -73,14 +73,14 @@ int main( int argc, char* args[] )
     {
         // tunis::Context can only be instantiated after a context is created
         // and made current
-        SampleApp app;
+        std::unique_ptr<SampleApp>app = SampleApp::create();
 
         std::stringstream title;
-        title << SampleApp::getSampleName() << " - " << app.ctx.backendName();
+        title << SampleApp::getSampleName() << " - " << app->ctx.backendName();
 
         glfwSetWindowTitle(window, title.str().c_str());
 
-        std::string frameName = std::string("Frame(") + app.ctx.backendName() + ")";
+        std::string frameName = std::string("Frame(") + app->ctx.backendName() + ")";
         while (!glfwWindowShouldClose(window))
         {
             EASY_BLOCK(frameName);
@@ -94,10 +94,10 @@ int main( int argc, char* args[] )
             float pxRatio = static_cast<float>(fbWidth) / static_cast<float>(winWidth);
 
             double frameTime = glfwGetTime();
-            app.ctx.clearFrame(0, 0, fbWidth, fbHeight);
-            app.ctx.beginFrame(winWidth, winHeight, pxRatio);
-            app.render(frameTime);
-            app.ctx.endFrame();
+            app->ctx.clearFrame(0, 0, fbWidth, fbHeight);
+            app->ctx.beginFrame(winWidth, winHeight, pxRatio);
+            app->render(frameTime);
+            app->ctx.endFrame();
             EASY_END_BLOCK;
 
             glfwSwapBuffers(window);
