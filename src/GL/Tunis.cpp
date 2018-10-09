@@ -401,12 +401,66 @@ namespace tunis
 
                                     VertexTexture *verticies;
                                     Index *indices;
-                                    uint16_t offset = addBatch(programTexture.get(),
-                                                               textures.back().get(),
-                                                               vertexCount,
-                                                               indexCount,
-                                                               &verticies,
-                                                               &indices);
+                                    uint16_t offset;
+
+                                    Color color = paint->colorStops().color(0);
+                                    color.a = static_cast<uint8_t>(color.a * state.globalAlpha);
+
+                                    // Do we need to render a shadow?
+                                    if (state.shadowColor != Transparent && (glm::epsilonNotEqual(state.shadowOffsetX, 0.0f, glm::epsilon<float>()) || glm::epsilonNotEqual(state.shadowOffsetY, 0.0f, glm::epsilon<float>())))
+                                    {
+                                        Color shadowColor = state.shadowColor;
+                                        shadowColor.a = static_cast<uint8_t>((shadowColor.a/255.0f * color.a/255.0f) * 0xFF);
+
+                                        offset = addBatch(programTexture.get(),
+                                                          textures.back().get(),
+                                                          vertexCount,
+                                                          indexCount,
+                                                          &verticies,
+                                                          &indices);
+
+                                        //populate the shadow vertices
+                                        for (size_t vid = 0; vid < polyContext.PointPoolCount; ++vid)
+                                        {
+                                            MPEPolyPoint &Point = polyContext.PointsPool[vid];
+                                            glm::vec2 pos(Point.X + state.shadowOffsetX,
+                                                          Point.Y + state.shadowOffsetY);
+                                            glm::vec2 tcoord = pos * gfxStates.pixelWidth;
+
+                                            verticies[vid].a_position = pos;
+                                            verticies[vid].a_texcoord.s = static_cast<uint16_t>(tcoord.s);
+                                            verticies[vid].a_texcoord.t = static_cast<uint16_t>(tcoord.t);
+                                            verticies[vid].a_texoffset.s = static_cast<uint16_t>(0);
+                                            verticies[vid].a_texoffset.t = static_cast<uint16_t>(0);
+                                            verticies[vid].a_texsize.s = static_cast<uint16_t>(1);
+                                            verticies[vid].a_texsize.t = static_cast<uint16_t>(1);
+                                            verticies[vid].a_color = shadowColor;
+                                        }
+
+                                        //populate the indicies
+                                        for (size_t tid = 0; tid < polyContext.TriangleCount; ++tid)
+                                        {
+                                            MPEPolyTriangle* triangle = polyContext.Triangles[tid];
+
+                                            // get the array index by pointer address arithmetic.
+                                            uint16_t p0 = static_cast<uint16_t>(triangle->Points[0] - polyContext.PointsPool);
+                                            uint16_t p1 = static_cast<uint16_t>(triangle->Points[1] - polyContext.PointsPool);
+                                            uint16_t p2 = static_cast<uint16_t>(triangle->Points[2] - polyContext.PointsPool);
+
+                                            size_t iid = tid * 3;
+                                            indices[iid+0] = offset+p2;
+                                            indices[iid+1] = offset+p1;
+                                            indices[iid+2] = offset+p0;
+                                        }
+
+                                    }
+
+                                    offset = addBatch(programTexture.get(),
+                                                      textures.back().get(),
+                                                      vertexCount,
+                                                      indexCount,
+                                                      &verticies,
+                                                      &indices);
 
                                     glm::vec2 shapeSize = path.boundBottomRight() - path.boundTopLeft();
                                     glm::vec2 texoffset = glm::vec2(paint->image().bounds().x(), paint->image().bounds().y()) * gfxStates.pixelWidth;
@@ -430,9 +484,6 @@ namespace tunis
                                             texscale = texsize / shapeSize;
                                             break;
                                     }
-
-                                    Color color = paint->colorStops().color(0);
-                                    color.a *= state.globalAlpha;
 
                                     //populate the vertices
                                     for (size_t vid = 0; vid < polyContext.PointPoolCount; ++vid)
