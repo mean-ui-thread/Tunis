@@ -34,16 +34,16 @@ namespace tunis
 
         struct VertexGradient
         {
-            Position pos;
+            glm::vec2 a_position;
         };
 
         struct VertexTexture
         {
-            Position pos;
-            TCoord tcoord;
-            TCoord toffset;
-            TCoord tsize;
-            Color color;
+            glm::vec2 a_position;
+            glm::u16vec2 a_texcoord;
+            glm::u16vec2 a_texoffset;
+            glm::u16vec2 a_texsize;
+            glm::u8vec4 a_color;
         };
 
         using Index = uint16_t;

@@ -32,9 +32,7 @@
 namespace tunis
 {
 
-using Position = glm::vec2;
 using SVGMatrix = glm::mat2x3;
-using TCoord = glm::u16vec2;
 using Viewport = glm::ivec4;
 
 enum class LineCap : uint8_t

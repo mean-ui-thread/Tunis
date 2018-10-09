@@ -384,8 +384,6 @@ namespace tunis
                                 break;
                         }
 
-                        glm::vec2 range = path.boundBottomRight() - path.boundTopLeft();
-
                         switch (paint->type())
                         {
                             case PaintType::texture:
@@ -410,25 +408,26 @@ namespace tunis
                                                                &verticies,
                                                                &indices);
 
-                                    glm::vec2 toffset = glm::vec2(paint->image().bounds().x(), paint->image().bounds().y()) * gfxStates.pixelWidth;
-                                    glm::vec2 tsize = glm::vec2(paint->image().bounds().width(), paint->image().bounds().height()) * gfxStates.pixelWidth;
-                                    glm::vec2 tscale;
+                                    glm::vec2 shapeSize = path.boundBottomRight() - path.boundTopLeft();
+                                    glm::vec2 texoffset = glm::vec2(paint->image().bounds().x(), paint->image().bounds().y()) * gfxStates.pixelWidth;
+                                    glm::vec2 texsize = glm::vec2(paint->image().bounds().width(), paint->image().bounds().height()) * gfxStates.pixelWidth;
+                                    glm::vec2 texscale;
 
                                     switch (paint->repetition())
                                     {
                                         case RepeatType::repeat:
-                                            tscale = glm::vec2(gfxStates.pixelWidth, gfxStates.pixelWidth);
+                                            texscale = glm::vec2(gfxStates.pixelWidth, gfxStates.pixelWidth);
                                             break;
                                         case RepeatType::repeat_x:
-                                            tscale.x = gfxStates.pixelWidth;
-                                            tscale.y = tsize.y / range.y;
+                                            texscale.x = gfxStates.pixelWidth;
+                                            texscale.y = texsize.y / shapeSize.y;
                                             break;
                                         case RepeatType::repeat_y:
-                                            tscale.x = tsize.x / range.x;
-                                            tscale.y = gfxStates.pixelWidth;
+                                            texscale.x = texsize.x / shapeSize.x;
+                                            texscale.y = gfxStates.pixelWidth;
                                             break;
                                         case RepeatType::no_repeat:
-                                            tscale = tsize / range;
+                                            texscale = texsize / shapeSize;
                                             break;
                                     }
 
@@ -439,18 +438,17 @@ namespace tunis
                                     for (size_t vid = 0; vid < polyContext.PointPoolCount; ++vid)
                                     {
                                         MPEPolyPoint &Point = polyContext.PointsPool[vid];
-                                        Position pos(Point.X, Point.Y);
-                                        glm::vec2 tcoord = tscale * (pos - path.boundTopLeft());
+                                        glm::vec2 pos(Point.X, Point.Y);
+                                        glm::vec2 tcoord = texscale * pos;
 
-                                        verticies[vid].pos = pos;
-                                        verticies[vid].tcoord.s = static_cast<uint16_t>(tcoord.s);
-                                        verticies[vid].tcoord.t = static_cast<uint16_t>(tcoord.t);
-                                        verticies[vid].toffset.s = static_cast<uint16_t>(toffset.s);
-                                        verticies[vid].toffset.t = static_cast<uint16_t>(toffset.t);
-                                        verticies[vid].tsize.s = static_cast<uint16_t>(tsize.s);
-                                        verticies[vid].tsize.t = static_cast<uint16_t>(tsize.t);
-
-                                        verticies[vid].color = color;
+                                        verticies[vid].a_position = pos;
+                                        verticies[vid].a_texcoord.s = static_cast<uint16_t>(tcoord.s);
+                                        verticies[vid].a_texcoord.t = static_cast<uint16_t>(tcoord.t);
+                                        verticies[vid].a_texoffset.s = static_cast<uint16_t>(texoffset.s);
+                                        verticies[vid].a_texoffset.t = static_cast<uint16_t>(texoffset.t);
+                                        verticies[vid].a_texsize.s = static_cast<uint16_t>(texsize.s);
+                                        verticies[vid].a_texsize.t = static_cast<uint16_t>(texsize.t);
+                                        verticies[vid].a_color = color;
                                     }
 
                                     //populate the indicies
@@ -497,7 +495,8 @@ namespace tunis
                                     for (size_t vid = 0; vid < polyContext.PointPoolCount; ++vid)
                                     {
                                         MPEPolyPoint &Point = polyContext.PointsPool[vid];
-                                        verticies[vid].pos = Position(Point.X, Point.Y);
+                                        verticies[vid].a_position.x = Point.X;
+                                        verticies[vid].a_position.y = Point.Y;
                                     }
 
                                     //populate the indicies
@@ -544,7 +543,8 @@ namespace tunis
                                     for (size_t vid = 0; vid < polyContext.PointPoolCount; ++vid)
                                     {
                                         MPEPolyPoint &Point = polyContext.PointsPool[vid];
-                                        verticies[vid].pos = Position(Point.X, Point.Y);
+                                        verticies[vid].a_position.x = Point.X;
+                                        verticies[vid].a_position.y = Point.Y;
                                     }
 
                                     //populate the indicies
