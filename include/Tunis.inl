@@ -124,5 +124,10 @@ inline Gradient Context::createRadialGradient(float x0, float y0, float r0,
     return Gradient(x0, y0, r0, x1, y1, r1);
 }
 
+inline Pattern Context::createPattern(Image image, RepeatType repetition)
+{
+    return Pattern(image, repetition);
+}
+
 }
 

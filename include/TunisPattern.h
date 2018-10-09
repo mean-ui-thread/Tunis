@@ -21,25 +21,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  **/
-#include "SampleApp.h"
+#ifndef TUNISPATTERN_H
+#define TUNISPATTERN_H
 
-std::unique_ptr<SampleApp> SampleApp::create() { return std::make_unique<SampleApp>(); }
-const char *SampleApp::getSampleName() { return "12_StrokeStyleExample"; }
-int SampleApp::getWindowWidth() { return 320; }
-int SampleApp::getWindowHeight() { return 200; }
+#include <TunisTypes.h>
+#include <TunisImage.h>
 
-/*!
- * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Applying_styles_and_colors#A_strokeStyle_example
- */
-void SampleApp::render(double)
+namespace tunis
 {
-    for (int i = 0; i < 6; i++) {
-      for (int j = 0; j < 6; j++) {
-        ctx.strokeStyle = rgb(0, Math.floor(255 - 42.5 * i),
-                              Math.floor(255 - 42.5 * j));
-        ctx.beginPath();
-        ctx.arc(12.5 + j * 25, 12.5 + i * 25, 10, 0, Math.PI * 2, true);
-        ctx.stroke();
-      }
-    }
+    enum class RepeatType
+    {
+        repeat,    // both directions
+        repeat_x,  // horizontal only
+        repeat_y,  // vertical only
+        no_repeat, // neither
+    };
+
+    /*!
+     * \brief The Pattern class represents an opaque object describing a
+     * pattern, based on an image, created by the
+     * tunis::Context.createPattern() method.
+     *
+     * \note It can be used as a fillStyle or strokeStyle.
+     */
+    class Pattern : public RefCountedSOA<Image, RepeatType>
+    {
+        inline Image &image() { return get<0>(); }
+        inline RepeatType &repetition() { return get<1>(); }
+
+        inline const Image &image() const { return get<0>(); }
+        inline const RepeatType &repetition() const { return get<1>(); }
+
+        friend class Context;
+        friend class Paint;
+
+        Pattern(Image image, RepeatType repetition);
+    };
+
 }
+
+
+#include "TunisPattern.inl"
+
+#endif // TUNISPATTERN_H

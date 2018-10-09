@@ -33,26 +33,29 @@ namespace tunis
 
     inline Paint::Paint()
     {
-        type() = detail::PaintType::solid;
+        type() = detail::PaintType::texture;
         colorStops().resize(1);
         colorStops().color(0) = Black;
-        image() = detail::blankImage;
+        image() = Image();
+        repetition() = RepeatType::no_repeat;
     }
 
     inline Paint::Paint(const Color &c)
     {
-        type() = detail::PaintType::solid;
+        type() = detail::PaintType::texture;
         colorStops().resize(1);
         colorStops().color(0) = c;
-        image() = detail::blankImage;
+        image() = Image();
+        repetition() = RepeatType::no_repeat;
     }
 
     inline Paint::Paint(const char* c)
     {
-        type() = detail::PaintType::solid;
+        type() = detail::PaintType::texture;
         colorStops().resize(1);
         colorStops().color(0) = c;
-        image() = detail::blankImage;
+        image() = Image();
+        repetition() = RepeatType::no_repeat;
     }
 
     inline Paint::Paint(const Gradient &g)
@@ -62,15 +65,16 @@ namespace tunis
         end() = g.end();
         radius() = g.radius();
         colorStops() = g.colorStops();
-        image() = detail::blankImage;
+        image() = Image();
     }
 
-    inline Paint::Paint(const Image &img)
+    inline Paint::Paint(const Pattern &pattern)
     {
-        type() = detail::PaintType::image;
+        type() = detail::PaintType::texture;
         colorStops().resize(1);
         colorStops().color(0) = White;
-        image() = img;
+        image() = pattern.image();
+        repetition() = pattern.repetition();
     }
 
 }

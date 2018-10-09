@@ -23,395 +23,353 @@
  **/
 #include <TunisRect.h>
 
-#include <glm/gtc/epsilon.hpp>
-
 namespace tunis
 {
-
-constexpr Rect::Rect() noexcept :
-    m_x(.0f),
-    m_y(.0f),
-    m_width(.0f),
-    m_height(.0f)
-{
-}
-
-constexpr Rect::Rect(float x, float y, float width, float height) noexcept :
-    m_x(x),
-    m_y(y),
-    m_width(width),
-    m_height(height)
-{
-}
-
-constexpr Rect::Rect(const Point &topLeft, const Size &size) noexcept :
-    m_x(topLeft.x),
-    m_y(topLeft.y),
-    m_width(size.width()),
-    m_height(size.height())
-{
-}
-
-constexpr Rect::Rect(const Point &topLeft, const Point &bottomRight) noexcept :
-    m_x(topLeft.x),
-    m_y(topLeft.y),
-    m_width(bottomRight.x - topLeft.x),
-    m_height(bottomRight.y - topLeft.y)
-{
-}
-
-constexpr Rect::Rect(const Rect &other) noexcept :
-    m_x(other.m_x),
-    m_y(other.m_y),
-    m_width(other.m_width),
-    m_height(other.m_height)
-{
-}
-
-inline bool Rect::isNull() const noexcept
-{
-    return glm::epsilonEqual(m_width, 0.0f, glm::epsilon<float>()) &&
-            glm::epsilonEqual(m_height, 0.0f, glm::epsilon<float>());
-}
-constexpr bool Rect::isEmpty() const noexcept
-{
-    return m_width <= .0f || m_height <= .0f;
-}
-
-constexpr bool Rect::isValid() const noexcept
-{
-    return m_width > .0f && m_height > .0f;
-}
-
-constexpr float Rect::left() const noexcept
-{
-    return m_x;
-}
-
-constexpr float Rect::top() const noexcept
-{
-    return m_y;
-}
-
-constexpr float Rect::right() const noexcept
-{
-    return m_x + m_width;
-}
-
-constexpr float Rect::bottom() const noexcept
-{
-    return m_y + m_height;
-}
-
-constexpr float &Rect::x() noexcept
-{
-    return m_x;
-}
-
-constexpr float Rect::x() const noexcept
-{
-    return m_x;
-}
-
-constexpr float &Rect::y() noexcept
-{
-    return m_y;
-}
-
-constexpr float Rect::y() const noexcept
-{
-    return m_y;
-}
-
-constexpr void Rect::setLeft(float left) noexcept
-{
-    float diff = left - m_x;
-    m_x += diff;
-    m_width -= diff;
-}
-
-constexpr void Rect::setRight(float right) noexcept
-{
-    m_width = right - m_x;
-}
-
-constexpr void Rect::setTop(float top) noexcept
-{
-    float diff = top - m_y;
-    m_y += diff;
-    m_height -= diff;
-}
-
-constexpr void Rect::setBottom(float bottom) noexcept
-{
-    m_height = bottom - m_y;
-}
-
-constexpr void Rect::setTopLeft(const Point &topLeft) noexcept
-{
-    setLeft(topLeft.x);
-    setTop(topLeft.y);
-}
-
-constexpr void Rect::setTopRight(const Point &topRight) noexcept
-{
-    setRight(topRight.x);
-    setTop(topRight.y);
-}
-
-constexpr void Rect::setBottomLeft(const Point &bottomLeft) noexcept
-{
-    setLeft(bottomLeft.x);
-    setBottom(bottomLeft.y);
-}
-
-constexpr void Rect::setBottomRight(const Point &bottomRight) noexcept
-{
-    setRight(bottomRight.x);
-    setBottom(bottomRight.y);
-}
-
-constexpr void Rect::setX(float pos) noexcept
-{
-    setLeft(pos);
-}
-
-constexpr void Rect::setY(float pos) noexcept
-{
-    setTop(pos);
-}
-
-constexpr Point Rect::topLeft() const noexcept
-{
-    return Point(m_x, m_y);
-}
-
-constexpr Point Rect::bottomRight() const noexcept
-{
-    return Point(m_x+m_width, m_y+m_height);
-}
-
-constexpr Point Rect::topRight() const noexcept
-{
-    return Point(m_x+m_width, m_y);
-}
-
-constexpr Point Rect::bottomLeft() const noexcept
-{
-    return Point(m_x, m_y+m_height);
-}
-
-constexpr Point Rect::center() const noexcept
-{
-    return Point(m_x + m_width/2, m_y + m_height/2);
-}
-
-constexpr void Rect::moveLeft(float pos) noexcept
-{
-    m_x = pos;
-}
-
-constexpr void Rect::moveTop(float pos) noexcept
-{
-    m_y = pos;
-}
-
-constexpr void Rect::moveRight(float pos) noexcept
-{
-    m_x = pos - m_width;
-}
-
-constexpr void Rect::moveBottom(float pos) noexcept
-{
-    m_y = pos - m_height;
-}
-
-constexpr void Rect::moveTopLeft(const Point &p) noexcept
-{
-    moveLeft(p.x);
-    moveTop(p.y);
-}
-
-constexpr void Rect::moveTopRight(const Point &p) noexcept
-{
-    moveRight(p.x);
-    moveTop(p.y);
-}
-
-constexpr void Rect::moveBottomLeft(const Point &p) noexcept
-{
-    moveLeft(p.x);
-    moveBottom(p.y);
-}
-
-constexpr void Rect::moveBottomRight(const Point &p) noexcept
-{
-    moveRight(p.x);
-    moveBottom(p.y);
-}
-
-constexpr void Rect::moveCenter(const Point &p) noexcept
-{
-    m_x = p.x - m_width/2;
-    m_y = p.y - m_height/2;
-}
-constexpr float Rect::width() const noexcept
-{
-    return m_width;
-}
-
-constexpr float Rect::height() const noexcept
-{
-    return m_height;
-}
-
-constexpr Size Rect::size() const noexcept
-{
-    return Size(m_width, m_height);
-}
-
-constexpr void Rect::translate(float dx, float dy) noexcept
-{
-    m_x += dx;
-    m_y += dy;
-}
-
-constexpr void Rect::translate(const Point &p) noexcept
-{
-    m_x += p.x;
-    m_y += p.y;
-}
-
-constexpr void Rect::moveTo(float ax, float ay) noexcept
-{
-    m_x = ax;
-    m_y = ay;
-}
-
-constexpr void Rect::moveTo(const Point &p) noexcept
-{
-    m_x = p.x;
-    m_y = p.y;
-}
-
-constexpr Rect Rect::translated(float dx, float dy) const noexcept
-{
-    return Rect(m_x + dx, m_y + dy, m_width, m_height);
-}
-
-constexpr Rect Rect::translated(const Point &p) const noexcept
-{
-    return Rect(m_x + p.x, m_y + p.y, m_width, m_height);
-}
-
-constexpr Rect Rect::transposed() const noexcept
-{
-    return Rect(topLeft(), size().transposed());
-}
-
-constexpr void Rect::getRect(float *ax, float *ay, float *aaw, float *aah) const noexcept
-{
-    *ax = this->m_x;
-    *ay = this->m_y;
-    *aaw = this->m_width;
-    *aah = this->m_height;
-}
-
-constexpr void Rect::setRect(float ax, float ay, float aaw, float aah) noexcept
-{
-    this->m_x = ax;
-    this->m_y = ay;
-    this->m_width = aaw;
-    this->m_height = aah;
-}
-
-constexpr void Rect::getCoords(float *xp1, float *yp1, float *xp2, float *yp2) const noexcept
-{
-    *xp1 = m_x;
-    *yp1 = m_y;
-    *xp2 = m_x + m_width;
-    *yp2 = m_y + m_height;
-}
-
-constexpr void Rect::setCoords(float xp1, float yp1, float xp2, float yp2) noexcept
-{
-    m_x = xp1;
-    m_y = yp1;
-    m_width = xp2 - xp1;
-    m_height = yp2 - yp1;
-}
-
-constexpr void Rect::adjust(float xp1, float yp1, float xp2, float yp2) noexcept
-{
-    m_x += xp1;
-    m_y += yp1;
-    m_width += xp2 - xp1;
-    m_height += yp2 - yp1;
-}
-
-constexpr Rect Rect::adjusted(float xp1, float yp1, float xp2, float yp2) const noexcept
-{
-    return Rect(m_x + xp1, m_y + yp1, m_width + xp2 - xp1, m_height + yp2 - yp1);
-}
-
-constexpr void Rect::setWidth(float aw) noexcept
-{
-    this->m_width = aw;
-}
-
-constexpr void Rect::setHeight(float ah) noexcept
-{
-    this->m_height = ah;
-}
-
-constexpr void Rect::setSize(const Size &s) noexcept
-{
-    m_width = s.width();
-    m_height = s.height();
-}
-
-constexpr bool Rect::contains(float ax, float ay) const noexcept
-{
-    return contains(Point(ax, ay));
-}
-
-constexpr Rect& Rect::operator|=(const Rect &r) noexcept
-{
-    *this = *this | r;
-    return *this;
-}
-
-constexpr Rect& Rect::operator&=(const Rect &r) noexcept
-{
-    *this = *this & r;
-    return *this;
-}
-
-constexpr Rect Rect::intersected(const Rect &r) const noexcept
-{
-    return *this & r;
-}
-
-constexpr Rect Rect::united(const Rect &r) const noexcept
-{
-    return *this | r;
-}
-
-}
-
-inline bool operator==(const tunis::Rect &r1, const tunis::Rect &r2) noexcept
-{
-    return glm::epsilonEqual(r1.x(), r2.x(), glm::epsilon<float>()) &&
-           glm::epsilonEqual(r1.y(), r2.y(), glm::epsilon<float>()) &&
-           glm::epsilonEqual(r1.width(), r2.width(), glm::epsilon<float>()) &&
-           glm::epsilonEqual(r1.height(), r2.height(), glm::epsilon<float>());
-}
-
-inline bool operator!=(const tunis::Rect &r1, const tunis::Rect &r2) noexcept
-{
-    return glm::epsilonNotEqual(r1.x(), r2.x(), glm::epsilon<float>()) ||
-           glm::epsilonNotEqual(r1.y(), r2.y(), glm::epsilon<float>()) ||
-           glm::epsilonNotEqual(r1.width(), r2.width(), glm::epsilon<float>()) ||
-           glm::epsilonNotEqual(r1.height(), r2.height(), glm::epsilon<float>());
+    template<typename T>
+    constexpr Rect<T>::Rect() noexcept :
+        m_x(0),
+        m_y(0),
+        m_width(-1),
+        m_height(-1)
+    {
+    }
+
+    template<typename T>
+    constexpr Rect<T>::Rect(T x, T y, T width, T height) noexcept :
+        m_x(x),
+        m_y(y),
+        m_width(width),
+        m_height(height)
+    {
+    }
+
+    template<typename T>
+    constexpr Rect<T>::Rect(const Point<T> &topLeft, const Size<T> &size) noexcept :
+        m_x(topLeft.x),
+        m_y(topLeft.y),
+        m_width(size.width()),
+        m_height(size.height())
+    {
+    }
+
+    template<typename T>
+    constexpr Rect<T>::Rect(const Point<T> &topLeft, const Point<T> &bottomRight) noexcept :
+        m_x(topLeft.x),
+        m_y(topLeft.y),
+        m_width(bottomRight.x - topLeft.x),
+        m_height(bottomRight.y - topLeft.y)
+    {
+    }
+
+    template<typename T>
+    constexpr Rect<T>::Rect(const Rect &other) noexcept :
+        m_x(other.m_x),
+        m_y(other.m_y),
+        m_width(other.m_width),
+        m_height(other.m_height)
+    {
+    }
+
+    template<typename T>
+    inline bool Rect<T>::isNull() const noexcept
+    {
+        return m_width == 0 && m_height == 0;
+    }
+
+    template<typename T>
+    constexpr bool Rect<T>::isEmpty() const noexcept
+    {
+        return m_width <= 0 || m_height <= 0;
+    }
+
+    template<typename T>
+    constexpr bool Rect<T>::isValid() const noexcept
+    {
+        return m_width > 0 && m_height > 0;
+    }
+
+    template<typename T>
+    constexpr T Rect<T>::left() const noexcept
+    {
+        return m_x;
+    }
+
+    template<typename T>
+    constexpr T Rect<T>::top() const noexcept
+    {
+        return m_y;
+    }
+
+    template<typename T>
+    constexpr T Rect<T>::right() const noexcept
+    {
+        return m_x + m_width;
+    }
+
+    template<typename T>
+    constexpr T Rect<T>::bottom() const noexcept
+    {
+        return m_y + m_height;
+    }
+
+    template<typename T>
+    constexpr T &Rect<T>::x() noexcept
+    {
+        return m_x;
+    }
+
+    template<typename T>
+    constexpr T Rect<T>::x() const noexcept
+    {
+        return m_x;
+    }
+
+    template<typename T>
+    constexpr T &Rect<T>::y() noexcept
+    {
+        return m_y;
+    }
+
+    template<typename T>
+    constexpr T Rect<T>::y() const noexcept
+    {
+        return m_y;
+    }
+
+    template<typename T>
+    constexpr void Rect<T>::setLeft(T left) noexcept
+    {
+        T diff = left - m_x;
+        m_x += diff;
+        m_width -= diff;
+    }
+
+    template<typename T>
+    constexpr void Rect<T>::setRight(T right) noexcept
+    {
+        m_width = right - m_x;
+    }
+
+    template<typename T>
+    constexpr void Rect<T>::setTop(T top) noexcept
+    {
+        T diff = top - m_y;
+        m_y += diff;
+        m_height -= diff;
+    }
+
+    template<typename T>
+    constexpr void Rect<T>::setBottom(T bottom) noexcept
+    {
+        m_height = bottom - m_y;
+    }
+
+    template<typename T>
+    constexpr void Rect<T>::setX(T x) noexcept
+    {
+        m_x = x;
+    }
+
+    template<typename T>
+    constexpr void Rect<T>::setY(T y) noexcept
+    {
+        m_y = y;
+    }
+
+    template<typename T>
+    constexpr Point<T> Rect<T>::topLeft() const noexcept
+    {
+        return Point<T>(m_x, m_y);
+    }
+
+    template<typename T>
+    constexpr Point<T> Rect<T>::bottomRight() const noexcept
+    {
+        return Point<T>(m_x+m_width, m_y+m_height);
+    }
+
+    template<typename T>
+    constexpr Point<T> Rect<T>::topRight() const noexcept
+    {
+        return Point<T>(m_x+m_width, m_y);
+    }
+
+    template<typename T>
+    constexpr Point<T> Rect<T>::bottomLeft() const noexcept
+    {
+        return Point<T>(m_x, m_y+m_height);
+    }
+
+    template<typename T>
+    constexpr Point<T> Rect<T>::center() const noexcept
+    {
+        return Point<T>(m_x + m_width/2, m_y + m_height/2);
+    }
+
+    template<typename T>
+    constexpr T Rect<T>::width() const noexcept
+    {
+        return m_width;
+    }
+
+    template<typename T>
+    constexpr T Rect<T>::height() const noexcept
+    {
+        return m_height;
+    }
+
+    template<typename T>
+    constexpr void Rect<T>::setWidth(T w) noexcept
+    {
+        m_width = w;
+    }
+
+    template<typename T>
+    constexpr void Rect<T>::setHeight(T h) noexcept
+    {
+        m_height = h;
+    }
+
+    template<typename T>
+    constexpr void Rect<T>::setSize(const Size<T> &size) noexcept
+    {
+        m_width = size.width();
+        m_height = size.height();
+    }
+
+    template<typename T>
+    constexpr bool Rect<T>::contains(T x, T y) const noexcept
+    {
+        return contains(Point<T>(x, y));
+    }
+
+    template<typename T>
+    constexpr Rect<T>& Rect<T>::operator|=(const Rect &other) noexcept
+    {
+        *this = *this | other;
+        return *this;
+    }
+
+    template<typename T>
+    constexpr Rect<T>& Rect<T>::operator&=(const Rect &other) noexcept
+    {
+        *this = *this & other;
+        return *this;
+    }
+
+
+    template<typename T>
+    constexpr Rect<T> Rect<T>::united(const Rect &other) const noexcept
+    {
+        return *this | other;
+    }
+
+    template<typename T>
+    constexpr Rect<T> Rect<T>::intersected(const Rect &other) const noexcept
+    {
+        return *this & other;
+    }
+
+    template<typename T>
+    constexpr bool Rect<T>::intersects(const Rect<T> &other) const noexcept
+    {
+        int left1 = m_x;
+        int right1 = m_x;
+
+        if (m_width < 0)
+        {
+            left1 += m_width;
+        }
+        else
+        {
+            right1 += m_width;
+        }
+
+        if (left1 == right1)
+        {
+            return false;
+        }
+
+        int left2 = other.m_x;
+        int right2 = other.m_x;
+
+        if (other.m_width < 0)
+        {
+            left2 += other.m_width;
+        }
+        else
+        {
+            right2 += other.m_width;
+        }
+
+        if (left2 == right2)
+        {
+            return false;
+        }
+
+        if (left1 >= right2 || left2 >= right1)
+        {
+            return false;
+        }
+
+        int top1 = m_y;
+        int bottom1 = m_y;
+
+        if (m_height < 0)
+        {
+            top1 += m_height;
+        }
+        else
+        {
+            bottom1 += m_height;
+        }
+
+        if (top1 == bottom1)
+        {
+            return false;
+        }
+
+        int top2 = other.m_y;
+        int bottom2 = other.m_y;
+
+        if (other.m_height < 0)
+        {
+            top2 += other.m_height;
+        }
+        else
+        {
+            bottom2 += other.m_height;
+        }
+
+        if (top2 == bottom2)
+        {
+            return false;
+        }
+
+        if (top1 >= bottom2 || top2 >= bottom1)
+        {
+            return false;
+        }
+
+        return true;
+    }
+}
+
+template<typename T>
+inline bool operator==(const tunis::Rect<T> &lhs, const tunis::Rect<T> &rhs) noexcept
+{
+    return lhs.x() == rhs.x() &&
+            lhs.y() == rhs.y() &&
+            lhs.width() == rhs.width() &&
+            lhs.height() == rhs.height();
+}
+
+template<typename T>
+inline bool operator!=(const tunis::Rect<T> &lhs, const tunis::Rect<T> &rhs) noexcept
+{
+    return lhs.x() != rhs.x() ||
+            lhs.y() != rhs.y() ||
+            lhs.width() != rhs.width() ||
+            lhs.height() != rhs.height();
 }
 

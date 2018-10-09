@@ -26,6 +26,7 @@
 #include <TunisGraphicStates.h>
 #include <TunisVertex.h>
 
+#include <cstddef>
 #include <string>
 #include <iostream>
 
@@ -241,32 +242,38 @@ namespace tunis
             }
         }
 
-
         /**
          * ShaderProgramTexture
          */
-
 
         inline ShaderProgramTexture::ShaderProgramTexture() :
             ShaderProgram(ShaderVertTexture(), ShaderFragTexture(), "ShaderProgramTexture")
         {
             // attribute locations
-            a_position = glGetAttribLocation(programId, "a_position");
-            a_texcoord = glGetAttribLocation(programId, "a_texcoord");
-            a_color = glGetAttribLocation(programId, "a_color");
+            a_position  = glGetAttribLocation(programId, "a_position");
+            a_texcoord  = glGetAttribLocation(programId, "a_texcoord");
+            a_texoffset = glGetAttribLocation(programId, "a_texoffset");
+            a_texsize   = glGetAttribLocation(programId, "a_texsize");
+            a_color     = glGetAttribLocation(programId, "a_color");
 
             assert(a_position != -1);
             assert(a_texcoord != -1);
+            assert(a_texoffset != -1);
+            assert(a_texsize != -1);
             assert(a_color != -1);
         }
 
         inline void ShaderProgramTexture::enableVertexAttribArray()
         {
-            glVertexAttribPointer(static_cast<GLuint>(a_position), decltype(VertexTexture::pos)::length(),    GL_FLOAT,          GL_FALSE, sizeof(VertexTexture), reinterpret_cast<const void *>(0));
-            glVertexAttribPointer(static_cast<GLuint>(a_texcoord), decltype(VertexTexture::tcoord)::length(), GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(VertexTexture), reinterpret_cast<const void *>(sizeof(VertexTexture::pos)));
-            glVertexAttribPointer(static_cast<GLuint>(a_color),    decltype(VertexTexture::color)::length(),  GL_UNSIGNED_BYTE,  GL_TRUE,  sizeof(VertexTexture), reinterpret_cast<const void *>(sizeof(VertexTexture::pos) + sizeof(VertexTexture::tcoord)));
+            glVertexAttribPointer(static_cast<GLuint>(a_position),  decltype(VertexTexture::pos)::length(),     GL_FLOAT,          GL_FALSE, sizeof(VertexTexture), reinterpret_cast<const void *>(offsetof(VertexTexture, pos)));
+            glVertexAttribPointer(static_cast<GLuint>(a_texcoord),  decltype(VertexTexture::tcoord)::length(),  GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(VertexTexture), reinterpret_cast<const void *>(offsetof(VertexTexture, tcoord)));
+            glVertexAttribPointer(static_cast<GLuint>(a_texoffset), decltype(VertexTexture::toffset)::length(), GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(VertexTexture), reinterpret_cast<const void *>(offsetof(VertexTexture, toffset)));
+            glVertexAttribPointer(static_cast<GLuint>(a_texsize),   decltype(VertexTexture::tsize)::length(),   GL_UNSIGNED_SHORT, GL_TRUE,  sizeof(VertexTexture), reinterpret_cast<const void *>(offsetof(VertexTexture, tsize)));
+            glVertexAttribPointer(static_cast<GLuint>(a_color),     decltype(VertexTexture::color)::length(),   GL_UNSIGNED_BYTE,  GL_TRUE,  sizeof(VertexTexture), reinterpret_cast<const void *>(offsetof(VertexTexture, color)));
             glEnableVertexAttribArray(static_cast<GLuint>(a_position));
             glEnableVertexAttribArray(static_cast<GLuint>(a_texcoord));
+            glEnableVertexAttribArray(static_cast<GLuint>(a_texoffset));
+            glEnableVertexAttribArray(static_cast<GLuint>(a_texsize));
             glEnableVertexAttribArray(static_cast<GLuint>(a_color));
         }
 
@@ -274,9 +281,10 @@ namespace tunis
         {
             glDisableVertexAttribArray(static_cast<GLuint>(a_position));
             glDisableVertexAttribArray(static_cast<GLuint>(a_texcoord));
+            glDisableVertexAttribArray(static_cast<GLuint>(a_texoffset));
+            glDisableVertexAttribArray(static_cast<GLuint>(a_texsize));
             glDisableVertexAttribArray(static_cast<GLuint>(a_color));
         }
-
 
         /**
          * ShaderProgramGradient

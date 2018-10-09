@@ -35,10 +35,10 @@ namespace tunis
         using Task = std::function<void(ContextPriv*)>;
         extern moodycamel::ConcurrentQueue<Task> taskQueue;
 
-        template<typename T, typename Tp>
-        inline void enqueueTask(void(T::*callback)(ContextPriv*), Tp *instance)
+        template<typename T>
+        inline void enqueueTask(void(T::*callback)(ContextPriv*), T *instance)
         {
-            detail::taskQueue.enqueue(std::bind(callback, *instance, std::placeholders::_1));
+            detail::taskQueue.enqueue(std::bind(callback, instance, std::placeholders::_1));
         }
     }
 }

@@ -28,10 +28,10 @@
 #include <cstddef>
 
 #include <TunisGL.h>
+#include <TunisImage.h>
 
 namespace tunis
 {
-
     namespace detail
     {
         enum class Filtering
@@ -42,17 +42,22 @@ namespace tunis
         class Texture
         {
         public:
-            Texture(int width, int height, Filtering filtering = Filtering::trilinear);
+            Texture(int width, int height, Filtering filtering = Filtering::bilinear);
             ~Texture();
 
+            bool tryAddImage(Image &img);
+
             void bind();
+            void updateMipmap();
             operator GLuint() const;
 
         private:
 
             GLuint handle;
-            int width, height;
+            int32_t width, height;
             Filtering filtering;
+            bool mipmapDirty;
+            std::vector<Image> images;
         };
     }
 

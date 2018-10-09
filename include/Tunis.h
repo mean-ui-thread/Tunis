@@ -31,6 +31,7 @@
 #include <TunisPath2D.h>
 #include <TunisMath.h>
 #include <TunisGradient.h>
+#include <TunisPattern.h>
 
 #include <memory>
 
@@ -343,6 +344,17 @@ public:
      */
     Gradient createRadialGradient(float x0, float y0, float r0,
                                   float x1, float y1, float r1);
+
+    /*!
+     * \brief createPattern creates a pattern using the specified image. It
+     * repeats the source in the directions specified by the repetition
+     * argument.
+     * \param image The image to be used as the image to repeat.
+     * \param repetition how to repeat the image.
+     * \return a Pattern
+     */
+    Pattern createPattern(Image image, RepeatType repetition);
+
 
 private:
 

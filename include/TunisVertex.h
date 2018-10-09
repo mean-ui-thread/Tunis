@@ -37,11 +37,12 @@ namespace tunis
             Position pos;
         };
 
-
         struct VertexTexture
         {
             Position pos;
             TCoord tcoord;
+            TCoord toffset;
+            TCoord tsize;
             Color color;
         };
 

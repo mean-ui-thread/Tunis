@@ -66,7 +66,6 @@ namespace tunis
         moodycamel::ConcurrentQueue< std::function<void(ContextPriv*)> > taskQueue(128);
 
         GraphicStates gfxStates;
-        Image blankImage;
 
         enum DrawOp
         {
@@ -135,20 +134,16 @@ namespace tunis
 #else
                 glGetIntegerv(GL_MAX_TEXTURE_SIZE, &global.maxTexSize);
 #endif
-                std::unique_ptr<Texture> tex = std::make_unique<Texture>(gfxStates.maxTexSize, gfxStates.maxTexSize);
+                gfxStates.texPadding = gfxStates.maxTexSize/64;
 
                 // pixel width in 16bit.
-                uint16_t pixelWidth = static_cast<uint16_t>((1.0f / gfxStates.maxTexSize) * 0xFFFF);
+                gfxStates.pixelWidth = static_cast<uint16_t>(glm::round((1.0f / gfxStates.maxTexSize) * 0xFFFF));
 
-                blankImage.sourceWidth() = 1;
-                blankImage.sourceHeight() = 1;
-                blankImage.bounds() = glm::u16vec4(0, 0, pixelWidth, pixelWidth);
-                blankImage.parent() = tex.get();
-
+                std::unique_ptr<Texture> tex = std::make_unique<Texture>(gfxStates.maxTexSize, gfxStates.maxTexSize);
                 textures.emplace_back(std::move(tex)); // retain
 
-
-
+                Gradient::reserve(64);
+                Image::reserve(64);
                 Paint::reserve(64);
                 Path2D::reserve(64);
                 renderQueue.reserve(1024);
@@ -216,7 +211,7 @@ namespace tunis
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-                // shut down GL wrangler/
+                // shut down GL wrangler
                 tunisGLShutdown();
             }
 
@@ -351,7 +346,7 @@ namespace tunis
                     #pragma omp parallel for num_threads(std::thread::hardware_concurrency())
                     for (long i = 0; i < renderQueue.size(); ++i)
                     {
-                        EASY_THREAD_SCOPE("OpenMP");
+                        EASY_THREAD_SCOPE("OpenMP trianglation");
                         auto &path = renderQueue.path(i);
                         if (path.dirty())
                         {
@@ -393,8 +388,7 @@ namespace tunis
 
                         switch (paint->type())
                         {
-                            case PaintType::solid:
-                            case PaintType::image:
+                            case PaintType::texture:
                                 for(size_t id = 0; id < path.subPathCount(); ++id)
                                 {
                                     MPEPolyContext &polyContext = path.subPaths()[id].polyContext;
@@ -416,6 +410,28 @@ namespace tunis
                                                                &verticies,
                                                                &indices);
 
+                                    glm::vec2 toffset = glm::vec2(paint->image().bounds().x(), paint->image().bounds().y()) / static_cast<float>(gfxStates.maxTexSize);
+                                    glm::vec2 tsize = glm::vec2(paint->image().bounds().width(), paint->image().bounds().height()) / static_cast<float>(gfxStates.maxTexSize);
+                                    glm::vec2 tscale;
+
+                                    switch (paint->repetition())
+                                    {
+                                        case RepeatType::repeat:
+                                            tscale = range / static_cast<float>(gfxStates.maxTexSize);
+                                            break;
+                                        case RepeatType::repeat_x:
+                                            tscale.x = range.x / static_cast<float>(gfxStates.maxTexSize);
+                                            tscale.y = tsize.y;
+                                            break;
+                                        case RepeatType::repeat_y:
+                                            tscale.x = tsize.x;
+                                            tscale.y = range.y / static_cast<float>(gfxStates.maxTexSize);
+                                            break;
+                                        case RepeatType::no_repeat:
+                                            tscale = tsize;
+                                            break;
+                                    }
+
                                     Color color = paint->colorStops().color(0);
                                     color.a *= state.globalAlpha;
 
@@ -424,10 +440,16 @@ namespace tunis
                                     {
                                         MPEPolyPoint &Point = polyContext.PointsPool[vid];
                                         Position pos(Point.X, Point.Y);
-                                        glm::vec2 tcoord = TCoord(((pos - path.boundTopLeft()) / range) * 16.0f / static_cast<float>(gfxStates.maxTexSize) * static_cast<float>(0xFFFF));
+                                        glm::vec2 tcoord = tscale * ((pos - path.boundTopLeft()) / range);
+
                                         verticies[vid].pos = pos;
-                                        verticies[vid].tcoord.x = static_cast<uint16_t>(tcoord.s);
-                                        verticies[vid].tcoord.t = static_cast<uint16_t>(tcoord.t);
+                                        verticies[vid].tcoord.s = static_cast<uint16_t>(tcoord.s * 0xFFFF);
+                                        verticies[vid].tcoord.t = static_cast<uint16_t>(tcoord.t * 0xFFFF);
+                                        verticies[vid].toffset.s = static_cast<uint16_t>(toffset.s * 0xFFFF);
+                                        verticies[vid].toffset.t = static_cast<uint16_t>(toffset.t * 0xFFFF);
+                                        verticies[vid].tsize.s = static_cast<uint16_t>(tsize.s * 0xFFFF);
+                                        verticies[vid].tsize.t = static_cast<uint16_t>(tsize.t * 0xFFFF);
+
                                         verticies[vid].color = color;
                                     }
 
@@ -556,7 +578,7 @@ namespace tunis
                 if (vertexBuffer.size() > 0) {
                     glBufferData(GL_ARRAY_BUFFER,
                                  static_cast<GLsizeiptr>(vertexBuffer.size() * sizeof(VertexTexture)),
-                                 &vertexBuffer.front(),
+                                 vertexBuffer.data(),
                                  GL_STREAM_DRAW);
                     vertexBuffer.resize(0);
                     currentVertexOffset = 0;
@@ -567,7 +589,7 @@ namespace tunis
                 if (indexBuffer.size() > 0) {
                     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                                  static_cast<GLsizeiptr>(indexBuffer.size() * sizeof(uint16_t)),
-                                 &indexBuffer.front(),
+                                 indexBuffer.data(),
                                  GL_STREAM_DRAW);
                     indexBuffer.resize(0);
                 }
@@ -650,6 +672,7 @@ namespace tunis
                         }
 
                         batches.texture(i)->bind();
+                        batches.texture(i)->updateMipmap();
 
 
 #if 1
@@ -1784,33 +1807,106 @@ namespace tunis
 
     void Image::sourceChanged(detail::ContextPriv *ctx)
     {
-        Image self = *this; // to prevent destruction when refcount reaches 0
-        std::string url = source(); // make a copy in case it changes on us.
-
-        #pragma omp task
+        auto decodeTask = +[](Image *self, std::string url)->void
         {
+            EASY_THREAD_SCOPE(url);
+            EASY_FUNCTION();
+
             int w, h, n;
             uint8_t *raw = stbi_load(url.c_str(), &w, &h, &n, 4); // force RGBA
-            size_t dataSize = w * h * 4;
-            data().resize(dataSize);
-            memcpy(&data()[0], &raw[0], dataSize);
+
+            if (!raw)
+            {
+                fprintf(stderr, "Could not load %s : %s\n", url.c_str(), stbi_failure_reason());
+                return;
+            }
+
+            int pw = w + detail::gfxStates.texPadding + detail::gfxStates.texPadding;
+            int ph = h + detail::gfxStates.texPadding + detail::gfxStates.texPadding;
+
+            self->data().resize(pw * ph * 4);
+
+            uint8_t *src = raw;
+            uint8_t *dst = self->data().data();
+
+            for(int row = 0; row < detail::gfxStates.texPadding; ++row)
+            {
+                for(size_t col = 0; col < detail::gfxStates.texPadding; ++col)
+                {
+                    memcpy(dst, &Red, 4);
+                    dst+=4;
+                }
+
+                memcpy(dst, src, w*4);
+                dst+=(w*4);
+
+                for(size_t col = 0; col < detail::gfxStates.texPadding; ++col)
+                {
+                    memcpy(dst, &Lime, 4);
+                    dst+=4;
+                }
+            }
+
+            for(int row = 0; row < h; ++row)
+            {
+                for(size_t col = 0; col < detail::gfxStates.texPadding; ++col)
+                {
+                    memcpy(dst, src, 4);
+                    dst+=4;
+                }
+
+                memcpy(dst, src, w*4);
+                dst+=(w*4);
+                src+=((w-1)*4);
+
+                for(size_t col = 0; col < detail::gfxStates.texPadding; ++col)
+                {
+                    memcpy(dst, src, 4);
+                    dst+=4;
+                }
+
+                src+=(4);
+            }
+
+            src-=(w*4);
+
+            for(int row = 0; row < detail::gfxStates.texPadding; ++row)
+            {
+                for(size_t col = 0; col < detail::gfxStates.texPadding; ++col)
+                {
+                    memcpy(dst, &White, 4);
+                    dst+=4;
+                }
+
+                memcpy(dst, src, w*4);
+                dst+=(w*4);
+
+                for(size_t col = 0; col < detail::gfxStates.texPadding; ++col)
+                {
+                    memcpy(dst, &Blue, 4);
+                    dst+=4;
+                }
+            }
+
             stbi_image_free(raw);
-            sourceWidth() = w;
-            sourceHeight() = h;
-            detail::enqueueTask(&Image::dataChanged, this);
-        }
+            self->bounds().setWidth(w);
+            self->bounds().setHeight(h);
+            self->paddedBounds().setWidth(pw);
+            self->paddedBounds().setHeight(ph);
+            detail::enqueueTask(&Image::dataChanged, self);
+        };
+
+        std::thread(decodeTask, this, source()).detach();
     }
 
     void Image::dataChanged(detail::ContextPriv *ctx)
     {
         for(size_t i = 0; i < ctx->textures.size(); ++i)
         {
-#if 0 // UNDER CONSTRUCTION
-            if (ctx->textures[i]->tryAppendImage(*this));
+            if (ctx->textures[i]->tryAddImage(*this))
             {
                 break;
             }
-#endif
         }
     }
 

@@ -24,6 +24,7 @@
 
 #include "SampleApp.h"
 
+std::unique_ptr<SampleApp> SampleApp::create() { return std::make_unique<SampleApp>(); }
 const char *SampleApp::getSampleName() { return "@SAMPLE_NAME@"; }
 int SampleApp::getWindowWidth() { return 320; }
 int SampleApp::getWindowHeight() { return 200; }
@@ -31,6 +32,10 @@ int SampleApp::getWindowHeight() { return 200; }
 /*!
  * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/???
  */
+SampleApp::SampleApp()
+{
+}
+
 void SampleApp::render(double)
 {
 

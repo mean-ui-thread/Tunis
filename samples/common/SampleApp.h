@@ -31,6 +31,7 @@ using namespace tunis;
 class SampleApp
 {
 public:
+    static std::unique_ptr<SampleApp> create();
     static const char *getSampleName();
     static int getWindowWidth();
     static int getWindowHeight();

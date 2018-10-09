@@ -23,6 +23,7 @@
  **/
 #include "SampleApp.h"
 
+std::unique_ptr<SampleApp> SampleApp::create() { return std::make_unique<SampleApp>(); }
 const char *SampleApp::getSampleName() { return "03_DrawingTriangle"; }
 int SampleApp::getWindowWidth() { return 320; }
 int SampleApp::getWindowHeight() { return 200; }
@@ -30,6 +31,7 @@ int SampleApp::getWindowHeight() { return 200; }
 /*!
  * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Drawing_shapes#Drawing_a_triangle
  */
+
 void SampleApp::render(double)
 {
     ctx.beginPath();

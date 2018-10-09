@@ -23,6 +23,7 @@
  **/
 #include "SampleApp.h"
 
+std::unique_ptr<SampleApp> SampleApp::create() { return std::make_unique<SampleApp>(); }
 const char *SampleApp::getSampleName() { return "16_LineCapExample"; }
 int SampleApp::getWindowWidth() { return 320; }
 int SampleApp::getWindowHeight() { return 200; }

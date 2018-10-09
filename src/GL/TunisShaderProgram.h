@@ -132,6 +132,8 @@ namespace tunis
             // attribute locations
             GLint a_position = 0;
             GLint a_texcoord = 0;
+            GLint a_texoffset = 0;
+            GLint a_texsize = 0;
             GLint a_color = 0;
 
         };

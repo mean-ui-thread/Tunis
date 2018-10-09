@@ -25,6 +25,8 @@
 #define TUNISIMAGE_H
 
 #include <TunisSOA.h>
+#include <TunisRect.h>
+
 #include <glm/fwd.hpp>
 #include <glm/vec2.hpp>
 #include <string>
@@ -40,25 +42,22 @@ namespace tunis
         class Texture;
     }
 
-    class Image : public RefCountedSOA<std::string, std::vector<uint8_t>, int, int, glm::u16vec4, glm::u16vec4, detail::Texture*>
+    class Image : public RefCountedSOA<std::string, std::vector<uint8_t>, Rect<int32_t>, Rect<int32_t>, detail::Texture*>
     {
         inline std::string &source() { return get<0>(); }
         inline std::vector<uint8_t> &data() { return get<1>(); }
-        inline int &sourceWidth() { return get<2>(); }
-        inline int &sourceHeight() { return get<3>(); }
-        inline glm::u16vec4 &bounds() { return get<4>(); }
-        inline glm::u16vec4 &paddedBounds() { return get<5>(); }
-        inline detail::Texture* &parent() { return get<6>(); }
+        inline Rect<int32_t> &bounds() { return get<2>(); }
+        inline Rect<int32_t> &paddedBounds() { return get<3>(); }
+        inline detail::Texture* &parent() { return get<4>(); }
 
         inline const std::string &source() const { return get<0>(); }
         inline const std::vector<uint8_t> &data() const { return get<1>(); }
-        inline const int &sourceWidth() const { return get<2>(); }
-        inline const int &sourceHeight() const { return get<3>(); }
-        inline const glm::u16vec4 &bounds() const { return get<4>(); }
-        inline const glm::u16vec4 &paddedBounds() const { return get<5>(); }
-        inline const detail::Texture* parent() const { return get<6>(); }
+        inline const Rect<int32_t> &bounds() const { return get<2>(); }
+        inline const Rect<int32_t> &paddedBounds() const { return get<3>(); }
+        inline const detail::Texture* parent() const { return get<4>(); }
 
         friend detail::ContextPriv;
+        friend detail::Texture;
 
         class Source
         {
@@ -79,7 +78,6 @@ namespace tunis
 
         Image();
         Image(std::string url);
-        Image(const uint8_t *raw, int width, int height);
 
         Source src;
     };

@@ -29,86 +29,62 @@
 
 namespace tunis
 {
+    template <typename T>
+    using Point = glm::vec<2, T, glm::highp>;
 
-class Rect
-{
-public:
-    constexpr Rect() noexcept;
-    constexpr Rect(const Point &topleft, const Size &size) noexcept;
-    constexpr Rect(const Point &topleft, const Point &bottomRight) noexcept;
-    constexpr Rect(float x, float y, float width, float height) noexcept;
-    constexpr Rect(const Rect &rect) noexcept;
-    bool isNull() const noexcept;
-    constexpr bool isEmpty() const noexcept;
-    constexpr bool isValid() const noexcept;
-    constexpr Rect normalized() const noexcept;
-    constexpr float left() const noexcept;
-    constexpr float top() const noexcept;
-    constexpr float right() const noexcept;
-    constexpr float bottom() const noexcept;
-    constexpr float &x() noexcept;
-    constexpr float x() const noexcept;
-    constexpr float &y() noexcept;
-    constexpr float y() const noexcept;
-    constexpr void setLeft(float pos) noexcept;
-    constexpr void setTop(float pos) noexcept;
-    constexpr void setRight(float pos) noexcept;
-    constexpr void setBottom(float pos) noexcept;
-    constexpr void setX(float pos) noexcept;
-    constexpr void setY(float pos) noexcept;
-    constexpr Point topLeft() const noexcept;
-    constexpr Point bottomRight() const noexcept;
-    constexpr Point topRight() const noexcept;
-    constexpr Point bottomLeft() const noexcept;
-    constexpr Point center() const noexcept;
-    constexpr void setTopLeft(const Point &p) noexcept;
-    constexpr void setBottomRight(const Point &p) noexcept;
-    constexpr void setTopRight(const Point &p) noexcept;
-    constexpr void setBottomLeft(const Point &p) noexcept;
-    constexpr void moveLeft(float pos) noexcept;
-    constexpr void moveTop(float pos) noexcept;
-    constexpr void moveRight(float pos) noexcept;
-    constexpr void moveBottom(float pos) noexcept;
-    constexpr void moveTopLeft(const Point &p) noexcept;
-    constexpr void moveBottomRight(const Point &p) noexcept;
-    constexpr void moveTopRight(const Point &p) noexcept;
-    constexpr void moveBottomLeft(const Point &p) noexcept;
-    constexpr void moveCenter(const Point &p) noexcept;
-    constexpr void translate(float dx, float dy) noexcept;
-    constexpr void translate(const Point &p) noexcept;
-    constexpr Rect translated(float dx, float dy) const noexcept;
-    constexpr Rect translated(const Point &p) const noexcept;
-    constexpr Rect transposed() const noexcept;
-    constexpr void moveTo(float x, float y) noexcept;
-    constexpr void moveTo(const Point &p) noexcept;
-    constexpr void setRect(float x, float y, float m_width, float m_height) noexcept;
-    constexpr void getRect(float *x, float *y, float *m_width, float *m_height) const noexcept;
-    constexpr void setCoords(float x1, float y1, float x2, float y2) noexcept;
-    constexpr void getCoords(float *x1, float *y1, float *x2, float *y2) const noexcept;
-    constexpr void adjust(float x1, float y1, float x2, float y2) noexcept;
-    constexpr Rect adjusted(float x1, float y1, float x2, float y2) const noexcept;
-    constexpr Size size() const noexcept;
-    constexpr float width() const noexcept;
-    constexpr float height() const noexcept;
-    constexpr void setWidth(float m_width) noexcept;
-    constexpr void setHeight(float m_height) noexcept;
-    constexpr void setSize(const Size &s) noexcept;
-    constexpr Rect operator|(const Rect &r) const noexcept;
-    constexpr Rect operator&(const Rect &r) const noexcept;
-    constexpr Rect& operator|=(const Rect &r) noexcept;
-    constexpr Rect& operator&=(const Rect &r) noexcept;
-    constexpr bool contains(const Rect &r) const noexcept;
-    constexpr bool contains(const Point &p) const noexcept;
-    constexpr bool contains(float x, float y) const noexcept;
-    constexpr Rect united(const Rect &other) const noexcept;
-    constexpr Rect intersected(const Rect &other) const noexcept;
-    constexpr bool intersects(const Rect &r) const noexcept;
-private:
-    float m_x;
-    float m_y;
-    float m_width;
-    float m_height;
-};
+    template <typename T>
+    class Rect
+    {
+    public:
+        constexpr Rect() noexcept;
+        constexpr Rect(const Point<T> &topleft, const Size<T> &size) noexcept;
+        constexpr Rect(const Point<T> &topleft, const Point<T> &bottomRight) noexcept;
+        constexpr Rect(T x, T y, T width, T height) noexcept;
+        constexpr Rect(const Rect &rect) noexcept;
+        bool isNull() const noexcept;
+        constexpr bool isEmpty() const noexcept;
+        constexpr bool isValid() const noexcept;
+        constexpr Rect normalized() const noexcept;
+        constexpr T left() const noexcept;
+        constexpr T top() const noexcept;
+        constexpr T right() const noexcept;
+        constexpr T bottom() const noexcept;
+        constexpr T &x() noexcept;
+        constexpr T x() const noexcept;
+        constexpr T &y() noexcept;
+        constexpr T y() const noexcept;
+        constexpr void setLeft(T pos) noexcept;
+        constexpr void setTop(T pos) noexcept;
+        constexpr void setRight(T pos) noexcept;
+        constexpr void setBottom(T pos) noexcept;
+        constexpr void setX(T pos) noexcept;
+        constexpr void setY(T pos) noexcept;
+        constexpr Point<T> topLeft() const noexcept;
+        constexpr Point<T> bottomRight() const noexcept;
+        constexpr Point<T> topRight() const noexcept;
+        constexpr Point<T> bottomLeft() const noexcept;
+        constexpr Point<T> center() const noexcept;
+        constexpr T width() const noexcept;
+        constexpr T height() const noexcept;
+        constexpr void setWidth(T m_width) noexcept;
+        constexpr void setHeight(T m_height) noexcept;
+        constexpr void setSize(const Size<T> &s) noexcept;
+        constexpr Rect operator|(const Rect &r) const noexcept;
+        constexpr Rect operator&(const Rect &r) const noexcept;
+        constexpr Rect& operator|=(const Rect &r) noexcept;
+        constexpr Rect& operator&=(const Rect &r) noexcept;
+        constexpr bool contains(const Rect &r) const noexcept;
+        constexpr bool contains(const Point<T> &p) const noexcept;
+        constexpr bool contains(T x, T y) const noexcept;
+        constexpr Rect united(const Rect &other) const noexcept;
+        constexpr Rect intersected(const Rect &other) const noexcept;
+        constexpr bool intersects(const Rect &r) const noexcept;
+    private:
+        T m_x;
+        T m_y;
+        T m_width;
+        T m_height;
+    };
 
 }
 

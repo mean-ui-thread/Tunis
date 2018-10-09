@@ -21,25 +21,44 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  **/
+
 #include "SampleApp.h"
 
-std::unique_ptr<SampleApp> SampleApp::create() { return std::make_unique<SampleApp>(); }
-const char *SampleApp::getSampleName() { return "12_StrokeStyleExample"; }
+class CustomSample : public SampleApp
+{
+public:
+    CustomSample();
+    void render(double);
+
+private:
+    Image img;
+};
+
+
+std::unique_ptr<SampleApp> SampleApp::create() { return std::unique_ptr<SampleApp>(new CustomSample()); }
+const char *SampleApp::getSampleName() { return "22_CreatePattern"; }
 int SampleApp::getWindowWidth() { return 320; }
 int SampleApp::getWindowHeight() { return 200; }
 
+
 /*!
- * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Applying_styles_and_colors#A_strokeStyle_example
+ * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Applying_styles_and_colors#A_createPattern_example
  */
-void SampleApp::render(double)
+CustomSample::CustomSample()
 {
-    for (int i = 0; i < 6; i++) {
-      for (int j = 0; j < 6; j++) {
-        ctx.strokeStyle = rgb(0, Math.floor(255 - 42.5 * i),
-                              Math.floor(255 - 42.5 * j));
-        ctx.beginPath();
-        ctx.arc(12.5 + j * 25, 12.5 + i * 25, 10, 0, Math.PI * 2, true);
-        ctx.stroke();
-      }
-    }
+    // create new image object to use as pattern
+    img.src = "Canvas_createpattern.png";
+}
+
+void CustomSample::render(double)
+{
+    // create pattern
+    auto ptrn = ctx.createPattern(img, RepeatType::repeat);
+    ctx.fillStyle = ptrn;
+    ctx.fillRect(0, 0, 320, 200);
+}
+
+void SampleApp::render(double dt)
+{
+    static_cast<CustomSample*>(this)->render(dt);
 }

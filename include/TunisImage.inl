@@ -29,11 +29,6 @@
 
 namespace tunis
 {
-    namespace detail
-    {
-        extern Image blankImage;
-    }
-
     inline Image::Source::Source(Image *image) :
         image(image)
     {
@@ -75,9 +70,8 @@ namespace tunis
     {
         source().resize(0);
         data().resize(0);
-        sourceWidth() = 0;
-        sourceHeight() = 0;
-        bounds() = glm::u16vec4(0);
+        bounds() = Rect<int32_t>(0, 0, 1, 1);
+        paddedBounds() = Rect<int32_t>();
         parent() = nullptr;
     }
 
@@ -86,25 +80,10 @@ namespace tunis
     {
         source() = std::move(url);
         data().resize(0);
-        sourceWidth() = 0;
-        sourceHeight() = 0;
-        bounds() = glm::u16vec4(0);
+        bounds() = Rect<int32_t>(0, 0, 1, 1);
+        paddedBounds() = Rect<int32_t>();
         parent() = nullptr;
         detail::enqueueTask(&Image::sourceChanged, this);
-    }
-
-    inline Image::Image(const uint8_t *raw, int width, int height) :
-        src(this)
-    {
-        size_t dataSize = width * height * 4;
-        source().resize(0);
-        data().resize(dataSize);
-        memcpy(&data()[0], &raw[0], dataSize);
-        sourceWidth() = width;
-        sourceHeight() = height;
-        bounds() = glm::u16vec4(0);
-        parent() = nullptr;
-        detail::enqueueTask(&Image::dataChanged, this);
     }
 
 }

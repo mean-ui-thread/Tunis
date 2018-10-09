@@ -75,17 +75,17 @@ int main( int argc, char* args[] )
     {
         // tunis::Context can only be instantiated after a context is created
         // and made current
-        SampleApp app;
+        std::unique_ptr<SampleApp> app = SampleApp::create();
 
         std::stringstream title;
-        title << SampleApp::getSampleName() << " - " << app.ctx.backendName();
+        title << SampleApp::getSampleName() << " - " << app->ctx.backendName();
 
         SDL_SetWindowTitle(window, title.str().c_str());
 
         SDL_Event e = {};
         Uint64 start = SDL_GetPerformanceCounter();
 
-        std::string frameName = std::string("Frame(") + app.ctx.backendName() + ")";
+        std::string frameName = std::string("Frame(") + app->ctx.backendName() + ")";
 
         bool quit = false;
         while( !quit )
@@ -104,15 +104,15 @@ int main( int argc, char* args[] )
             SDL_GetWindowSize(window, &winWidth, &winHeight);
             SDL_GL_GetDrawableSize(window, &fbWidth, &fbHeight);
 
-            // Calculate pixel ration for hi-dpi devices.
+            // Calculate pixel ratio for hi-dpi devices.
             float pxRatio = static_cast<float>(fbWidth) / static_cast<float>(winWidth);
 
 
             double frameTime = static_cast<double>(SDL_GetPerformanceCounter() - start) / SDL_GetPerformanceFrequency();
-            app.ctx.clearFrame(0, 0, fbWidth, fbHeight);
-            app.ctx.beginFrame(winWidth, winHeight, pxRatio);
-            app.render(frameTime);
-            app.ctx.endFrame();
+            app->ctx.clearFrame(0, 0, fbWidth, fbHeight);
+            app->ctx.beginFrame(winWidth, winHeight, pxRatio);
+            app->render(frameTime);
+            app->ctx.endFrame();
             EASY_END_BLOCK;
 
             SDL_GL_SwapWindow(window);
@@ -125,4 +125,3 @@ int main( int argc, char* args[] )
 
     return 0;
 }
-
