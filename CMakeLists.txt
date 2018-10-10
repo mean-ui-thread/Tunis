@@ -99,17 +99,20 @@ target_include_directories(Tunis
 
 hunter_add_package(glm)
 hunter_add_package(easy_profiler)
+hunter_add_package(msdfgen)
 hunter_add_package(stb)
 
 find_package(glm CONFIG REQUIRED)
 find_package(easy_profiler CONFIG REQUIRED)
 find_package(stb CONFIG REQUIRED)
+find_package(msdfgen CONFIG REQUIRED)
 find_package(OpenMP REQUIRED)
 
 target_link_libraries(Tunis PUBLIC
     glm
     easy_profiler
     stb::stb
+    msdfgen::lib_msdfgen
     OpenMP::OpenMP_CXX
 )
 

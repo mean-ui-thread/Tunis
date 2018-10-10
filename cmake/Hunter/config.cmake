@@ -31,3 +31,10 @@ hunter_config(easy_profiler
         BUILD_WITH_CHRONO_HIGH_RESOLUTION_CLOCK=ON
         BUILD_SHARED_LIBS=OFF
 )
+
+hunter_config(msdfgen
+    GIT_SUBMODULE
+        "3rdparty/msdfgen"
+    CMAKE_ARGS
+        BUILD_SHARED_LIBS=OFF
+)
