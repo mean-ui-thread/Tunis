@@ -70,7 +70,9 @@ namespace tunis
         enum DrawOp
         {
             DRAW_FILL,
-            DRAW_STROKE
+            DRAW_STROKE,
+            DRAW_TEXT_FILL,
+            DRAW_TEXT_STROKE
         };
 
         struct BatchArray : public SoA<ShaderProgram*, Texture*, size_t, size_t, Paint>
@@ -1838,6 +1840,16 @@ namespace tunis
         rect(x, y, width, height);
         fill();
         fillStyle = origFillStyle;
+    }
+
+    void Context::fillText(const char *text, float x, float y, float maxWidth)
+    {
+
+    }
+
+    void Context::strokeText(const char *text, float x, float y, float maxWidth)
+    {
+
     }
 
     void Context::fill(Path2D &path, FillRule /*fillRule*/)

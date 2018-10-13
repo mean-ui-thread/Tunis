@@ -21,28 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ##
-add_subdirectory(common)
 
-add_subdirectory(01_SimpleExample)
-add_subdirectory(02_DrawingRectangles)
-add_subdirectory(03_DrawingTriangle)
-add_subdirectory(04_MovingThePen)
-add_subdirectory(05_Lines)
-add_subdirectory(06_Arcs)
-add_subdirectory(07_QuadraticBezierCurves)
-add_subdirectory(08_CubicBezierCurves)
-add_subdirectory(09_MakingCombinations)
-add_subdirectory(10_Path2D)
-add_subdirectory(11_FillStyleExample)
-add_subdirectory(12_StrokeStyleExample)
-add_subdirectory(13_GlobalAlphaExample)
-add_subdirectory(14_RGBAExample)
-add_subdirectory(15_LineWidthExample)
-add_subdirectory(16_LineCapExample)
-add_subdirectory(17_LineJoinExample)
-add_subdirectory(18_MiterLimit)
-add_subdirectory(19_UsingLineDashes)
-add_subdirectory(20_CreateLinearGradient)
-add_subdirectory(21_CreateRadialGradient)
-add_subdirectory(22_CreatePattern)
-add_subdirectory(23_ShadowedTextExample)
+project(23_ShadowedTextExample)
+
+add_executable(${PROJECT_NAME} SampleApp.cpp)
+target_link_libraries(${PROJECT_NAME} TunisSampleCommon)

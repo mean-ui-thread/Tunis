@@ -1,7 +1,7 @@
 /**
  * MIT License
  *
- * Copyright (c) @SAMPLE_YEAR@ Matt Chiasson
+ * Copyright (c) 2018 Matt Chiasson
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,14 +25,21 @@
 #include "SampleApp.h"
 
 std::unique_ptr<SampleApp> SampleApp::create() { return std::make_unique<SampleApp>(); }
-const char *SampleApp::getSampleName() { return "@SAMPLE_NAME@"; }
+const char *SampleApp::getSampleName() { return "23_ShadowedTextExample"; }
 int SampleApp::getWindowWidth() { return 320; }
 int SampleApp::getWindowHeight() { return 200; }
 
 /*!
- * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/???
+ * Based on https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Applying_styles_and_colors#A_shadowed_text_example
  */
 void SampleApp::render(double)
 {
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+    ctx.shadowBlur = 2;
+    ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
 
+    ctx.font = "20px Times New Roman";
+    ctx.fillStyle = "Black";
+    ctx.fillText("Sample String", 5, 30);
 }

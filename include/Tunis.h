@@ -109,6 +109,53 @@ public:
      */
     void clearRect(float x, float y, float width, float height);
 
+    /*!
+     * \brief fillText draws a text string at the specified coordinates,
+     * filling the string's characters with the current foreground color.
+     * An optional parameter allows specifying a maximum width for the rendered
+     * text, which the user agent will achieve by condensing the text or by
+     * using a lower font size.The text is rendered using the font and text layout configuration as
+     * defined by the font, textAlign, textBaseline, and direction properties.
+     * To draw the outlines of the characters in a string, call the context's
+     * strokeText() method.
+     *
+     * \param text the text string to render into the context. The text is
+     * rendered using the settings specified by font, textAlign, textBaseline,
+     * and direction.
+     * \param x The x -coordinate of the point at which to begin drawing the
+     * text, in pixels.
+     * \param y The y-coordinate of the point at which to begin drawing the
+     * text, in pixels.
+     * \param maxWidth The maximum number of pixels wide the string may be once
+     * rendered. If not specified, there is no limit to the width of the string.
+     * However, if this value is provided, Tunis will adjust the kerning, select
+     * a more horizontally condensed font (if one is available or can be
+     * generated without loss of quality), or scale down to a smaller font size
+     * in order to fit the text in the specified width.
+     */
+    void fillText(const char *text, float x, float y, float maxWidth = FLT_MAX);
+
+    /*!
+     * \brief strokeText strokes — that is, draws the outlines of — the
+     * characters of a specified text string at the given (x, y) position. If
+     * the optional fourth parameter for a maximum width is provided, the text
+     * is scaled to fit that width. See the CanvasRenderingContext2D.fillText()
+     * method to draw the text with the characters filled with color rather than
+     * having just their outlines drawn.
+     *
+     * \param text The text to draw using the current font, textAlign,
+     * textBaseline, and direction values.
+     * \param x The x axis of the coordinate for the text starting point.
+     * \param y The y axis of the coordinate for the text starting point.
+     * \param maxWidth The maximum width to draw. If specified, and the string
+     * is computed to be wider than this width, the font is adjusted to use a
+     * more horizontally condensed font (if one is available or if a reasonably
+     * readable one can be synthesized by scaling the current font horizontally)
+     * or a smaller font.
+     */
+    void strokeText(const char *text, float x, float y, float maxWidth = FLT_MAX);
+
+
 
     /*!
      * \brief beginPath starts a new path by emptying the list of sub-paths.
