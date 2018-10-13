@@ -26,7 +26,7 @@
 namespace tunis
 {
     template<typename T>
-    constexpr Rect<T>::Rect() noexcept :
+    inline Rect<T>::Rect() :
         m_x(0),
         m_y(0),
         m_width(-1),
@@ -35,7 +35,7 @@ namespace tunis
     }
 
     template<typename T>
-    constexpr Rect<T>::Rect(T x, T y, T width, T height) noexcept :
+    inline Rect<T>::Rect(T x, T y, T width, T height) :
         m_x(x),
         m_y(y),
         m_width(width),
@@ -44,7 +44,7 @@ namespace tunis
     }
 
     template<typename T>
-    constexpr Rect<T>::Rect(const Point<T> &topLeft, const Size<T> &size) noexcept :
+    inline Rect<T>::Rect(const Point<T> &topLeft, const Size<T> &size) :
         m_x(topLeft.x),
         m_y(topLeft.y),
         m_width(size.width()),
@@ -53,7 +53,7 @@ namespace tunis
     }
 
     template<typename T>
-    constexpr Rect<T>::Rect(const Point<T> &topLeft, const Point<T> &bottomRight) noexcept :
+    inline Rect<T>::Rect(const Point<T> &topLeft, const Point<T> &bottomRight) :
         m_x(topLeft.x),
         m_y(topLeft.y),
         m_width(bottomRight.x - topLeft.x),
@@ -62,7 +62,7 @@ namespace tunis
     }
 
     template<typename T>
-    constexpr Rect<T>::Rect(const Rect &other) noexcept :
+    inline Rect<T>::Rect(const Rect &other) :
         m_x(other.m_x),
         m_y(other.m_y),
         m_width(other.m_width),
@@ -71,73 +71,73 @@ namespace tunis
     }
 
     template<typename T>
-    inline bool Rect<T>::isNull() const noexcept
+    inline bool Rect<T>::isNull() const
     {
         return m_width == 0 && m_height == 0;
     }
 
     template<typename T>
-    constexpr bool Rect<T>::isEmpty() const noexcept
+    inline bool Rect<T>::isEmpty() const
     {
         return m_width <= 0 || m_height <= 0;
     }
 
     template<typename T>
-    constexpr bool Rect<T>::isValid() const noexcept
+    inline bool Rect<T>::isValid() const
     {
         return m_width > 0 && m_height > 0;
     }
 
     template<typename T>
-    constexpr T Rect<T>::left() const noexcept
+    inline T Rect<T>::left() const
     {
         return m_x;
     }
 
     template<typename T>
-    constexpr T Rect<T>::top() const noexcept
+    inline T Rect<T>::top() const
     {
         return m_y;
     }
 
     template<typename T>
-    constexpr T Rect<T>::right() const noexcept
+    inline T Rect<T>::right() const
     {
         return m_x + m_width;
     }
 
     template<typename T>
-    constexpr T Rect<T>::bottom() const noexcept
+    inline T Rect<T>::bottom() const
     {
         return m_y + m_height;
     }
 
     template<typename T>
-    constexpr T &Rect<T>::x() noexcept
+    inline T &Rect<T>::x()
     {
         return m_x;
     }
 
     template<typename T>
-    constexpr T Rect<T>::x() const noexcept
+    inline T Rect<T>::x() const
     {
         return m_x;
     }
 
     template<typename T>
-    constexpr T &Rect<T>::y() noexcept
+    inline T &Rect<T>::y()
     {
         return m_y;
     }
 
     template<typename T>
-    constexpr T Rect<T>::y() const noexcept
+    inline T Rect<T>::y() const
     {
         return m_y;
     }
 
     template<typename T>
-    constexpr void Rect<T>::setLeft(T left) noexcept
+    inline void Rect<T>::setLeft(T left)
     {
         T diff = left - m_x;
         m_x += diff;
@@ -145,13 +145,13 @@ namespace tunis
     }
 
     template<typename T>
-    constexpr void Rect<T>::setRight(T right) noexcept
+    inline void Rect<T>::setRight(T right)
     {
         m_width = right - m_x;
     }
 
     template<typename T>
-    constexpr void Rect<T>::setTop(T top) noexcept
+    inline void Rect<T>::setTop(T top)
     {
         T diff = top - m_y;
         m_y += diff;
@@ -159,99 +159,99 @@ namespace tunis
     }
 
     template<typename T>
-    constexpr void Rect<T>::setBottom(T bottom) noexcept
+    inline void Rect<T>::setBottom(T bottom)
     {
         m_height = bottom - m_y;
     }
 
     template<typename T>
-    constexpr void Rect<T>::setX(T x) noexcept
+    inline void Rect<T>::setX(T x)
     {
         m_x = x;
     }
 
     template<typename T>
-    constexpr void Rect<T>::setY(T y) noexcept
+    inline void Rect<T>::setY(T y)
     {
         m_y = y;
     }
 
     template<typename T>
-    constexpr Point<T> Rect<T>::topLeft() const noexcept
+    inline Point<T> Rect<T>::topLeft() const
     {
         return Point<T>(m_x, m_y);
     }
 
     template<typename T>
-    constexpr Point<T> Rect<T>::bottomRight() const noexcept
+    inline Point<T> Rect<T>::bottomRight() const
     {
         return Point<T>(m_x+m_width, m_y+m_height);
     }
 
     template<typename T>
-    constexpr Point<T> Rect<T>::topRight() const noexcept
+    inline Point<T> Rect<T>::topRight() const
     {
         return Point<T>(m_x+m_width, m_y);
     }
 
     template<typename T>
-    constexpr Point<T> Rect<T>::bottomLeft() const noexcept
+    inline Point<T> Rect<T>::bottomLeft() const
     {
         return Point<T>(m_x, m_y+m_height);
     }
 
     template<typename T>
-    constexpr Point<T> Rect<T>::center() const noexcept
+    inline Point<T> Rect<T>::center() const
     {
         return Point<T>(m_x + m_width/2, m_y + m_height/2);
     }
 
     template<typename T>
-    constexpr T Rect<T>::width() const noexcept
+    inline T Rect<T>::width() const
     {
         return m_width;
     }
 
     template<typename T>
-    constexpr T Rect<T>::height() const noexcept
+    inline T Rect<T>::height() const
     {
         return m_height;
     }
 
     template<typename T>
-    constexpr void Rect<T>::setWidth(T w) noexcept
+    inline void Rect<T>::setWidth(T w)
     {
         m_width = w;
     }
 
     template<typename T>
-    constexpr void Rect<T>::setHeight(T h) noexcept
+    inline void Rect<T>::setHeight(T h)
     {
         m_height = h;
     }
 
     template<typename T>
-    constexpr void Rect<T>::setSize(const Size<T> &size) noexcept
+    inline void Rect<T>::setSize(const Size<T> &size)
     {
         m_width = size.width();
         m_height = size.height();
     }
 
     template<typename T>
-    constexpr bool Rect<T>::contains(T x, T y) const noexcept
+    inline bool Rect<T>::contains(T x, T y) const
     {
         return contains(Point<T>(x, y));
     }
 
     template<typename T>
-    constexpr Rect<T>& Rect<T>::operator|=(const Rect &other) noexcept
+    inline Rect<T>& Rect<T>::operator|=(const Rect &other)
     {
         *this = *this | other;
         return *this;
     }
 
     template<typename T>
-    constexpr Rect<T>& Rect<T>::operator&=(const Rect &other) noexcept
+    inline Rect<T>& Rect<T>::operator&=(const Rect &other)
     {
         *this = *this & other;
         return *this;
@@ -259,19 +259,19 @@ namespace tunis
 
 
     template<typename T>
-    constexpr Rect<T> Rect<T>::united(const Rect &other) const noexcept
+    inline Rect<T> Rect<T>::united(const Rect &other) const
     {
         return *this | other;
     }
 
     template<typename T>
-    constexpr Rect<T> Rect<T>::intersected(const Rect &other) const noexcept
+    inline Rect<T> Rect<T>::intersected(const Rect &other) const
     {
         return *this & other;
     }
 
     template<typename T>
-    constexpr bool Rect<T>::intersects(const Rect<T> &other) const noexcept
+    inline bool Rect<T>::intersects(const Rect<T> &other) const
     {
         int left1 = m_x;
         int right1 = m_x;
@@ -356,7 +356,7 @@ namespace tunis
 }
 
 template<typename T>
-inline bool operator==(const tunis::Rect<T> &lhs, const tunis::Rect<T> &rhs) noexcept
+inline bool operator==(const tunis::Rect<T> &lhs, const tunis::Rect<T> &rhs)
 {
     return lhs.x() == rhs.x() &&
             lhs.y() == rhs.y() &&
@@ -365,7 +365,7 @@ inline bool operator==(const tunis::Rect<T> &lhs, const tunis::Rect<T> &rhs) noe
 }
 
 template<typename T>
-inline bool operator!=(const tunis::Rect<T> &lhs, const tunis::Rect<T> &rhs) noexcept
+inline bool operator!=(const tunis::Rect<T> &lhs, const tunis::Rect<T> &rhs)
 {
     return lhs.x() != rhs.x() ||
             lhs.y() != rhs.y() ||

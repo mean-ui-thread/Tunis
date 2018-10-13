@@ -52,7 +52,9 @@
 #include <TunisVertex.h>
 
 
+#if defined(TUNIS_PROFILING)
 #include <easy/profiler.h>
+#endif
 #include <glm/gtc/epsilon.hpp>
 #include <glm/gtx/exterior_product.hpp>
 #include <stb/stb_image.h>
@@ -61,8 +63,12 @@
 
 namespace tunis
 {
+    detail::Math Math;
+
     namespace detail
     {
+        const float Math::PI = glm::pi<float>();
+
         moodycamel::ConcurrentQueue< std::function<void(ContextPriv*)> > taskQueue(128);
 
         GraphicStates gfxStates;
@@ -141,7 +147,7 @@ namespace tunis
                 // pixel width in 16bit.
                 gfxStates.pixelWidth = static_cast<float>(0xFFFF) / static_cast<float>(gfxStates.maxTexSize);
 
-                std::unique_ptr<Texture> tex = std::make_unique<Texture>(gfxStates.maxTexSize, gfxStates.maxTexSize);
+                std::unique_ptr<Texture> tex = std::unique_ptr<Texture>(new Texture(gfxStates.maxTexSize, gfxStates.maxTexSize));
                 textures.emplace_back(std::move(tex)); // retain
 
                 Gradient::reserve(64);
@@ -167,9 +173,9 @@ namespace tunis
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[ContextPriv::IBO]);
 
                 // Initialize our shader programs.
-                programTexture = std::make_unique<ShaderProgramTexture>();
-                programGradientLinear = std::make_unique<ShaderProgramGradientLinear>();
-                programGradientRadial = std::make_unique<ShaderProgramGradientRadial>();
+                programTexture = std::unique_ptr<ShaderProgramTexture>(new ShaderProgramTexture());
+                programGradientLinear = std::unique_ptr<ShaderProgramGradientLinear>(new ShaderProgramGradientLinear());
+                programGradientRadial = std::unique_ptr<ShaderProgramGradientRadial>(new ShaderProgramGradientRadial());
 
                 // Use our default texture program.
                 programTexture->useProgram();
@@ -345,10 +351,14 @@ namespace tunis
                 if (renderQueue.size() > 0)
                 {
                     // Generate Geometry (Multi-threaded)
+                    #if defined(_OPENMP)
                     #pragma omp parallel for num_threads(std::thread::hardware_concurrency())
+                    #endif
                     for (long i = 0; i < renderQueue.size(); ++i)
                     {
+                        #if defined(TUNIS_PROFILING) && defined(_OPENMP)
                         EASY_THREAD_SCOPE("OpenMP trianglation");
+                        #endif
                         auto &path = renderQueue.path(i);
                         if (path.dirty())
                         {
@@ -368,7 +378,10 @@ namespace tunis
                         }
                     }
 
-                    EASY_BLOCK("Batch", profiler::colors::DarkRed)
+                    #if defined(TUNIS_PROFILING)
+                    EASY_BLOCK("Batch", profiler::colors::DarkRed);
+                    #endif
+
                     // Batch Geometry into vertex and index buffers
                     for (size_t i = 0; i < renderQueue.size(); ++i)
                     {
@@ -623,10 +636,14 @@ namespace tunis
 
                     renderQueue.resize(0);
                 }
+                #if defined(TUNIS_PROFILING)
                 EASY_END_BLOCK;
+                #endif
 
 
-                EASY_BLOCK("glBufferData", profiler::colors::DarkRed)
+                #if defined(TUNIS_PROFILING)
+                EASY_BLOCK("glBufferData", profiler::colors::DarkRed);
+                #endif
                 // flush the vertex buffer.
                 if (vertexBuffer.size() > 0) {
                     glBufferData(GL_ARRAY_BUFFER,
@@ -646,12 +663,16 @@ namespace tunis
                                  GL_STREAM_DRAW);
                     indexBuffer.resize(0);
                 }
+                #if defined(TUNIS_PROFILING)
                 EASY_END_BLOCK;
+                #endif
 
                 // flush the batches
                 if ( batches.size() > 0)
                 {
-                    EASY_BLOCK("glDrawElements", profiler::colors::DarkRed)
+                    #if defined(TUNIS_PROFILING)
+                    EASY_BLOCK("glDrawElements", profiler::colors::DarkRed);
+                    #endif
                     for (size_t i = 0; i < batches.size(); ++i)
                     {
                         batches.program(i)->useProgram();
@@ -1106,7 +1127,9 @@ namespace tunis
 
             inline void generateContour(Path2D &path)
             {
+                #if defined(TUNIS_PROFILING)
                 EASY_FUNCTION(profiler::colors::DarkRed);
+                #endif
                 SubPath2DArray &subPaths = path.subPaths();
                 PathCommandArray &commands = path.commands();
 
@@ -1268,7 +1291,10 @@ namespace tunis
             inline void generateStrokeContour(Path2D &path, const ContextState& state)
             {
                 generateContour(path);
+
+                #if defined(TUNIS_PROFILING)
                 EASY_FUNCTION(profiler::colors::DarkGreen);
+                #endif
 
                 float halfLineWidth = state.lineWidth * 0.5f;
                 SubPath2DArray &subPaths = path.subPaths();
@@ -1693,7 +1719,9 @@ namespace tunis
 
             inline void triangulate(Path2D &path)
             {
+                #if defined(TUNIS_PROFILING)
                 EASY_FUNCTION(profiler::colors::DarkBlue);
+                #endif
 
                 SubPath2DArray &subPaths = path.subPaths();
                 glm::vec2 &boundTopLeft = path.boundTopLeft();
@@ -1872,8 +1900,10 @@ namespace tunis
     {
         auto decodeTask = +[](Image *self, std::string url)->void
         {
+            #if defined(TUNIS_PROFILING)
             EASY_THREAD_SCOPE(url);
             EASY_FUNCTION();
+            #endif
 
             int w, h, n;
             uint8_t *raw = stbi_load(url.c_str(), &w, &h, &n, 4); // force RGBA

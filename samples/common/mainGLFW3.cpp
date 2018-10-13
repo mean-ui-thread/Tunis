@@ -27,7 +27,9 @@
 
 #include <sstream>
 
+#if defined(TUNIS_PROFILING)
 #include <easy/profiler.h>
+#endif
 
 void error_callback(int error, const char* description)
 {
@@ -36,9 +38,11 @@ void error_callback(int error, const char* description)
 
 int main( int argc, char* args[] )
 {
+    #if defined(TUNIS_PROFILING)
     EASY_MAIN_THREAD;
     EASY_PROFILER_ENABLE;
     profiler::startListen();
+    #endif
 
     glfwSetErrorCallback(error_callback);
 
@@ -50,9 +54,9 @@ int main( int argc, char* args[] )
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef TUNIS_SAMPLES_MSAA
+    #ifdef TUNIS_SAMPLES_MSAA
     glfwWindowHint(GLFW_SAMPLES, 4);
-#endif
+    #endif
     glfwWindowHint(GLFW_DEPTH_BITS, 24);
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
 
@@ -83,7 +87,10 @@ int main( int argc, char* args[] )
         std::string frameName = std::string("Frame(") + app->ctx.backendName() + ")";
         while (!glfwWindowShouldClose(window))
         {
+            #if defined(TUNIS_PROFILING)
             EASY_BLOCK(frameName);
+            #endif
+
             glfwPollEvents();
 
             int winWidth, winHeight, fbWidth , fbHeight;
@@ -98,7 +105,10 @@ int main( int argc, char* args[] )
             app->ctx.beginFrame(winWidth, winHeight, pxRatio);
             app->render(frameTime);
             app->ctx.endFrame();
+
+            #if defined(TUNIS_PROFILING)
             EASY_END_BLOCK;
+            #endif
 
             glfwSwapBuffers(window);
         }
@@ -107,7 +117,9 @@ int main( int argc, char* args[] )
 
     glfwTerminate();
 
+    #if defined(TUNIS_PROFILING)
     profiler::dumpBlocksToFile("easy_profiler.prof");
+    #endif
 
     return 0;
 }

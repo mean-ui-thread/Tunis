@@ -23,7 +23,7 @@
 ##
 cmake_minimum_required(VERSION 3.2)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -98,30 +98,29 @@ target_include_directories(Tunis
 )
 
 hunter_add_package(glm)
-hunter_add_package(easy_profiler)
 hunter_add_package(msdfgen)
 hunter_add_package(stb)
 
 find_package(glm CONFIG REQUIRED)
-find_package(easy_profiler CONFIG REQUIRED)
 find_package(stb CONFIG REQUIRED)
 find_package(msdfgen CONFIG REQUIRED)
-find_package(OpenMP REQUIRED)
+find_package(OpenMP)
 
-target_link_libraries(Tunis PUBLIC
-    glm
-    easy_profiler
-    stb::stb
-    msdfgen::lib_msdfgen
-    OpenMP::OpenMP_CXX
-)
+target_link_libraries(Tunis PUBLIC glm stb::stb msdfgen::lib_msdfgen)
+
+if (TUNIS_PROFILING)
+    hunter_add_package(easy_profiler)
+    find_package(easy_profiler CONFIG REQUIRED)
+    target_link_libraries(Tunis PUBLIC easy_profiler)
+    target_compile_definitions(Tunis PUBLIC TUNIS_PROFILING=1)
+endif()
+
+if (TARGET OpenMP::OpenMP_CXX)
+    target_link_libraries(Tunis PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 include(src/${TUNIS_BACKEND}/Backend.cmake)
 tunis_backend_dependencies()
-
-if (NOT TUNIS_PROFILING)
-    target_compile_definitions(Tunis PUBLIC DISABLE_EASY_PROFILER=1)
-endif()
 
 if (TUNIS_BUILD_SAMPLES)
     add_subdirectory(samples)

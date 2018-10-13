@@ -39,27 +39,27 @@ namespace tunis
     class Size
     {
     public:
-        constexpr Size() noexcept;
-        constexpr Size(const Size &sz) noexcept;
-        constexpr Size(T w, T h) noexcept;
-        inline bool isNull() const noexcept;
-        constexpr inline bool isEmpty() const noexcept;
-        constexpr inline bool isValid() const noexcept;
-        constexpr inline T &width() noexcept;
-        constexpr inline T &height() noexcept;
-        constexpr inline T width() const noexcept;
-        constexpr inline T height() const noexcept;
-        constexpr inline void setWidth(T w) noexcept;
-        constexpr inline void setHeight(T h) noexcept;
-        constexpr inline Size &operator+=(const Size &) noexcept;
-        constexpr inline Size &operator-=(const Size &) noexcept;
-        constexpr inline Size &operator*=(T c) noexcept;
-        constexpr inline const Size operator+(const Size &) noexcept;
-        constexpr inline const Size operator-(const Size &) noexcept;
-        constexpr inline const Size operator*(T) noexcept;
-        constexpr inline const Size operator*(const Size &) noexcept;
-        constexpr inline Size &operator/=(T c);
-        constexpr inline const Size operator/(T);
+        Size();
+        Size(const Size &sz);
+        Size(T w, T h);
+        inline bool isNull() const;
+        inline bool isEmpty() const;
+        inline bool isValid() const;
+        inline T &width();
+        inline T &height();
+        inline T width() const;
+        inline T height() const;
+        inline void setWidth(T w);
+        inline void setHeight(T h);
+        inline Size &operator+=(const Size &);
+        inline Size &operator-=(const Size &);
+        inline Size &operator*=(T c);
+        inline const Size operator+(const Size &);
+        inline const Size operator-(const Size &);
+        inline const Size operator*(T);
+        inline const Size operator*(const Size &);
+        inline Size &operator/=(T c);
+        inline const Size operator/(T);
     private:
         T m_width;
         T m_height;

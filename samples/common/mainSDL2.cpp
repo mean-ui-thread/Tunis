@@ -26,13 +26,17 @@
 
 #include <sstream>
 
+#if defined(TUNIS_PROFILING)
 #include <easy/profiler.h>
+#endif
 
 int main( int argc, char* args[] )
 {
+#if defined(TUNIS_PROFILING)
     EASY_MAIN_THREAD;
     EASY_PROFILER_ENABLE;
     profiler::startListen();
+#endif
 
     if (SDL_Init( SDL_INIT_VIDEO ) < 0 )
     {
@@ -90,7 +94,9 @@ int main( int argc, char* args[] )
         bool quit = false;
         while( !quit )
         {
+#if defined(TUNIS_PROFILING)
             EASY_BLOCK(frameName);
+#endif
             //Handle events on queue
             while( SDL_PollEvent( &e ) != 0 )
             {
@@ -113,15 +119,18 @@ int main( int argc, char* args[] )
             app->ctx.beginFrame(winWidth, winHeight, pxRatio);
             app->render(frameTime);
             app->ctx.endFrame();
+#if defined(TUNIS_PROFILING)
             EASY_END_BLOCK;
-
+#endif
             SDL_GL_SwapWindow(window);
         }
     }
 
     SDL_Quit();
 
+#if defined(TUNIS_PROFILING)
     profiler::dumpBlocksToFile("easy_profiler.prof");
+#endif
 
     return 0;
 }

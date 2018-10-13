@@ -24,7 +24,7 @@
 
 #include "SampleApp.h"
 
-std::unique_ptr<SampleApp> SampleApp::create() { return std::make_unique<SampleApp>(); }
+std::unique_ptr<SampleApp> SampleApp::create() { return std::unique_ptr<SampleApp>(new SampleApp()); }
 const char *SampleApp::getSampleName() { return "23_ShadowedTextExample"; }
 int SampleApp::getWindowWidth() { return 320; }
 int SampleApp::getWindowHeight() { return 200; }
