@@ -212,5 +212,4 @@ script:
   - cmake --version
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cmake -H. -B_build -DCMAKE_TOOLCHAIN_FILE=`pwd`/cmake/toolchains/${TOOLCHAIN}; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then cmake -H. -B_build -G Xcode -DCMAKE_TOOLCHAIN_FILE=`pwd`/cmake/toolchains/${TOOLCHAIN}; fi
-  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then cmake -H. -B_build -G "Visual Studio 15 2017 Win64"; fi
   - cmake --build _build
