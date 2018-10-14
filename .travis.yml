@@ -32,9 +32,6 @@ matrix:
   include:
 
     - os: osx
-      env: TOOLCHAIN=osx-10.10.cmake
-
-    - os: osx
       env: TOOLCHAIN=osx-10.13.cmake
 
     - os: linux
