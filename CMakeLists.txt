@@ -39,6 +39,8 @@ project(Tunis)
 
 include(BuildOptions)
 
+file(GLOB_RECURSE CI_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ci/*)
+file(GLOB_RECURSE CMAKE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} cmake/*)
 file(GLOB_RECURSE BACKEND_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/${TUNIS_BACKEND}/*)
 
 add_library(Tunis
@@ -47,11 +49,8 @@ add_library(Tunis
     .travis.yml
     .appveyor.yml
 
-    ci/build-linux.sh
-    ci/build-osx.sh
-
-    cmake/BuildOptions.cmake
-    cmake/Hunter/config.cmake
+    ${CI_FILES}
+    ${CMAKE_FILES}
 
     include/Tunis.h
     include/Tunis.inl

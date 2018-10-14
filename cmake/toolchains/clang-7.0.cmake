@@ -22,5 +22,5 @@
 # SOFTWARE.
 ##
 include(${CMAKE_CURRENT_LIST_DIR}/common/default.cmake)
-set(CMAKE_C_COMPILER gcc-4.7)
-set(CMAKE_CXX_COMPILER g++-4.7)
+set(CMAKE_C_COMPILER clang-7.0)
+set(CMAKE_CXX_COMPILER clang++-7.0)
