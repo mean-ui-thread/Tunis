@@ -44,6 +44,11 @@ file(GLOB_RECURSE BACKEND_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/${TUNIS_B
 add_library(Tunis
     LICENSE
     README.md
+    .travis.yml
+    .appveyor.yml
+
+    ci/build-linux.sh
+    ci/build-osx.sh
 
     cmake/BuildOptions.cmake
     cmake/Hunter/config.cmake

@@ -22,194 +22,72 @@
 # SOFTWARE.
 ##
 
-language: generic
-sudo: false
-dist: trusty
 git:
   quiet: true
   depth: 1
 
-addons_shortcuts:
-
-  addons_clang35: &clang35
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.5' ]
-      packages: [ 'clang-3.5', 'libiomp-dev' ]
-
-  addons_clang36: &clang36
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.6' ]
-      packages: [ 'clang-3.6', 'libiomp-dev' ]
-
-  addons_clang37: &clang37
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7' ]
-      packages: [ 'clang-3.7', 'libiomp-dev' ]
-
-  addons_clang38: &clang38
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.8' ]
-      packages: [ 'clang-3.8', 'libiomp-dev' ]
-
-  addons_clang39: &clang39
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-3.9' ]
-      packages: [ 'clang-3.9', 'libiomp-dev' ]
-
-  addons_clang40: &clang40
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-4.0' ]
-      packages: [ 'clang-4.0', 'libiomp-dev' ]
-
-  addons_clang50: &clang50
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-5.0' ]
-      packages: [ 'clang-5.0', 'libiomp-dev' ]
-
-  addons_clang60: &clang60
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-6.0' ]
-      packages: [ 'clang-6.0', 'libiomp-dev' ]
-
-  addons_clang70: &clang70
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-7.0' ]
-      packages: [ 'clang-7.0', 'libiomp-dev' ]
-
-  addons_gcc47: &gcc47
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test' ]
-      packages: [ 'g++-4.7', 'gcc-4.7' ]
-
-  addons_gcc48: &gcc48
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test' ]
-      packages: [ 'g++-4.8', 'gcc-4.8' ]
-
-  addons_gcc49: &gcc49
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test' ]
-      packages: [ 'g++-4.9', 'gcc-4.9' ]
-
-  addons_gcc5: &gcc5
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test' ]
-      packages: [ 'g++-5', 'gcc-5' ]
-
-  addons_gcc6: &gcc6
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test' ]
-      packages: [ 'g++-6', 'gcc-6' ]
-
-  addons_gcc7: &gcc7
-    apt:
-      sources: [ 'ubuntu-toolchain-r-test' ]
-      packages: [ 'g++-7', 'gcc-7' ]
-
+language: generic
 
 matrix:
   include:
-    - os: osx
-      osx_image: xcode8.3
-      env: TOOLCHAIN=osx-10.12.cmake
 
     - os: osx
-      osx_image: xcode9
-      env: TOOLCHAIN=osx-10.12.cmake
+      env: TOOLCHAIN=osx-10.10.cmake
 
     - os: osx
-      osx_image: xcode9.1
-      env: TOOLCHAIN=osx-10.12.cmake
-
-    - os: osx
-      osx_image: xcode9.2
-      env: TOOLCHAIN=osx-10.12.cmake
-
-    - os: osx
-      osx_image: xcode9.3
-      env: TOOLCHAIN=osx-10.13.cmake
-
-    - os: osx
-      osx_image: xcode9.4
-      env: TOOLCHAIN=osx-10.13.cmake
-
-    - os: osx
-      osx_image: xcode10
       env: TOOLCHAIN=osx-10.13.cmake
 
     - os: linux
       compiler: 'clang-3.5'
-      addons: *clang35
       env: TOOLCHAIN=clang-3.5.cmake
-
-    - os: linux
-      compiler: 'clang-3.6'
-      addons: *clang36
-      env: TOOLCHAIN=clang-3.6.cmake
-
-    - os: linux
-      compiler: 'clang-3.7'
-      addons: *clang37
-      env: TOOLCHAIN=clang-3.7.cmake
-
-    - os: linux
-      compiler: 'clang-3.8'
-      addons: *clang38
-      env: TOOLCHAIN=clang-3.8.cmake
-
-    - os: linux
-      compiler: 'clang-3.9'
-      addons: *clang39
-      env: TOOLCHAIN=clang-3.9.cmake
-
-    - os: linux
-      compiler: 'clang-4.0'
-      addons: *clang40
-      env: TOOLCHAIN=clang-4.0.cmake
-
-    - os: linux
-      compiler: 'clang-5.0'
-      addons: *clang50
-      env: TOOLCHAIN=clang-5.0.cmake
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.5
+          packages:
+            - ninja-build
+            - clang-3.5
+            - libiomp-dev
 
     - os: linux
       compiler: 'clang-6.0'
-      addons: *clang60
       env: TOOLCHAIN=clang-6.0.cmake
-
-# TunisSOA.h crashes gcc-4.7 (segfault)
-#    - os: linux
-#      compiler: 'gcc-4.7'
-#      addons: *gcc47
-#      env: TOOLCHAIN=gcc-4.7.cmake
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-6.0
+          packages:
+            - ninja-build
+            - clang-6.0
+            - libiomp-dev
 
     - os: linux
       compiler: 'gcc-4.8'
-      addons: *gcc48
       env: TOOLCHAIN=gcc-4.8.cmake
-
-    - os: linux
-      compiler: 'gcc-4.9'
-      addons: *gcc49
-      env: TOOLCHAIN=gcc-4.9.cmake
-
-    - os: linux
-      compiler: 'gcc-5'
-      addons: *gcc5
-      env: TOOLCHAIN=gcc-5.cmake
-
-    - os: linux
-      compiler: 'gcc-6'
-      addons: *gcc6
-      env: TOOLCHAIN=gcc-6.cmake
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - ninja-build
+            - gcc-4.8
+            - g++-4.8
+            - libiomp-dev
 
     - os: linux
       compiler: 'gcc-7'
-      addons: *gcc7
       env: TOOLCHAIN=gcc-7.cmake
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - ninja-build
+            - gcc-7
+            - g++-7
+            - libiomp-dev
 
 script:
-  - cmake --version
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cmake -H. -B_build -DCMAKE_TOOLCHAIN_FILE=`pwd`/cmake/toolchains/${TOOLCHAIN}; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then cmake -H. -B_build -G Xcode -DCMAKE_TOOLCHAIN_FILE=`pwd`/cmake/toolchains/${TOOLCHAIN}; fi
-  - cmake --build _build
+  - ./ci/build-${TRAVIS_OS_NAME}.sh ${TOOLCHAIN}
