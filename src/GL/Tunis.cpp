@@ -882,7 +882,7 @@ namespace tunis
 
                 float d2 = glm::abs(((x2 - x4) * dy - (y2 - y4) * dx));
                 float d3 = glm::abs(((x3 - x4) * dy - (y3 - y4) * dx));
-                float da1, da2, k;
+                float da2, k;
 
                 switch((int(d2 > glm::epsilon<float>()) << 1) + int(d3 > glm::epsilon<float>()))
                 {
@@ -898,7 +898,7 @@ namespace tunis
                         else
                         {
                             k   = 1 / k;
-                            da1 = x2 - x1;
+                            float da1 = x2 - x1;
                             da2 = y2 - y1;
                             d2  = k * (da1*dx + da2*dy);
                             da1 = x3 - x1;
@@ -1045,8 +1045,7 @@ namespace tunis
             {
                 glm::vec2 pq = q - p;
                 glm::vec2 pc = c - p;
-                float d = (pq.x * pq.x) + (pq.y * pq.y);
-                d = glm::dot(pq, pq);
+                float d = glm::dot(pq, pq);
                 float t = glm::dot(pq, pc);
 
                 if (d > 0)
