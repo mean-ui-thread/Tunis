@@ -80,7 +80,7 @@ namespace tunis
     class RefCountedSOA
     {
     public:
-        using id_t = uint32_t;
+        using refid_t = uint32_t;
         using refcount_t = uint32_t;
         enum {_refCount = sizeof...(Elements) };
 
@@ -94,7 +94,7 @@ namespace tunis
         bool operator==(const RefCountedSOA &other);
         bool operator!=(const RefCountedSOA &other);
 
-        id_t getId() const;
+        refid_t getId() const;
 
         template <typename T> T clone();
 
@@ -110,8 +110,8 @@ namespace tunis
 
     private:
         static SoA<Elements..., refcount_t> _soa;
-        static std::vector<id_t> _available;
-        id_t _id;
+        static std::vector<refid_t> _available;
+        refid_t _id;
     };
 
 }

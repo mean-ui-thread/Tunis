@@ -35,7 +35,7 @@ namespace tunis
         }
         else
         {
-            _id = static_cast<id_t>(_soa.size());
+            _id = static_cast<refid_t>(_soa.size());
             _soa.resize(_soa.size()+1);
         }
 
@@ -114,7 +114,7 @@ namespace tunis
     }
 
     template <typename... Elements>
-    id_t RefCountedSOA<Elements...>::getId() const
+    typename RefCountedSOA<Elements...>::refid_t RefCountedSOA<Elements...>::getId() const
     {
         return _id;
     }
@@ -153,7 +153,7 @@ namespace tunis
     SoA<Elements..., typename RefCountedSOA<Elements...>::refcount_t> RefCountedSOA<Elements...>::_soa;
 
     template <typename... Elements>
-    std::vector<typename RefCountedSOA<Elements...>::id_t> RefCountedSOA<Elements...>::_available;
+    std::vector<typename RefCountedSOA<Elements...>::refid_t> RefCountedSOA<Elements...>::_available;
 
 
 }
