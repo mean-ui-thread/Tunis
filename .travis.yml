@@ -38,6 +38,7 @@ matrix:
       env: TOOLCHAIN=osx-10.13.cmake
 
     - os: linux
+      dist: trusty
       compiler: 'clang-3.5'
       env: TOOLCHAIN=clang-3.5.cmake
       addons:
@@ -51,6 +52,7 @@ matrix:
             - libiomp-dev
 
     - os: linux
+      dist: trusty
       compiler: 'clang-6.0'
       env: TOOLCHAIN=clang-6.0.cmake
       addons:
@@ -64,6 +66,7 @@ matrix:
             - libiomp-dev
 
     - os: linux
+      dist: trusty
       compiler: 'gcc-4.8'
       env: TOOLCHAIN=gcc-4.8.cmake
       addons:
@@ -77,6 +80,7 @@ matrix:
             - libiomp-dev
 
     - os: linux
+      dist: trusty
       compiler: 'gcc-7'
       env: TOOLCHAIN=gcc-7.cmake
       addons:
