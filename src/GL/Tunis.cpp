@@ -882,14 +882,14 @@ namespace tunis
 
                 float d2 = glm::abs(((x2 - x4) * dy - (y2 - y4) * dx));
                 float d3 = glm::abs(((x3 - x4) * dy - (y3 - y4) * dx));
-                float da2, k;
 
                 switch((int(d2 > glm::epsilon<float>()) << 1) + int(d3 > glm::epsilon<float>()))
                 {
                     case 0:
+                    {
                         // All collinear OR p1==p4
                         //----------------------
-                        k = dx*dx + dy*dy;
+                        float k = dx*dx + dy*dy;
                         if(glm::epsilonEqual(k, 0.0f, glm::epsilon<float>()))
                         {
                             d2 = calcSqrtDistance(x1, y1, x2, y2);
@@ -899,7 +899,7 @@ namespace tunis
                         {
                             k   = 1 / k;
                             float da1 = x2 - x1;
-                            da2 = y2 - y1;
+                            float da2 = y2 - y1;
                             d2  = k * (da1*dx + da2*dy);
                             da1 = x3 - x1;
                             da2 = y3 - y1;
@@ -935,7 +935,7 @@ namespace tunis
                             }
                         }
                         break;
-
+                    }
                     case 1:
                         // p1,p2,p4 are collinear, p3 is significant
                         //----------------------
