@@ -38,3 +38,12 @@ hunter_config(msdfgen
     CMAKE_ARGS
         BUILD_SHARED_LIBS=OFF
 )
+
+hunter_config(PocoCpp 
+    VERSION
+        1.7.9-p1
+    CMAKE_ARGS
+        ENABLE_NETSSL=ON
+        ENABLE_CRYPTO=ON
+        BUILD_SHARED_LIBS=OFF
+)
