@@ -43,6 +43,7 @@ matrix:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise-3.5
           packages:
+            - perl
             - ninja-build
             - clang-3.5
             - libiomp-dev
@@ -56,6 +57,7 @@ matrix:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-trusty-6.0
           packages:
+            - perl
             - ninja-build
             - clang-6.0
             - libiomp-dev
@@ -68,6 +70,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
+            - perl
             - ninja-build
             - gcc-4.8
             - g++-4.8
@@ -81,6 +84,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
+            - perl
             - ninja-build
             - gcc-7
             - g++-7
