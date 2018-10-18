@@ -12,6 +12,7 @@ find_package(RapidJSON CONFIG REQUIRED)
 
 list(APPEND deps
     msdfgen::lib_msdfgen
+    Poco::Net
     Poco::NetSSL
     OpenSSL::SSL
     OpenSSL::Crypto
@@ -24,11 +25,15 @@ if (TARGET OpenMP::OpenMP_CXX)
 endif()
 
 add_executable(${PROJECT_NAME}
-    main.cpp
+    TunisFontGenerator.cpp
+    TunisFontGenerator.h
     TunisFontLoader.cpp
     TunisFontLoader.h
     TunisFontStyle.cpp
     TunisFontStyle.h
+    TunisGlyphLoader.cpp
+    TunisGlyphLoader.h
+    main.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${deps})

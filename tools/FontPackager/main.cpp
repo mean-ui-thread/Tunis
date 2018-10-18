@@ -31,14 +31,17 @@
 
 #include <iostream>
 
+#include "TunisFontGenerator.h"
 #include "TunisFontLoader.h"
 
 namespace tunis
 {
     class FontPackager : public Poco::Util::Application
     {
-        bool m_helpRequested = false;
+        FontGenerator m_generator;
         FontLoader m_loader;
+        std::string m_output = "font.tfp";
+        bool m_helpRequested = false;
 
     public:
         FontPackager()
@@ -50,10 +53,15 @@ namespace tunis
         {
             Application::defineOptions(options);
 
-            options.addOption(Poco::Util::Option("help", "h", "Usage Information. ")
+            options.addOption(Poco::Util::Option("help", "h", "Usage Information.")
                         .required(false)
                         .repeatable(false)
                         .callback(Poco::Util::OptionCallback<FontPackager>(this, &FontPackager::handleHelp)));
+
+            options.addOption(Poco::Util::Option("output", "o", "Font package file output.  Default is 'font.tfp'.")
+                        .required(false)
+                        .repeatable(false)
+                        .callback(Poco::Util::OptionCallback<FontPackager>(this, &FontPackager::handleOutput)));
 
             options.addOption(Poco::Util::Option("font", "f", "Font file pattern to add to the package. Wildcard (*) allowed.")
                         .required(false)
@@ -85,8 +93,8 @@ namespace tunis
         {
             Poco::Util::HelpFormatter helpFormatter(options());
             helpFormatter.setCommand(commandName());
-            helpFormatter.setUsage("[-f <font file> [-f <font file> [...]]]");
-            helpFormatter.setHeader("Tunis Font Packager. Turns group of font into a Tunis font Package (.tfp)");
+            helpFormatter.setHeader("Tunis Font Packager.\nCopyright (c) 2015-2018 Mathieu-Andre Chiasson\nAll rights reserved.\n\nTurns group of font into a Tunis font Package (.tfp)");
+            helpFormatter.setUsage("[-f <pattern1> [-f <pattern2> [...]]] [-w family1 [-w family2 [...]]]");
             helpFormatter.format(std::cout);
         }
 
@@ -94,6 +102,11 @@ namespace tunis
         {
             m_helpRequested = true;
             stopOptionsProcessing();
+        }
+
+        void handleOutput(const std::string& name, const std::string& value)
+        {
+            m_output = value;
         }
 
         void handleFont(const std::string& name, const std::string& value)
@@ -132,6 +145,8 @@ namespace tunis
                 displayHelp();
                 return EXIT_USAGE;
             }
+
+            m_generator.generate(m_output, faces);
 
             return EXIT_OK;
         }

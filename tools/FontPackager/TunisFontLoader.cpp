@@ -147,6 +147,7 @@ void FontLoader::loadFonts()
         }
         else
         {
+
             std::cout << "Loaded " << file << std::endl;
             m_faces.push_back(face);
         }
@@ -262,7 +263,7 @@ void FontLoader::loadWebFonts()
             {
                 Poco::URI fontUrl(fileItr->value.GetString());
 
-                Poco::Net::HTTPSClientSession fontDownloadSession(fontUrl.getHost(), fontUrl.getPort(), context);
+                Poco::Net::HTTPClientSession fontDownloadSession(fontUrl.getHost(), fontUrl.getPort());
                 Poco::Net::HTTPRequest fontDownloadRequest(Poco::Net::HTTPRequest::HTTP_GET, fontUrl.getPathAndQuery(), Poco::Net::HTTPMessage::HTTP_1_1);
                 Poco::Net::HTTPResponse fontDownloadResponse;
                 fontDownloadSession.sendRequest(fontDownloadRequest);
