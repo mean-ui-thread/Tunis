@@ -40,7 +40,7 @@ namespace tunis
     {
         FontGenerator m_generator;
         FontLoader m_loader;
-        std::string m_output = "font.tfp";
+        std::string m_output = "fonts.tfp";
         bool m_helpRequested = false;
 
     public:

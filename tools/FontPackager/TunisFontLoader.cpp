@@ -238,29 +238,20 @@ void FontLoader::loadWebFonts()
 
             if (!valid) { continue; }
 
-            valid = m_styles.size() == 0;
-            for(const FontStyle &validStyle: m_styles)
-            {
-                for (rapidjson::SizeType variantId = 0; variantId < variants.Size(); variantId++)
-                {
-                    FontStyle style = FontStyle::GetStyleByName(variants[variantId].GetString());
-
-                    if (style == FontStyle::Invalid)
-                    {
-                        std::cerr << "Invalid Style " << variants[variantId].GetString() << std::endl;
-                    }
-
-                    valid = style == validStyle;
-                    if (valid) break;
-                }
-                if (valid) break;
-            }
-
-            if (!valid) { continue; }
-
             rapidjson::Value::ConstMemberIterator fileItr = files.MemberBegin(), fileEnd = files.MemberEnd();
             while (fileItr != fileEnd)
             {
+
+                valid = m_styles.size() == 0;
+                for(const FontStyle &validStyle: m_styles)
+                {
+                    FontStyle style = FontStyle::GetStyleByName(fileItr->name.GetString());
+                    valid = style == validStyle;
+                    if (valid) break;
+                }
+
+                if (!valid) { ++fileItr; continue; }
+
                 Poco::URI fontUrl(fileItr->value.GetString());
 
                 Poco::Net::HTTPClientSession fontDownloadSession(fontUrl.getHost(), fontUrl.getPort());
@@ -269,19 +260,20 @@ void FontLoader::loadWebFonts()
                 fontDownloadSession.sendRequest(fontDownloadRequest);
                 std::istream& is = fontDownloadSession.receiveResponse(fontDownloadResponse);
 
-                std::vector<char> data;
+                size_t length = 0;
+                char * data = nullptr;
 
                 while (is.good())
                 {
                     const size_t blocksize = 4096;
-                    size_t oldsize = data.size();
-                    data.resize(oldsize + blocksize);
-                    is.read(&data[oldsize], blocksize);
-                    data.resize(oldsize + static_cast<size_t>(is.gcount()));
+                    data = reinterpret_cast<char*>(realloc(data, length + blocksize));
+                    is.read(&data[length], blocksize);
+                    length += static_cast<size_t>(is.gcount());
+                    data = reinterpret_cast<char*>(realloc(data, length));
                 }
 
                 FT_Face face;
-                FT_Error error = FT_New_Memory_Face(m_library, reinterpret_cast<const uint8_t*>(data.data()), static_cast<FT_Long>(data.size()), 0, &face);
+                FT_Error error = FT_New_Memory_Face(m_library, reinterpret_cast<const uint8_t*>(data), static_cast<FT_Long>(length), 0, &face);
 
                 if (error)
                 {

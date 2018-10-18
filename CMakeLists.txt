@@ -39,7 +39,7 @@ project(Tunis)
 
 include(BuildOptions)
 
-add_subdirectory(tools/FontPackager)
+add_subdirectory(tools)
 
 file(GLOB_RECURSE CI_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ci/*)
 file(GLOB_RECURSE CMAKE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} cmake/*)
