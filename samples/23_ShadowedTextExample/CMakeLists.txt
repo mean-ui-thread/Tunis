@@ -24,5 +24,14 @@
 
 project(23_ShadowedTextExample)
 
-add_executable(${PROJECT_NAME} SampleApp.cpp)
+add_custom_command(
+    OUTPUT
+        ${CMAKE_CURRENT_BINARY_DIR}/fonts.tfp
+    COMMAND
+        $<TARGET_FILE:TunisFontPackager> -w "Source Serif Pro" -s Regular
+    DEPENDS
+        TunisFontPackager
+)
+
+add_executable(${PROJECT_NAME} SampleApp.cpp ${CMAKE_CURRENT_BINARY_DIR}/fonts.tfp)
 target_link_libraries(${PROJECT_NAME} TunisSampleCommon)

@@ -59,6 +59,11 @@ FontLoader::~FontLoader()
         FT_Done_Face(face);
     }
 
+    for (char* data : m_faceData)
+    {
+        free(data);
+    }
+
     FT_Done_FreeType(m_library);
 }
 
@@ -271,6 +276,8 @@ void FontLoader::loadWebFonts()
                     length += static_cast<size_t>(is.gcount());
                     data = reinterpret_cast<char*>(realloc(data, length));
                 }
+
+                m_faceData.push_back(data);
 
                 FT_Face face;
                 FT_Error error = FT_New_Memory_Face(m_library, reinterpret_cast<const uint8_t*>(data), static_cast<FT_Long>(length), 0, &face);

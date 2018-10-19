@@ -64,6 +64,7 @@ private:
     std::set<FontStyle> m_styles;
     std::set<std::string> m_patterns;
     std::vector<FT_Face> m_faces;
+    std::vector<char*> m_faceData;
     FT_Library m_library;
 };
 

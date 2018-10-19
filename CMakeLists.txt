@@ -104,15 +104,13 @@ target_include_directories(Tunis
 )
 
 hunter_add_package(glm)
-hunter_add_package(msdfgen)
 hunter_add_package(stb)
 
 find_package(glm CONFIG REQUIRED)
 find_package(stb CONFIG REQUIRED)
-find_package(msdfgen CONFIG REQUIRED)
 find_package(OpenMP)
 
-target_link_libraries(Tunis PUBLIC glm stb::stb msdfgen::lib_msdfgen)
+target_link_libraries(Tunis PUBLIC glm stb::stb )
 
 if (TUNIS_PROFILING)
     hunter_add_package(easy_profiler)
