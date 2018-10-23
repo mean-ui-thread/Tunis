@@ -32,11 +32,17 @@ hunter_config(easy_profiler
         BUILD_SHARED_LIBS=OFF
 )
 
+hunter_config(flatbuffers
+    VERSION
+        1.8.0-p1
+    CMAKE_ARGS
+        FLATBUFFERS_BUILD_FLATC=ON
+        FLATBUFFERS_BUILD_FLATHASH=ON
+)
+
 hunter_config(msdfgen
     GIT_SUBMODULE
         "3rdparty/msdfgen"
-    CMAKE_ARGS
-        BUILD_SHARED_LIBS=OFF
 )
 
 hunter_config(PocoCpp 
@@ -45,5 +51,4 @@ hunter_config(PocoCpp
     CMAKE_ARGS
         ENABLE_NETSSL=ON
         ENABLE_CRYPTO=ON
-        BUILD_SHARED_LIBS=OFF
 )

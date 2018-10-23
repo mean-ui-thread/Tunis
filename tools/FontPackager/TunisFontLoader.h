@@ -27,9 +27,8 @@
 #ifndef TUNISFONTLOADER_H
 #define TUNISFONTLOADER_H
 
-#include "TunisFontStyle.h"
-
 #include <set>
+#include <string>
 #include <vector>
 
 #include <ft2build.h>
@@ -45,10 +44,7 @@ public:
     FontLoader();
     ~FontLoader();
 
-    void addCategory(const std::string &category);
-    void addSubset(const std::string &subset);
     void addFamily(const std::string &family);
-    void addStyle(const std::string &family);
     void addFilePattern(const std::string &pattern);
 
     const std::vector<FT_Face> &getFaces();
@@ -58,10 +54,7 @@ private:
     void loadFonts();
     void loadWebFonts();
 
-    std::set<std::string> m_subsets;
-    std::set<std::string> m_categories;
     std::set<std::string> m_families;
-    std::set<FontStyle> m_styles;
     std::set<std::string> m_patterns;
     std::vector<FT_Face> m_faces;
     std::vector<char*> m_faceData;

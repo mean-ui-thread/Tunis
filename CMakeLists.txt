@@ -35,14 +35,24 @@ HunterGate(
     LOCAL
 )
 
-project(Tunis)
-
 include(BuildOptions)
 
+project(Tunis)
+
+hunter_add_package(glm)
+hunter_add_package(stb)
+hunter_add_package(flatbuffers)
+
+find_package(glm CONFIG REQUIRED)
+find_package(stb CONFIG REQUIRED)
+find_package(Flatbuffers CONFIG REQUIRED)
+
+add_subdirectory(schema)
 add_subdirectory(tools)
 
 file(GLOB_RECURSE CI_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ci/*)
 file(GLOB_RECURSE CMAKE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} cmake/*)
+file(GLOB_RECURSE INCLUDE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/*)
 file(GLOB_RECURSE BACKEND_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/${TUNIS_BACKEND}/*)
 
 add_library(Tunis
@@ -53,32 +63,8 @@ add_library(Tunis
 
     ${CI_FILES}
     ${CMAKE_FILES}
+    ${INCLUDE_FILES}
 
-    include/Tunis.h
-    include/Tunis.inl
-    include/TunisBitMask.h
-    include/TunisColor.h
-    include/TunisContextState.h
-    include/TunisGL.h
-    include/TunisGradient.h
-    include/TunisGradient.inl
-    include/TunisImage.h
-    include/TunisImage.inl
-    include/TunisMath.h
-    include/TunisPaint.h
-    include/TunisPaint.inl
-    include/TunisPath2D.h
-    include/TunisPath2D.inl
-    include/TunisRect.h
-    include/TunisRect.inl
-    include/TunisRenderState.h
-    include/TunisSOA.h
-    include/TunisSOA.inl
-    include/TunisSize.h
-    include/TunisSize.inl
-    include/TunisSpinLock.h
-    include/TunisTypes.h
-    include/TunisVertex.h
     src/TunisColor.cpp
     ${BACKEND_SRC}
 
@@ -103,14 +89,13 @@ target_include_directories(Tunis
     PRIVATE src/${TUNIS_BACKEND}
 )
 
-hunter_add_package(glm)
-hunter_add_package(stb)
-
-find_package(glm CONFIG REQUIRED)
-find_package(stb CONFIG REQUIRED)
-find_package(OpenMP)
-
-target_link_libraries(Tunis PUBLIC glm stb::stb )
+target_link_libraries(Tunis
+    PUBLIC
+        glm
+        stb::stb
+    PRIVATE
+        TunisFonts
+)
 
 if (TUNIS_PROFILING)
     hunter_add_package(easy_profiler)
@@ -119,6 +104,7 @@ if (TUNIS_PROFILING)
     target_compile_definitions(Tunis PUBLIC TUNIS_PROFILING=1)
 endif()
 
+find_package(OpenMP)
 if (TARGET OpenMP::OpenMP_CXX)
     target_link_libraries(Tunis PUBLIC OpenMP::OpenMP_CXX)
 endif()

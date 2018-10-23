@@ -28,7 +28,7 @@ add_custom_command(
     OUTPUT
         ${CMAKE_CURRENT_BINARY_DIR}/fonts.tfp
     COMMAND
-        $<TARGET_FILE:TunisFontPackager> -w "Source Serif Pro" -s Regular
+        $<TARGET_FILE:TunisFontPackager> -w "Roboto"
     DEPENDS
         TunisFontPackager
 )

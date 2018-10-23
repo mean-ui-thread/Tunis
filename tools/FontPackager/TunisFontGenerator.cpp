@@ -1,10 +1,9 @@
 #include "TunisFontGenerator.h"
-#include "TunisFontStyle.h"
 #include "TunisGlyphLoader.h"
 
 #include <msdfgen/msdfgen.h>
 #include <msdfgen/msdfgen-ext.h>
-#include <lodepng.h>
+#include <libpng/png.h>
 
 #include <Poco/File.h>
 #include <Poco/Path.h>
@@ -19,6 +18,8 @@
 #include <cfloat>
 #include <sstream>
 
+#include "TunisFonts_generated.h"
+
 
 #ifdef _MSC_VER
     #define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
@@ -31,11 +32,6 @@ using namespace tunis;
 static const uint16_t s_fontSize = 48;
 static const uint8_t s_range = s_fontSize / 8;
 static const uint8_t s_padding = 4;
-
-struct RGBA
-{
-    uint8_t r, g, b, a;
-};
 
 static uint32_t unicode_latin[] = {
     // 0020-007F Basic Latin
@@ -54,110 +50,82 @@ static uint32_t unicode_latin[] = {
     0x00F0, 0x00F1, 0x00F2, 0x00F3, 0x00F4, 0x00F5, 0x00F6, 0x00F7, 0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x00FE, 0x00FF
 };
 
-PACK(struct HeaderChunk {
-         char header0 = 'T';
-         char header1 = 'F';
-         char header2 = 'P';
-         uint8_t versionMajor = 0;
-         uint8_t versionMinor = 1;
-     });
-
-PACK(struct KerningChunk {
-         uint8_t chunkID = 0x03;
-         uint32_t chunkSize;
-         uint32_t unicode_left;
-         uint32_t unicode_right;
-         int16_t  amount;
-     });
-
-PACK(struct GlyphChunk {
-         uint8_t chunkID = 0x02;
-         uint32_t chunkSize;
-         uint32_t unicode;
-         uint32_t width;
-         uint32_t height;
-         int32_t xoffset;
-         int32_t yoffset;
-         int32_t xadvance;
-         int32_t yadvance;
-         uint32_t bitmapWidth;
-         uint32_t bitmapheight;
-         std::vector<uint8_t> image;
-     });
-
-
-PACK(struct FontChunk {
-         uint8_t chunkID = 0x01;
-         uint32_t chunkSize;
-         uint8_t fontSize = s_fontSize;
-         uint8_t range = s_range;
-         uint8_t padding = s_padding;
-         uint8_t styleType;
-         uint8_t lineHeight;
-         uint8_t familyLen;
-         uint8_t styleLen;
-         char * family;
-         char * style;
-         std::vector<GlyphChunk> glyphs;
-         std::vector<KerningChunk> kernings;
-     });
-
-
-std::ofstream& operator<<(std::ofstream& out, HeaderChunk &chunk)
+struct RGBA
 {
-    out.write(reinterpret_cast<char*>(&chunk), sizeof(HeaderChunk));
-    return out;
-}
+    uint8_t r, g, b, a;
+};
 
-std::ofstream& operator<<(std::ofstream& out, KerningChunk &chunk)
+static FontWeight toFontWeight(const std::string &name)
 {
-    out.write(reinterpret_cast<char*>(&chunk), sizeof(KerningChunk));
-    return out;
-}
+    if (Poco::icompare(name, "Thin") == 0 ||
+        Poco::icompare(name, "Thin Italic") == 0 ||
+        Poco::icompare(name, "100") == 0 ||
+        Poco::icompare(name, "100italic") == 0)
+        return FontWeight_Thin;
 
-std::ofstream& operator<<(std::ofstream& out, GlyphChunk &chunk)
-{
-    out.write(reinterpret_cast<char*>(&chunk), offsetof(GlyphChunk, image));
-    out.write(reinterpret_cast<char*>(chunk.image.data()), static_cast<std::streamsize>(chunk.image.size() * sizeof(decltype (chunk.image)::value_type)));
-    return out;
-}
+    if (Poco::icompare(name, "ExtraLight") == 0 ||
+        Poco::icompare(name, "ExtraLight Italic") == 0 ||
+        Poco::icompare(name, "200") == 0 ||
+        Poco::icompare(name, "200italic") == 0)
+        return FontWeight_ExtraLight;
 
-std::ofstream& operator<<(std::ofstream& out, FontChunk &chunk)
-{
-    chunk.chunkSize = offsetof(FontChunk, family) + strlen(chunk.family) + strlen(chunk.style);
+    if (Poco::icompare(name, "Light") == 0 ||
+        Poco::icompare(name, "Light Italic") == 0 ||
+        Poco::icompare(name, "300") == 0 ||
+        Poco::icompare(name, "300italic") == 0)
+        return FontWeight_Light;
 
-    for (GlyphChunk &glyph : chunk.glyphs)
-    {
-        glyph.chunkSize = offsetof(GlyphChunk, image) + glyph.image.size() * sizeof(decltype (glyph.image)::value_type);
-        chunk.chunkSize += glyph.chunkSize;
-    }
+    if (Poco::icompare(name, "Regular") == 0 ||
+        Poco::icompare(name, "Italic") == 0 ||
+        Poco::icompare(name, "400") == 0 ||
+        Poco::icompare(name, "400italic") == 0)
+        return FontWeight_Regular;
 
-    for (KerningChunk &kerning : chunk.kernings)
-    {
-        kerning.chunkSize = sizeof(KerningChunk);
-        chunk.chunkSize += kerning.chunkSize;
-    }
+    if (Poco::icompare(name, "Medium") == 0 ||
+        Poco::icompare(name, "Medium Italic") == 0 ||
+        Poco::icompare(name, "500") == 0 ||
+        Poco::icompare(name, "500italic") == 0)
+        return FontWeight_Medium;
 
-    out.write(reinterpret_cast<char*>(&chunk), offsetof(FontChunk, family));
-    out << chunk.family;
-    out << chunk.style;
-    for (GlyphChunk &glyph : chunk.glyphs) { out << glyph; }
-    for (KerningChunk &kerning : chunk.kernings) { out << kerning; }
-    return out;
+    if (Poco::icompare(name, "SemiBold") == 0 ||
+        Poco::icompare(name, "SemiBold Italic") == 0 ||
+        Poco::icompare(name, "600") == 0 ||
+        Poco::icompare(name, "600italic") == 0)
+        return FontWeight_SemiBold;
+
+    if (Poco::icompare(name, "Bold") == 0 ||
+        Poco::icompare(name, "Bold Italic") == 0 ||
+        Poco::icompare(name, "700") == 0 ||
+        Poco::icompare(name, "700italic") == 0)
+        return FontWeight_Bold;
+
+    if (Poco::icompare(name, "ExtraBold") == 0 ||
+        Poco::icompare(name, "ExtraBold Italic") == 0 ||
+        Poco::icompare(name, "800") == 0 ||
+        Poco::icompare(name, "800italic") == 0)
+        return FontWeight_ExtraBold;
+
+    if (Poco::icompare(name, "Black") == 0 ||
+        Poco::icompare(name, "Black Italic") == 0 ||
+        Poco::icompare(name, "900") == 0 ||
+        Poco::icompare(name, "900italic") == 0)
+        return FontWeight_Black;
+
+    std::cerr << "Unknown style " << name << std::endl;
+    return FontWeight_Invalid;
 }
 
 void FontGenerator::generate(const std::string output, const std::vector<FT_Face> &faces)
 {
-    std::ofstream out(output, std::ios::out | std::ios::binary);
+    flatbuffers::FlatBufferBuilder builder;
 
-    HeaderChunk header;
-    out << header;
+    std::vector< flatbuffers::Offset<tunis::Font> > fontBlock;
 
     for(const FT_Face &face : faces)
     {
-        FontChunk font;
-
         FT_Set_Pixel_Sizes(face, 0, s_fontSize);
+
+        std::vector< flatbuffers::Offset<tunis::Glyph> > glyphBlock;
 
         for(size_t i = 0; i < sizeof(unicode_latin)/sizeof(uint32_t); ++i)
         {
@@ -255,35 +223,76 @@ void FontGenerator::generate(const std::string output, const std::vector<FT_Face
                 }
             }
 
-            GlyphChunk glyph;
-            glyph.unicode = unicode_latin[i];
-            glyph.width = face->glyph->bitmap.width;
-            glyph.height = face->glyph->bitmap.rows;
-            glyph.xoffset = static_cast<int32_t>(face->glyph->bitmap_left);
-            glyph.yoffset = static_cast<int32_t>(face->glyph->bitmap_top);
-            glyph.xadvance = static_cast<int32_t>(face->glyph->advance.x/64.0 + 0.5);
-            glyph.yadvance = static_cast<int32_t>(face->glyph->advance.y/64.0 + 0.5);
-            glyph.bitmapWidth = bitmapWidth;
-            glyph.bitmapheight = bitmapHeight;
+            // Compress bitmap to png using libpng
+            std::vector<uint8_t> msdfapng;
+            png_structp pPng = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+            png_infop pPngInfo = png_create_info_struct(pPng);
+            png_set_write_fn(pPng, &msdfapng, +[](png_structp pPng, png_bytep src, png_size_t size) {
+                std::vector<uint8_t> &dst = *reinterpret_cast<std::vector<uint8_t>*>(png_get_io_ptr(pPng));
+                dst.insert(dst.end(), src, src+size); }, +[](png_structp) { });
+            png_set_IHDR(pPng, pPngInfo, bitmapWidth, bitmapHeight, 8, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+            png_write_info(pPng, pPngInfo);
+            std::vector<uint8_t*> rowPointers;
+            rowPointers.resize(bitmapHeight);
+            for (size_t y = 0; y < bitmapHeight; ++y) { rowPointers[y] = reinterpret_cast<uint8_t*>(&msdfa[y*bitmapWidth]); }
+            png_write_image(pPng, &rowPointers.front());
+            png_destroy_write_struct(&pPng, &pPngInfo);
+            auto pngData = builder.CreateVector(msdfapng.data(), msdfapng.size());
 
-            lodepng::encode(glyph.image,
-                            reinterpret_cast<const unsigned char*>(msdfa.data()),
-                            bitmapWidth,
-                            bitmapHeight);
+            std::vector<tunis::Kerning> kernings;
+            if (FT_HAS_KERNING(face))
+            {
+                FT_Vector kerning;
+                FT_Error error;
+                for(size_t j = 0; j < sizeof(unicode_latin)/sizeof(uint32_t); ++j)
+                {
+                    error = FT_Get_Kerning(face,
+                                           FT_Get_Char_Index(face, unicode_latin[i]),
+                                           FT_Get_Char_Index(face, unicode_latin[j]),
+                                           FT_KERNING_UNSCALED,
+                                           &kerning);
 
-            font.glyphs.emplace_back(glyph);
+                    if (error) continue;
+
+                    if (kerning.x > 0)
+                    {
+                        kernings.emplace_back(tunis::Kerning(unicode_latin[j], kerning.x/64.0f));
+                    }
+                }
+            }
+            auto kerningVector = builder.CreateVectorOfStructs(kernings);
+
+            tunis::GlyphBuilder glyphBuilder(builder);
+            glyphBuilder.add_unicode(unicode_latin[i]);
+            glyphBuilder.add_width(face->glyph->bitmap.width);
+            glyphBuilder.add_height(face->glyph->bitmap.rows);
+            glyphBuilder.add_xadvance(face->glyph->advance.x/64.0f);
+            glyphBuilder.add_xoffset(face->glyph->bitmap_left);
+            glyphBuilder.add_yoffset(face->glyph->bitmap_top);
+            glyphBuilder.add_kernings(kerningVector);
+            glyphBuilder.add_png(pngData);
+            glyphBlock.push_back(glyphBuilder.Finish());
         }
 
-        font.styleType = static_cast<uint8_t>(FontStyle::GetStyleByName(face->style_name).getId());
-        font.lineHeight = static_cast<uint8_t>(face->size->metrics.height/64.0 + 0.5);
-        font.familyLen = static_cast<uint8_t>(strlen(face->family_name));
-        font.styleLen = static_cast<uint8_t>(strlen(face->style_name));
-        font.family = face->family_name;
-        font.style = face->style_name;
+        auto familyString = builder.CreateString(face->family_name);
+        auto glyphVector = builder.CreateVector(glyphBlock.data(), glyphBlock.size());
 
-        out << font;
+        tunis::FontBuilder fontBuilder(builder);
+        fontBuilder.add_family(familyString);
+        fontBuilder.add_weight(toFontWeight(face->style_name));
+        fontBuilder.add_italic(face->style_flags | FT_STYLE_FLAG_ITALIC);
+        fontBuilder.add_fontSize(face->size->metrics.y_ppem);
+        fontBuilder.add_padding(s_range + s_padding);
+        fontBuilder.add_lineHeight(face->size->metrics.height/64.0f);
+        fontBuilder.add_glyphs(glyphVector);
+        fontBlock.push_back(fontBuilder.Finish());
     }
 
+    builder.Finish(builder.CreateVector(fontBlock.data(), fontBlock.size()));
+
+    std::ofstream out(output, std::ios::out | std::ios::binary);
+
+    out.write(reinterpret_cast<char*>(builder.GetBufferPointer()), builder.GetSize());
 
     out.close();
 }

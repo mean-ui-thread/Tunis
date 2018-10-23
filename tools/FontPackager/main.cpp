@@ -74,19 +74,6 @@ namespace tunis
                         .repeatable(true)
                         .argument("family")
                         .callback(Poco::Util::OptionCallback<FontPackager>(this, &FontPackager::handleWebFont)));
-
-            options.addOption(Poco::Util::Option("language", "l", "Add extra language subsets to package. 'latin' is included by default.")
-                        .required(false)
-                        .repeatable(true)
-                        .argument("lang")
-                        .callback(Poco::Util::OptionCallback<FontPackager>(this, &FontPackager::handleSubset)));
-
-            options.addOption(Poco::Util::Option("style", "s", "restrict styles to package. every styles are included by default until at least one style is provided.")
-                        .required(false)
-                        .repeatable(true)
-                        .argument("style")
-                        .callback(Poco::Util::OptionCallback<FontPackager>(this, &FontPackager::handleStyle)));
-
         }
 
         void displayHelp()
@@ -117,16 +104,6 @@ namespace tunis
         void handleWebFont(const std::string& name, const std::string& value)
         {
             m_loader.addFamily(value);
-        }
-
-        void handleSubset(const std::string& name, const std::string& value)
-        {
-            m_loader.addSubset(value);
-        }
-
-        void handleStyle(const std::string& name, const std::string& value)
-        {
-            m_loader.addStyle(value);
         }
 
         int main(const std::vector<std::string>& args)

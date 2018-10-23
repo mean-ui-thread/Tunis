@@ -43,7 +43,6 @@ using namespace tunis;
 
 FontLoader::FontLoader()
 {
-    m_subsets.insert("latin");
     FT_Error error = FT_Init_FreeType(&m_library);
     if (error)
     {
@@ -67,51 +66,9 @@ FontLoader::~FontLoader()
     FT_Done_FreeType(m_library);
 }
 
-void FontLoader::addCategory(const std::string &category)
-{
-    m_categories.insert(category);
-}
-
-void FontLoader::addSubset(const std::string &subset)
-{
-    m_subsets.insert(subset);
-}
-
 void FontLoader::addFamily(const std::string &family)
 {
    m_families.insert(family);
-}
-
-void FontLoader::addStyle(const std::string &styleStr)
-{
-    FontStyle style = FontStyle::GetStyleByName(styleStr);
-    if (style == FontStyle::Invalid)
-    {
-        std::cerr << "Unsupported style " << styleStr << ". Supported styles are:\n";
-
-        std::cerr << "\t\"Thin\",               \"100\",\n";
-        std::cerr << "\t\"Thin Italic\",        \"100italic\",\n";
-        std::cerr << "\t\"Extra-Light\",        \"200\",\n";
-        std::cerr << "\t\"Extra-Light Italic\", \"200italic\",\n";
-        std::cerr << "\t\"Light\",              \"300\",\n";
-        std::cerr << "\t\"Light Italic\",       \"300italic\",\n";
-        std::cerr << "\t\"Regular\",            \"regular\",\n";
-        std::cerr << "\t\"Regular Italic\",     \"italic\",\n";
-        std::cerr << "\t\"Medium\",             \"500\",\n";
-        std::cerr << "\t\"Medium Italic\",      \"500italic\",\n";
-        std::cerr << "\t\"Semi-Bold\",          \"600\",\n";
-        std::cerr << "\t\"Semi-Bold Italic\",   \"600italic\",\n";
-        std::cerr << "\t\"Bold\",               \"700\",\n";
-        std::cerr << "\t\"Bold Italic\",        \"700italic\",\n";
-        std::cerr << "\t\"Extra-Bold\",         \"800\",\n";
-        std::cerr << "\t\"Extra-Bold Italic\",  \"800italic\",\n";
-        std::cerr << "\t\"Black\",              \"900\",\n";
-        std::cerr << "\t\"Black Italic\",       \"900italic\"" << std::endl;
-    }
-    else
-    {
-        m_styles.insert(style);
-    }
 }
 
 void FontLoader::addFilePattern(const std::string &pattern)
@@ -177,7 +134,6 @@ void FontLoader::loadWebFonts()
     Poco::Base64Decoder decoder(istr);
     std::string result;
     decoder >> result;
-    result += "&sort=popularity";
     Poco::URI uri(std::move(result));
 
     const Poco::Net::Context::Ptr context = new Poco::Net::Context(Poco::Net::Context::CLIENT_USE, "", "", "", Poco::Net::Context::VERIFY_NONE, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
@@ -198,42 +154,11 @@ void FontLoader::loadWebFonts()
         {
             const rapidjson::Value &item = items[itemId];
 
-
             std::string category = item["category"].GetString();
             std::string family = item["family"].GetString();
-            const rapidjson::Value &subsets = item["subsets"];
-            const rapidjson::Value &variants = item["variants"];
             const rapidjson::Value &files = item["files"];
 
-
             bool valid = false;
-
-            for(const std::string &validSubset: m_subsets)
-            {
-                for (rapidjson::SizeType subsetId = 0; subsetId < subsets.Size(); subsetId++)
-                {
-                    std::string subset = subsets[subsetId].GetString();
-                    valid = Poco::icompare(subset, validSubset) == 0;
-                    if (valid) break;
-                }
-
-                if (valid) break;
-            }
-
-            if (!valid) { continue; }
-
-
-            valid = m_categories.size() == 0;
-
-            for(const std::string &validCategory: m_categories)
-            {
-                valid = Poco::icompare(category, validCategory) == 0;
-                if (valid) break;
-            }
-
-            if (!valid) { continue; }
-
-            valid = m_families.size() == 0;
 
             for(const std::string &validFamily: m_families)
             {
@@ -246,17 +171,6 @@ void FontLoader::loadWebFonts()
             rapidjson::Value::ConstMemberIterator fileItr = files.MemberBegin(), fileEnd = files.MemberEnd();
             while (fileItr != fileEnd)
             {
-
-                valid = m_styles.size() == 0;
-                for(const FontStyle &validStyle: m_styles)
-                {
-                    FontStyle style = FontStyle::GetStyleByName(fileItr->name.GetString());
-                    valid = style == validStyle;
-                    if (valid) break;
-                }
-
-                if (!valid) { ++fileItr; continue; }
-
                 Poco::URI fontUrl(fileItr->value.GetString());
 
                 Poco::Net::HTTPClientSession fontDownloadSession(fontUrl.getHost(), fontUrl.getPort());
@@ -288,7 +202,7 @@ void FontLoader::loadWebFonts()
                 }
                 else
                 {
-                    std::cout << "Loaded " << fileItr->value.GetString() << std::endl;
+                    std::cout << "Loaded " << face->family_name << " " << face->style_name << std::endl;
                     m_faces.push_back(face);
                 }
 
