@@ -87,6 +87,7 @@ target_include_directories(Tunis
     PUBLIC 3rdparty/concurrentqueue
     PRIVATE src
     PRIVATE src/${TUNIS_BACKEND}
+    PRIVATE ${Tunis_BINARY_DIR}/schema
 )
 
 target_link_libraries(Tunis

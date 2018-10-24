@@ -39,20 +39,19 @@ enum FontWeight : byte {
 
 struct Kerning
 {
-    unicode:uint32 = 0;
+    unicode:uint32 (key);
     offset:float = 0.0;
 }
 
 table Glyph
 {
-    unicode:uint32 = 0;
+    unicode:uint32 (key);
     width:uint8 = 0;
     height:uint8 = 0;
     xadvance:float = 0.0;
     xoffset:float = 0.0;
     yoffset:float = 0.0;
     kernings:[Kerning];
-    png:[uint8];
 }
 
 table Font {

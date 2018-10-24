@@ -123,6 +123,17 @@ void FontGenerator::generate(const std::string output, const std::vector<FT_Face
 
     for(const FT_Face &face : faces)
     {
+        FontWeight weight = toFontWeight(face->style_name);
+
+        std::string path =
+                std::string(face->family_name) +
+                Poco::Path::separator() +
+                std::to_string(weight*100) +
+                (face->style_flags & FT_STYLE_FLAG_ITALIC ? "italic" : "") +
+                Poco::Path::separator();
+
+        Poco::File(path).createDirectories();
+
         FT_Set_Pixel_Sizes(face, 0, s_fontSize);
 
         std::vector< flatbuffers::Offset<tunis::Glyph> > glyphBlock;
@@ -223,21 +234,21 @@ void FontGenerator::generate(const std::string output, const std::vector<FT_Face
                 }
             }
 
+
             // Compress bitmap to png using libpng
-            std::vector<uint8_t> msdfapng;
+            FILE *msdfaPNGFile = fopen((path + std::to_string(unicode_latin[i]) + ".png").c_str(), "wb");
             png_structp pPng = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
             png_infop pPngInfo = png_create_info_struct(pPng);
-            png_set_write_fn(pPng, &msdfapng, +[](png_structp pPng, png_bytep src, png_size_t size) {
-                std::vector<uint8_t> &dst = *reinterpret_cast<std::vector<uint8_t>*>(png_get_io_ptr(pPng));
-                dst.insert(dst.end(), src, src+size); }, +[](png_structp) { });
+            png_init_io(pPng, msdfaPNGFile);
             png_set_IHDR(pPng, pPngInfo, bitmapWidth, bitmapHeight, 8, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
             png_write_info(pPng, pPngInfo);
             std::vector<uint8_t*> rowPointers;
             rowPointers.resize(bitmapHeight);
             for (size_t y = 0; y < bitmapHeight; ++y) { rowPointers[y] = reinterpret_cast<uint8_t*>(&msdfa[y*bitmapWidth]); }
             png_write_image(pPng, &rowPointers.front());
+            png_write_end(pPng, nullptr);
             png_destroy_write_struct(&pPng, &pPngInfo);
-            auto pngData = builder.CreateVector(msdfapng.data(), msdfapng.size());
+            fclose(msdfaPNGFile);
 
             std::vector<tunis::Kerning> kernings;
             if (FT_HAS_KERNING(face))
@@ -260,7 +271,7 @@ void FontGenerator::generate(const std::string output, const std::vector<FT_Face
                     }
                 }
             }
-            auto kerningVector = builder.CreateVectorOfStructs(kernings);
+            auto kerningVector = builder.CreateVectorOfSortedStructs(kernings.data(), kernings.size());
 
             tunis::GlyphBuilder glyphBuilder(builder);
             glyphBuilder.add_unicode(unicode_latin[i]);
@@ -270,17 +281,16 @@ void FontGenerator::generate(const std::string output, const std::vector<FT_Face
             glyphBuilder.add_xoffset(face->glyph->bitmap_left);
             glyphBuilder.add_yoffset(face->glyph->bitmap_top);
             glyphBuilder.add_kernings(kerningVector);
-            glyphBuilder.add_png(pngData);
             glyphBlock.push_back(glyphBuilder.Finish());
         }
 
         auto familyString = builder.CreateString(face->family_name);
-        auto glyphVector = builder.CreateVector(glyphBlock.data(), glyphBlock.size());
+        auto glyphVector = builder.CreateVectorOfSortedTables(glyphBlock.data(), glyphBlock.size());
 
         tunis::FontBuilder fontBuilder(builder);
         fontBuilder.add_family(familyString);
-        fontBuilder.add_weight(toFontWeight(face->style_name));
-        fontBuilder.add_italic(face->style_flags | FT_STYLE_FLAG_ITALIC);
+        fontBuilder.add_weight(weight);
+        fontBuilder.add_italic(face->style_flags & FT_STYLE_FLAG_ITALIC);
         fontBuilder.add_fontSize(face->size->metrics.y_ppem);
         fontBuilder.add_padding(s_range + s_padding);
         fontBuilder.add_lineHeight(face->size->metrics.height/64.0f);

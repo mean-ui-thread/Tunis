@@ -50,7 +50,8 @@
 #include <TunisSOA.h>
 #include <TunisTexture.h>
 #include <TunisVertex.h>
-
+#include <TunisFonts_generated.h>
+#include <fstream>
 
 #if defined(TUNIS_PROFILING)
 #include <easy/profiler.h>
@@ -135,6 +136,15 @@ namespace tunis
                 {
                     abort();
                 }
+
+                std::ifstream inFontfile;
+                inFontfile.open("fonts.tfp", std::ios::binary | std::ios::in);
+                if (inFontfile.is_open())
+                {
+                    std::cout << "Found fonts.tfp! loading...";
+                }
+
+                inFontfile.close();
 
                 // Create a default texture atlas.
 #ifdef TUNIS_MAX_TEXTURE_SIZE
