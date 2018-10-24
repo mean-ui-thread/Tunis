@@ -39,7 +39,7 @@ void SampleApp::render(double)
     ctx.shadowBlur = 2;
     ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
 
-    ctx.font = "20px Source Serif Pro";
+    ctx.font = "20px Roboto";
     ctx.fillStyle = "Black";
     ctx.fillText("Sample String", 5, 30);
 }

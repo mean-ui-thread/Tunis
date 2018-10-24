@@ -51,7 +51,6 @@
 #include <TunisTexture.h>
 #include <TunisVertex.h>
 #include <TunisFonts_generated.h>
-#include <fstream>
 
 #if defined(TUNIS_PROFILING)
 #include <easy/profiler.h>
@@ -60,6 +59,8 @@
 #include <glm/gtx/exterior_product.hpp>
 #include <stb/stb_image.h>
 
+#include <fstream>
+#include <map>
 #include <thread>
 
 namespace tunis
@@ -129,6 +130,13 @@ namespace tunis
             float tessTol = 0.25f;
             float distTol = 0.01f;
 
+            const FontRepository *fontRepo = nullptr;
+            const Font *currentFont = nullptr;
+
+            using FontGlyphImageCache = std::map<const Glyph*, Image>;
+
+            FontGlyphImageCache fontGlyphImageCache;
+
             inline ContextPriv()
             {
                 auto tunisGL_initialized = tunisGLInit();
@@ -141,10 +149,18 @@ namespace tunis
                 inFontfile.open("fonts.tfp", std::ios::binary | std::ios::in);
                 if (inFontfile.is_open())
                 {
-                    std::cout << "Found fonts.tfp! loading...";
+                    inFontfile.seekg(0, std::ios::end);
+                    std::streamsize length = inFontfile.tellg();
+                    inFontfile.seekg(0, std::ios::beg);
+                    char *data = new char[length];
+                    inFontfile.read(data, length);
+                    inFontfile.close();
+
+                    fontRepo = GetFontRepository(data);
+
+                    // Do not delete data: flatbuffers seems to takes ownership of our data pointer
                 }
 
-                inFontfile.close();
 
                 // Create a default texture atlas.
 #ifdef TUNIS_MAX_TEXTURE_SIZE
@@ -1820,6 +1836,50 @@ namespace tunis
                 }
             }
 
+            inline const Font* findFont(const FontDef &fontDef)
+            {
+                assert(fontRepo != nullptr);
+
+                const Font *font = nullptr;
+                for (flatbuffers::uoffset_t i = 0; i < fontRepo->fonts()->size(); ++i)
+                {
+                   const Font *candidate = fontRepo->fonts()->Get(i);
+
+                    if (candidate->family()->str() == fontDef.family)
+                    {
+                        font = candidate;
+
+                        if (candidate->weight() == fontDef.weight && candidate->italic() == fontDef.italic)
+                        {
+                            break; // perfect candidate!
+                        }
+                    }
+                    else if (!font && candidate->weight() <= fontDef.weight && candidate->italic() == fontDef.italic)
+                    {
+                        font = candidate;
+                    }
+                }
+
+                return font;
+            }
+
+            inline const Glyph *findGlyph(const Font *font, uint32_t unicode)
+            {
+                return font->glyphs()->LookupByKey(unicode);
+            }
+
+            inline Image getImageForGlyph(const Glyph *glyph)
+            {
+                auto it = fontGlyphImageCache.find(glyph);
+                if (it != fontGlyphImageCache.end())
+                {
+                    return it->second;
+                }
+
+                // TODO create the image and add it to the cache.
+                return Image();
+
+            }
         };
 
 
@@ -1881,7 +1941,27 @@ namespace tunis
 
     void Context::fillText(const char *text, float x, float y, float maxWidth)
     {
+        if (ctx->fontRepo == nullptr)
+        {
+            std::cout << "No font repository loaded. Missing fonts.tfp?" << std::endl;
+            return;
+        }
 
+        const Font *inst = ctx->findFont(font);
+        if (!inst)
+        {
+            std::cout << "Could not find suitable font candidate for " << font.family << std::endl;
+            return;
+        }
+
+        for(size_t i = 0; i < strlen(text); ++i)
+        {
+            const Glyph *glyph = ctx->findGlyph(inst, static_cast<uint32_t>(text[i]));
+            if (glyph)
+            {
+                Image glyphImage = ctx->getImageForGlyph(glyph);
+            }
+        }
     }
 
     void Context::strokeText(const char *text, float x, float y, float maxWidth)

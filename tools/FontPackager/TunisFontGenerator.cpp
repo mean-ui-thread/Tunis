@@ -298,7 +298,11 @@ void FontGenerator::generate(const std::string output, const std::vector<FT_Face
         fontBlock.push_back(fontBuilder.Finish());
     }
 
-    builder.Finish(builder.CreateVector(fontBlock.data(), fontBlock.size()));
+    auto fontVector = builder.CreateVector(fontBlock.data(), fontBlock.size());
+
+    tunis::FontRepositoryBuilder fontRepositoryBuilder(builder);
+    fontRepositoryBuilder.add_fonts(fontVector);
+    builder.Finish(fontRepositoryBuilder.Finish());
 
     std::ofstream out(output, std::ios::out | std::ios::binary);
 

@@ -58,10 +58,14 @@ table Font {
     family:string;
     weight:FontWeight = Invalid;
     italic:bool = false;
+    lineHeight:float = 0;
     fontSize:uint16 = 0;
     padding:uint16 = 0;
-    lineHeight:float = 0;
     glyphs:[Glyph];
 }
 
-root_type Font;
+table FontRepository {
+    fonts:[Font];
+}
+
+root_type FontRepository;

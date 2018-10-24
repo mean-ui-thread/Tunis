@@ -25,6 +25,7 @@
 #define TUNISCONTEXTSTATE_H
 
 #include <TunisPaint.h>
+#include <TunisFontDef.h>
 #include <TunisPath2D.h>
 
 namespace tunis
@@ -146,7 +147,7 @@ public:
      * text. This string uses the same syntax as the CSS font specifier. The
      * default font is '10px sans-serif'.
      */
-    std::string font = "10px sans-serif";
+    FontDef font = "10px sans-serif";
 
     /*!
      * \brief textAlign specifies the current text alignment being used when

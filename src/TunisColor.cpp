@@ -22,18 +22,11 @@
  * SOFTWARE.
  **/
 #include "TunisColor.h"
+#include "TunisUtil.h"
 
 #include <iostream>
 
-#if defined(_MSC_VER)
-    #define TUNIS_STRCASECMP _stricmp
-    #define TUNIS_STRNCASECMP _strnicmp
-    #define TUNIS_SSCANF sscanf_s
-#else
-    #define TUNIS_STRCASECMP strcasecmp
-    #define TUNIS_STRNCASECMP strncasecmp
-    #define TUNIS_SSCANF sscanf
-#endif
+
 
 #define RGBA_COLOR(COLOR_NAME, r, g, b, a) const tunis::Color tunis::COLOR_NAME = tunis::Color(r, g, b, a)
 #define RGB_COLOR(COLOR_NAME, r, g, b) RGBA_COLOR(COLOR_NAME, r, g, b, 1.0f)
