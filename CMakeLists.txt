@@ -30,8 +30,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 include(Hunter/HunterGate)
 HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.23.30.tar.gz"
-    SHA1 "c062b0a2316cf8dcb57b6a9ad49fea1025a928f6"
+    URL "https://github.com/cpp-pm/hunter/archive/v0.23.249.tar.gz"
+    SHA1 "d45d77d8bba9da13e9290a180e0477e90accd89b"
     LOCAL
 )
 
