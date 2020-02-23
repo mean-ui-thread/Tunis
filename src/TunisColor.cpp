@@ -24,9 +24,8 @@
 #include "TunisColor.h"
 #include "TunisUtil.h"
 
+#include <cstring>
 #include <iostream>
-
-
 
 #define RGBA_COLOR(COLOR_NAME, r, g, b, a) const tunis::Color tunis::COLOR_NAME = tunis::Color(r, g, b, a)
 #define RGB_COLOR(COLOR_NAME, r, g, b) RGBA_COLOR(COLOR_NAME, r, g, b, 1.0f)

@@ -172,8 +172,8 @@ void FontGenerator::generate(const std::string output, const std::vector<FT_Face
                 continue;
             }
 
-            msdfgen::Bitmap<float> sdf(bitmapWidth, bitmapHeight);
-            msdfgen::Bitmap<msdfgen::FloatRGB> msdf(bitmapWidth, bitmapHeight);
+            msdfgen::Bitmap<float, 1> sdf(bitmapWidth, bitmapHeight);
+            msdfgen::Bitmap<float, 3> msdf(bitmapWidth, bitmapHeight);
 
             shape.normalize();
             edgeColoringSimple(shape, 3.13);
@@ -224,11 +224,11 @@ void FontGenerator::generate(const std::string output, const std::vector<FT_Face
                     }
                     else
                     {
-                        msdfa[x + (bitmapHeight - 1 - y)*bitmapWidth] = {
-                            static_cast<uint8_t>(std::max(0, std::min(255, int(msdf(x, y).r * 256.0f + 0.5f)))),
-                            static_cast<uint8_t>(std::max(0, std::min(255, int(msdf(x, y).g * 256.0f + 0.5f)))),
-                            static_cast<uint8_t>(std::max(0, std::min(255, int(msdf(x, y).b * 256.0f + 0.5f)))),
-                            static_cast<uint8_t>(std::max(0, std::min(255, int(sdf(x, y) * 256.0f + 0.5f)))),
+                        msdfa[x + (bitmapHeight - 1 - y) * bitmapWidth] = {
+                            static_cast<uint8_t>(std::max(0, std::min(255, int(msdf(x, y)[0] * 256.0f + 0.5f)))),
+                            static_cast<uint8_t>(std::max(0, std::min(255, int(msdf(x, y)[1] * 256.0f + 0.5f)))),
+                            static_cast<uint8_t>(std::max(0, std::min(255, int(msdf(x, y)[2] * 256.0f + 0.5f)))),
+                            static_cast<uint8_t>(std::max(0, std::min(255, int(sdf(x, y)[0] * 256.0f + 0.5f)))),
                         };
                     }
                 }
